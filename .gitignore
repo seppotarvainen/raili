@@ -8,3 +8,6 @@ node_modules
 
 # Manual testing
 .raili
+
+# Draft docs
+docs/exclude
