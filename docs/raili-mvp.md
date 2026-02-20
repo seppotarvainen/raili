@@ -42,9 +42,37 @@ Executes the orchestrator workflow.
 
 ------------------------------------------------------------------------
 
+### 3. `raili help`
+
+Shows usage information and brief descriptions of available commands.
+
+- Usage examples:
+  - `raili help` — prints a short summary of commands and their purpose.
+  - `raili --help` — equivalent to `raili help`.
+  - `raili <command> --help` — prints help for a specific command (for example `raili init --help`).
+
+- Purpose:
+  - Provide discoverability for the CLI in interactive use.
+  - Print short guidance and examples for common workflows.
+
+- Example minimal help output:
+
+```
+Usage: raili <command>
+
+Commands:
+  init   Initialize a .raili/ directory with template files
+  run    Validate and execute the configured workflow
+  help   Show this help message
+```
+
+This command should be implemented as a simple, deterministic formatter that reads no runtime state and does not modify files. It is intended purely for user guidance.
+
+------------------------------------------------------------------------
+
 ## Core MVP Requirements
 
-### 0. Initial Setup and Validation - TODO
+### 0. Initial Setup and Validation - DONE
 
 - `raili init` must create `.raili/` with template files.
 - `raili run` must validate existence and correctness of `.raili/` and
@@ -108,6 +136,26 @@ Installation example:
 ```bash
 npm install @client/raili
 ```
+
+------------------------------------------------------------------------
+
+### 11. Help and Discoverability - TODO
+
+The CLI must provide a deterministic, read-only help facility that
+helps users discover available commands and usage.
+
+- `raili help` and `raili --help` MUST print a short summary of
+  commands and purpose.
+- `raili <command> --help` MUST print command-specific usage and
+  examples (for example `raili init --help`).
+- Help output MUST be read-only and deterministic: it should not read
+  runtime state or modify files.
+- Help should include concise examples for common tasks (init, run,
+  troubleshooting validation errors).
+
+This requirement complements the `raili help` CLI command described
+above; implement as a simple formatter, not a dynamic introspection
+system.
 
 ------------------------------------------------------------------------
 
