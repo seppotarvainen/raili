@@ -1,0 +1,10 @@
+# Hidden files
+.idea
+.DS_Store
+
+# Build files and dependencies
+dist
+node_modules
+
+# Manual testing
+.raili

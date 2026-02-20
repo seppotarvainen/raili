@@ -1,0 +1,32 @@
+{
+  "name": "raili",
+  "version": "1.0.0",
+  "description": "Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution.",
+  "main": "dist/cli.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "test": "jest --runInBand",
+    "lint": "echo 'no linter configured'"
+  },
+  "keywords": [
+    "agent",
+    "asdlc",
+    "agent",
+    "orchestrator"
+  ],
+  "author": "Seppo Tarvainen",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/jest": "^29.5.3",
+    "@types/node": "^20.4.2",
+    "jest": "^29.6.1",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6"
+  }
+}
