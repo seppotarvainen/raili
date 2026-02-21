@@ -23,7 +23,7 @@ export function loadAgentRegistry(dir: string): AgentRegistry {
   }
 
   for (const [k, v] of Object.entries(parsed)) {
-    if (!v || typeof v !== 'object' || typeof v.path !== 'string') {
+    if (!v || typeof v !== 'object' || typeof (v as any).path !== 'string') {
       throw new Error(`Invalid agent registry entry for '${k}'`);
     }
   }
