@@ -30,9 +30,11 @@ export async function runCommand(cwd: string) {
     throw new Error('script-registry.json not found in .raili/');
   }
 
-  const agents = readJsonFile(agentRegistryPath);
-  const scripts = readJsonFile(scriptRegistryPath);
+  // Validate registries and referenced files using validators
+  const { validateAgentRegistry, validateScriptRegistry } = require('./registryValidator');
+  const agents = validateAgentRegistry(cwd);
+  const scripts = validateScriptRegistry(cwd);
 
-  // For MVP, we only validate registries and return them.
+  // For MVP, return loaded registries for potential consumers
   return { agents, scripts };
 }
