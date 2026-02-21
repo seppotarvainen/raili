@@ -105,7 +105,7 @@ Scripts are referenced by name and resolved via registry mapping.
 States can define manual transitions requiring user confirmation via CLI
 prompt.
 
-### 6. Transition Handling - TODO
+### 6. Transition Handling - DONE
 
 Transitions support: - `PASSED` - `FAILED` - Manual approval states -
 Loopbacks (e.g., `verify → execute`)
