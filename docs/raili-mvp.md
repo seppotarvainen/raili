@@ -95,7 +95,7 @@ States may invoke agents defined in the agent registry.\
 Agent configuration includes agent file path and model defined in
 frontmatter.
 
-### 4. Script Execution Support - TODO
+### 4. Script Execution Support - DONE
 
 States may execute predefined scripts defined in the script registry.\
 Scripts are referenced by name and resolved via registry mapping.
