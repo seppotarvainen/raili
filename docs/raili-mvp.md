@@ -100,7 +100,7 @@ frontmatter.
 States may execute predefined scripts defined in the script registry.\
 Scripts are referenced by name and resolved via registry mapping.
 
-### 5. Manual Transition Support - TODO
+### 5. Manual Transition Support - DONE
 
 States can define manual transitions requiring user confirmation via CLI
 prompt.
