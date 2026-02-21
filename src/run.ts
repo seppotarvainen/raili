@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import * as fs from 'fs';
 import * as path from 'path';
+import { FIXED_STATE_MACHINE, validateStateMachine } from './stateMachine';
 
 function readJsonFile(filePath: string) {
   try {
@@ -16,6 +17,8 @@ export async function runCommand(cwd: string) {
   if (!fs.existsSync(railiDir) || !fs.statSync(railiDir).isDirectory()) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');
   }
+
+  validateStateMachine(FIXED_STATE_MACHINE);
 
   const agentRegistryPath = path.join(railiDir, 'agent-registry.json');
   const scriptRegistryPath = path.join(railiDir, 'script-registry.json');

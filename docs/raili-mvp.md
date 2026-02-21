@@ -78,7 +78,7 @@ This command should be implemented as a simple, deterministic formatter that rea
 - `raili run` must validate existence and correctness of `.raili/` and
   registries before execution.
 
-### 1. Fixed State Machine Skeleton - TODO
+### 1. Fixed State Machine Skeleton - DONE
 
 Raili uses a predefined workflow structure (e.g.,
 `init → analyze → plan → execute → verify → archive → done`).\
