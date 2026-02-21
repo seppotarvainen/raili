@@ -2,15 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { FIXED_STATE_MACHINE, validateStateMachine } from './stateMachine';
-
-function readJsonFile(filePath: string) {
-  try {
-    const raw = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(raw);
-  } catch (err: any) {
-    throw new Error(`Invalid JSON in ${filePath}: ${err.message}`);
-  }
-}
+import {validateAgentRegistry, validateScriptRegistry} from "./registryValidator";
 
 export async function runCommand(cwd: string) {
   const railiDir = path.join(cwd, '.raili');
@@ -31,7 +23,6 @@ export async function runCommand(cwd: string) {
   }
 
   // Validate registries and referenced files using validators
-  const { validateAgentRegistry, validateScriptRegistry } = require('./registryValidator');
   const agents = validateAgentRegistry(cwd);
   const scripts = validateScriptRegistry(cwd);
 

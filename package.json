@@ -11,7 +11,8 @@
     "build": "tsc",
     "start": "node dist/cli.js",
     "test": "jest --runInBand",
-    "lint": "echo 'no linter configured'"
+    "lint": "echo 'no linter configured'",
+    "knip": "knip"
   },
   "keywords": [
     "agent",
@@ -30,6 +31,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "knip": "^5.85.0",
     "xstate": "^5.28.0"
   }
 }
