@@ -110,7 +110,7 @@ prompt.
 Transitions support: - `PASSED` - `FAILED` - Manual approval states -
 Loopbacks (e.g., `verify → execute`)
 
-### 7. Registry Validation - TODO
+### 7. Registry Validation - DONE
 
 Before execution, `raili run` must validate: - `.raili/` exists - Agent
 registry exists and is valid - Script registry exists and is valid
