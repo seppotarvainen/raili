@@ -84,12 +84,12 @@ Raili uses a predefined workflow structure (e.g.,
 `init → analyze → plan → execute → verify → archive → done`).\
 States are not dynamically created in MVP.
 
-### 2. Configurable State Behavior - TODO
+### 2. Configurable State Behavior - DONE
 
 Each state's behavior (agent, script, manual interaction) is defined in
 `workflow.yaml`.
 
-### 3. Agent Execution Support - TODO
+### 3. Agent Execution Support - DONE
 
 States may invoke agents defined in the agent registry.\
 Agent configuration includes agent file path and model defined in
