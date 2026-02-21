@@ -1,0 +1,29 @@
+import fs from 'fs';
+import path from 'path';
+
+export type ScriptEntry = { path: string };
+export type ScriptRegistry = Record<string, ScriptEntry>;
+
+export function loadScriptRegistry(dir: string): ScriptRegistry {
+  const registryPath = path.resolve(dir, '.raili', 'script-registry.json');
+  if (!fs.existsSync(registryPath)) throw new Error(`Script registry not found at ${registryPath}`);
+  const raw = fs.readFileSync(registryPath, 'utf8');
+  let parsed: any;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`Script registry JSON parse error: ${(e as Error).message}`);
+  }
+
+  if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+    throw new Error('Script registry must be an object mapping ids to entries');
+  }
+
+  for (const [k, v] of Object.entries(parsed)) {
+    if (!v || typeof v !== 'object' || typeof (v as any).path !== 'string') {
+      throw new Error(`Invalid script registry entry for '${k}'`);
+    }
+  }
+
+  return parsed as ScriptRegistry;
+}
