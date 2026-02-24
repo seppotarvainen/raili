@@ -2,6 +2,8 @@
 
 This document defines all workflow states for the Raili MVP, including a reusable manual approval state.
 
+All files are stored in the `.raili/` directory, which is created by `raili init` command.
+
 ---
 
 ## State Overview
@@ -55,8 +57,7 @@ Inputs:
 - CLI input (ticket ID and description)
 
 Outputs:
-- `.raili/prompt.md` (user input)
-- `.raili/context.json` (state history entry)
+- `prompt.md` (user input)
 
 Success Criteria:
 - Output files created
@@ -77,13 +78,12 @@ run: automatic
 Splits ticket into ptN work files.
 
 Inputs:
-- `.raili/context.json` (state history entry)
+- `prompt.md` (ticket ID and description)
 
 Outputs:
-- `llm/<TICKET>-ptN-*.md` files
+- `<TICKET>-ptN-*.md` files
 
 Success Criteria:
-- ptN files created
 - No agent error
 
 On success:
@@ -103,24 +103,30 @@ Generic human approval gate used after states that require explicit confirmation
 
 The engine:
 
-1. Reads the **previous state** from `stateHistory` (the state that led to manual-approve).
+1. Reads the **previous state** from `stateHistory` (the state that led to manual-approve). This is always the latest state according to timestamp.
 2. Loads that state's definition from `workflow.yaml`.
 3. Reads:
-- `approval.question`
-- `approval.PASSED`
-- `approval.FAILED`
-
+   - `approval.question`
+   - `approval.PASSED`
+   - `approval.FAILED`
 4. Prompts the user (CLI).
 5. Transitions according to the workflow definition.
-
-No approval routing is stored in context.
 
 ### Inputs
 
 - `context.stateHistory` (last state before manual-approve)
-
 - `workflow.yaml` state definition for that state
 
+Example context.stateHistory (raili engine always creates entries in this format, so the engine can reliably read the last state and its timestamp):
+
+```
+[
+  {
+    "state": "analyze",
+    "enteredAt": "2026-02-20T12:00:00Z"
+  }
+]
+```
 
 Example workflow.yaml snippet:
 
@@ -170,16 +176,17 @@ Creates implementation plan and progress file.
 
 Inputs:
 - ptN work file
-- specifications
-- project source tree (read-only)
+- Specifications
+- Examines project source
 
 Outputs:
-- `implementation_plan.md`
-- `implementation_plan_progress.md`
+- `<TICKET-ID>-<ptN>-implementation_plan.md`
+- `<TICKET-ID>-<ptN>-implementation_plan_spec.md` (Relevant parts of specification)
+- `<TICKET-ID>-<ptN>-implementation_plan_progress.md`
+- One to many `commit-msg-*.txt` files, if commits required for the plan.
 
 Success Criteria:
-- Plan file exists
-- Progress file exists
+- No agent error
 
 On success:
 - manual-approve (plan approval)
@@ -198,13 +205,14 @@ Implements next unchecked step from progress file.
 
 Inputs:
 - implementation plan
+- implementation plan specifications
 - progress file
-- optional structured test feedback
+- `test-results.txt` (optional test feedback)
 
 Outputs:
 - Modified source files
 - Updated progress file
-- Optional `.raili/commit-msg-*.txt`
+- Optional `commit-msg-*.txt`
 
 Success Criteria:
 - Step marked complete in progress file
@@ -223,15 +231,14 @@ On fail:
 type: script  
 run: automatic  
 
-Runs project tests deterministically.
+Runs project tests deterministically. Before running, deletes the existing `test-results.txt` to ensure results are from the current test run. The test command is defined in the script registry and can be customized per project.
 
 Inputs:
 - Source code
 - Test command from script registry
 
 Outputs:
-- `.raili/test-output.txt`
-- `.raili/test-summary.json`
+- `test-results.txt`
 
 Success Criteria:
 - Test command completes
@@ -246,13 +253,13 @@ On fail:
 
 # 7. Verify
 
-type: engine  
+type: agent  
 run: automatic  
 
 Determines next state based on workflow status.
 
 Inputs:
-- `.raili/test-summary.json`
+- `test-results.txt`
 - `implementation_plan_progress.md`
 - commit message files (if any)
 
@@ -284,7 +291,7 @@ run: automatic
 Creates a Git commit using next available commit message file.
 
 Inputs:
-- `.raili/commit-msg-*.txt`
+- `commit-msg-*.txt`
 - Working tree changes
 
 Outputs:
@@ -293,7 +300,7 @@ Outputs:
 
 Success Criteria:
 - Commit succeeds
-- Commit message file deleted
+- File deleted after successful commit
 
 On success:
 - verify
