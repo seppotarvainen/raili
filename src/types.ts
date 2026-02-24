@@ -1,6 +1,6 @@
 // Shared types for the fixed state machine
 
-export type StateId = 'init' | 'analyze' | 'plan' | 'execute' | 'verify' | 'archive' | 'done' | 'failed';
+export type StateId = 'init' | 'analyze' | 'plan' | 'execute' | 'test' | 'verify' | 'archive' | 'done' | 'failed';
 
 export interface StateDef {
   id: StateId;
