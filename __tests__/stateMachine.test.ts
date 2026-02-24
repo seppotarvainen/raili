@@ -8,8 +8,8 @@ describe('FIXED_STATE_MACHINE', () => {
   test('happy path transitions are allowed', () => {
     const m = FIXED_STATE_MACHINE;
     let cur = m.initial;
-    // Walk the expected happy path: init -> analyze -> plan -> execute -> verify -> archive -> done
-    const path = ['analyze', 'plan', 'execute', 'verify', 'archive', 'done'];
+    // Walk the expected happy path: init -> analyze -> plan -> execute -> test -> verify -> archive -> done
+    const path = ['analyze', 'plan', 'execute', 'test', 'verify', 'archive', 'done'];
     for (const next of path) {
       const def = m.states[cur];
       expect(def.transitions).toContain(next);
