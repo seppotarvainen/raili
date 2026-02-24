@@ -3,6 +3,7 @@ import path from 'path';
 
 export type AgentEntry = {
   path: string;
+  model?: string;
 };
 
 export type AgentRegistry = Record<string, AgentEntry>;
@@ -25,6 +26,9 @@ export function loadAgentRegistry(dir: string): AgentRegistry {
   for (const [k, v] of Object.entries(parsed)) {
     if (!v || typeof v !== 'object' || typeof (v as any).path !== 'string') {
       throw new Error(`Invalid agent registry entry for '${k}'`);
+    }
+    if ((v as any).model !== undefined && typeof (v as any).model !== 'string') {
+      throw new Error(`Invalid agent registry entry for '${k}': model must be a string`);
     }
   }
 

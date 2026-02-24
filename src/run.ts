@@ -1,7 +1,8 @@
 /// <reference types="node" />
 import * as fs from 'fs';
 import * as path from 'path';
-import { FIXED_STATE_MACHINE, validateStateMachine } from './stateMachine';
+import { FIXED_STATE_MACHINE, validateStateMachine, xstateMachine } from './stateMachine';
+import {createActor, interpret} from 'xstate';
 import {validateAgentRegistry, validateScriptRegistry} from "./registryValidator";
 
 export async function runCommand(cwd: string) {
@@ -26,6 +27,13 @@ export async function runCommand(cwd: string) {
   const agents = validateAgentRegistry(cwd);
   const scripts = validateScriptRegistry(cwd);
 
-  // For MVP, return loaded registries for potential consumers
-  return { agents, scripts };
+  // Start the XState interpreter for the fixed state machine
+  const service = createActor(xstateMachine);
+  service.start();
+
+
+  // service.state isn't available on the Actor type; use fixed machine initial state
+
+  // For MVP, return loaded registries and current state for potential consumers
+  return { agents, scripts};
 }

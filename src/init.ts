@@ -10,9 +10,30 @@ export async function initCommand(cwd: string) {
 
   fs.mkdirSync(railiDir);
 
-  const workflowYaml = `states:\n  analyze:\n    type: agent\n    agent: analyzer.agent\n`;
+  const workflowYaml = [
+    'states:',
+    '  analyze:',
+    '    type: agent',
+    '    agent: analyzer.agent',
+    '  plan:',
+    '    type: agent',
+    '    agent: planner.agent',
+    '  execute:',
+    '    type: agent',
+    '    agent: executor.agent',
+    '  verify:',
+    '    type: agent',
+    '    agent: verifier.agent',
+    '  archive:',
+    '    type: script',
+    '    script: archive-part',
+    '',
+  ].join('\n');
   const agentRegistry = JSON.stringify({
-    'analyzer.agent': { path: './agents/analyzer.agent.md' }
+    'analyzer.agent': { path: './agents/analyzer.agent.md' },
+    'planner.agent': { path: './agents/planner.agent.md' },
+    'executor.agent': { path: './agents/executor.agent.md' },
+    'verifier.agent': { path: './agents/verifier.agent.md' },
   }, null, 2);
   const scriptRegistry = JSON.stringify({
     'archive-part': './archive.sh'
