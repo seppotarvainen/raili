@@ -1,9 +1,9 @@
 /// <reference types="node" />
 import * as fs from 'fs';
 import * as path from 'path';
-import { FIXED_STATE_MACHINE, validateStateMachine, xstateMachine } from './stateMachine';
-import {createActor, interpret} from 'xstate';
-import {validateAgentRegistry, validateScriptRegistry} from "./registryValidator";
+import { loadWorkflowConfig, buildStateMachine, validateStateMachine } from './workflowLoader';
+import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from "./registryValidator";
+import { loadContext } from './context';
 
 export async function runCommand(cwd: string) {
   const railiDir = path.join(cwd, '.raili');
@@ -11,7 +11,14 @@ export async function runCommand(cwd: string) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');
   }
 
-  validateStateMachine(FIXED_STATE_MACHINE);
+  // Load workflow configuration from YAML
+  const workflowConfig = loadWorkflowConfig(cwd);
+
+  // Build state machine from workflow config
+  const stateMachine = buildStateMachine(workflowConfig);
+
+  // Validate state machine structure
+  validateStateMachine(stateMachine);
 
   const agentRegistryPath = path.join(railiDir, 'agent-registry.json');
   const scriptRegistryPath = path.join(railiDir, 'script-registry.json');
@@ -27,13 +34,29 @@ export async function runCommand(cwd: string) {
   const agents = validateAgentRegistry(cwd);
   const scripts = validateScriptRegistry(cwd);
 
-  // Start the XState interpreter for the fixed state machine
-  const service = createActor(xstateMachine);
-  service.start();
+  // Validate that all workflow references exist in registries (fail-fast)
+  validateWorkflowReferences(workflowConfig, agents, scripts);
 
+  // Load execution context
+  const context = loadContext(cwd);
 
-  // service.state isn't available on the Actor type; use fixed machine initial state
+  // TODO: Implement execution engine loop
+  // - Start from context.currentState or stateMachine.initial
+  // - Execute state handlers
+  // - Resolve transitions
+  // - Update and persist context
 
-  // For MVP, return loaded registries and current state for potential consumers
-  return { agents, scripts};
+  console.log(`Workflow loaded: ${Object.keys(stateMachine.states).length} states defined`);
+  console.log(`Initial state: ${stateMachine.initial}`);
+  console.log(`Current state: ${context.stateHistory.length > 0 ? context.stateHistory[context.stateHistory.length - 1].state : 'none'}`);
+  console.log(`✓ All agents and scripts are properly configured`);
+
+  // For MVP, return loaded configuration
+  return {
+    workflow: workflowConfig,
+    stateMachine,
+    agents,
+    scripts,
+    context
+  };
 }

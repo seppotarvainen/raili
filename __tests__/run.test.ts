@@ -23,6 +23,11 @@ describe('runCommand', () => {
   test('fails if registries missing or invalid', async () => {
     const railiDir = path.join(tmpdir, '.raili');
     fs.mkdirSync(railiDir);
+
+    // Need workflow.yaml to exist first
+    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+
     await expect(runCommand(tmpdir)).rejects.toThrow('agent-registry.json not found');
 
     // simulate validator throwing on invalid JSON
@@ -37,6 +42,11 @@ describe('runCommand', () => {
   test('returns parsed registries when valid', async () => {
     const railiDir = path.join(tmpdir, '.raili');
     fs.mkdirSync(railiDir);
+
+    // Create minimal workflow
+    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({ a: { path: './x' } }));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({ s: { path: './y' } }));
 

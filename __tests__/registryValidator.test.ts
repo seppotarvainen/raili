@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { validateAgentRegistry, validateScriptRegistry } from '../src/registryValidator';
+import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from '../src/registryValidator';
+import { WorkflowConfig } from '../src/types';
 
 const TMP = path.resolve(__dirname, 'tmp_registry');
 beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });
@@ -24,3 +25,122 @@ test('throws when script file missing', () => {
   fs.writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
   expect(() => validateScriptRegistry(TMP)).toThrow();
 });
+
+describe('validateWorkflowReferences', () => {
+  test('passes when all agents and scripts exist in registries', () => {
+    const workflow: WorkflowConfig = {
+      initial: 'analyze',
+      states: {
+        analyze: {
+          type: 'agent',
+          agent: 'analyzer.agent',
+        },
+        test: {
+          type: 'script',
+          script: 'test-runner',
+        },
+      },
+    };
+
+    const agents = {
+      'analyzer.agent': { path: './agents/analyzer.md' },
+    };
+
+    const scripts = {
+      'test-runner': { path: './scripts/test.sh' },
+    };
+
+    expect(() => validateWorkflowReferences(workflow, agents, scripts)).not.toThrow();
+  });
+
+  test('throws when agent referenced in workflow is not in registry', () => {
+    const workflow: WorkflowConfig = {
+      initial: 'analyze',
+      states: {
+        analyze: {
+          type: 'agent',
+          agent: 'missing.agent',
+        },
+      },
+    };
+
+    const agents = {};
+    const scripts = {};
+
+    expect(() => validateWorkflowReferences(workflow, agents, scripts)).toThrow(
+      /State 'analyze' references agent 'missing.agent'/
+    );
+  });
+
+  test('throws when script referenced in workflow is not in registry', () => {
+    const workflow: WorkflowConfig = {
+      initial: 'test',
+      states: {
+        test: {
+          type: 'script',
+          script: 'missing-script',
+        },
+      },
+    };
+
+    const agents = {};
+    const scripts = {};
+
+    expect(() => validateWorkflowReferences(workflow, agents, scripts)).toThrow(
+      /State 'test' references script 'missing-script'/
+    );
+  });
+
+  test('throws with comprehensive error for multiple missing references', () => {
+    const workflow: WorkflowConfig = {
+      initial: 'init',
+      states: {
+        analyze: {
+          type: 'agent',
+          agent: 'missing-analyzer',
+        },
+        plan: {
+          type: 'agent',
+          agent: 'missing-planner',
+        },
+        test: {
+          type: 'script',
+          script: 'missing-test',
+        },
+      },
+    };
+
+    const agents = {};
+    const scripts = {};
+
+    expect(() => validateWorkflowReferences(workflow, agents, scripts)).toThrow(
+      /Workflow validation failed/
+    );
+    expect(() => validateWorkflowReferences(workflow, agents, scripts)).toThrow(
+      /Missing agent definitions/
+    );
+    expect(() => validateWorkflowReferences(workflow, agents, scripts)).toThrow(
+      /Missing script definitions/
+    );
+  });
+
+  test('ignores engine-type states without agent or script', () => {
+    const workflow: WorkflowConfig = {
+      initial: 'init',
+      states: {
+        init: {
+          type: 'engine',
+        },
+        done: {
+          type: 'engine',
+        },
+      },
+    };
+
+    const agents = {};
+    const scripts = {};
+
+    expect(() => validateWorkflowReferences(workflow, agents, scripts)).not.toThrow();
+  });
+});
+

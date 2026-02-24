@@ -1,46 +1,62 @@
-import { StateMachine, StateDef } from './types';
-import { createMachine, EventObject } from 'xstate';
+// This file is deprecated - state machine is now loaded from workflow.yaml
+// Kept for backward compatibility with existing tests
+// TODO: Remove after migrating tests to workflowLoader
 
-// Fixed deterministic state machine skeleton for MVP. This is structural only
-// and contains no handlers or business logic. It is validated at startup.
+import { StateMachine } from './types';
 
+// Legacy fixed state machine for backward compatibility
 export const FIXED_STATE_MACHINE: StateMachine = {
   initial: 'init',
   states: {
-    init: { id: 'init', transitions: ['analyze'] },
-    analyze: { id: 'analyze', transitions: ['plan'] },
-    plan: { id: 'plan', transitions: ['execute'] },
-    execute: { id: 'execute', transitions: ['test', 'failed'] },
-    test: { id: 'test', transitions: ['verify', 'failed'] },
-    verify: { id: 'verify', transitions: ['archive', 'execute'] },
-    archive: { id: 'archive', transitions: ['done'] },
-    done: { id: 'done', transitions: [] },
-    failed: { id: 'failed', transitions: [] },
+    init: {
+      id: 'init',
+      config: { type: 'engine' },
+      transitions: ['analyze']
+    },
+    analyze: {
+      id: 'analyze',
+      config: { type: 'agent', agent: 'analyzer' },
+      transitions: ['plan']
+    },
+    plan: {
+      id: 'plan',
+      config: { type: 'agent', agent: 'planner' },
+      transitions: ['execute']
+    },
+    execute: {
+      id: 'execute',
+      config: { type: 'agent', agent: 'executor' },
+      transitions: ['test', 'failed']
+    },
+    test: {
+      id: 'test',
+      config: { type: 'script', script: 'test' },
+      transitions: ['verify', 'failed']
+    },
+    verify: {
+      id: 'verify',
+      config: { type: 'agent', agent: 'verifier' },
+      transitions: ['archive', 'execute']
+    },
+    archive: {
+      id: 'archive',
+      config: { type: 'script', script: 'archive' },
+      transitions: ['done']
+    },
+    done: {
+      id: 'done',
+      config: { type: 'engine' },
+      transitions: []
+    },
+    failed: {
+      id: 'failed',
+      config: { type: 'engine' },
+      transitions: []
+    },
   },
 };
 
-// Convert the simple machine shape to an XState machine config
-function toXStateConfig(machine: StateMachine) {
-  const states: Record<string, any> = {};
-  for (const [id, def] of Object.entries(machine.states)) {
-    states[id] = {
-      on: def.transitions.reduce((acc: Record<string, string>, t: string) => {
-        // Use transition name as event, pointing to target state
-        acc[t.toUpperCase()] = t;
-        return acc;
-      }, {}),
-    };
-  }
-
-  return {
-    id: 'fixedStateMachine',
-    initial: machine.initial,
-    states,
-  };
-}
-
-export const xstateMachine = createMachine(toXStateConfig(FIXED_STATE_MACHINE));
-
+// Legacy validation function - use workflowLoader.validateStateMachine instead
 export function validateStateMachine(machine: StateMachine): void {
   if (!machine) throw new Error('State machine is undefined');
   if (typeof machine.initial !== 'string' || !(machine.initial in machine.states)) {
