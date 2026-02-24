@@ -21,6 +21,9 @@ export async function initCommand(cwd: string) {
     '  execute:',
     '    type: agent',
     '    agent: executor.agent',
+    '  tester:',
+    '    type: script',
+    '    script: test-runner',
     '  verify:',
     '    type: agent',
     '    agent: verifier.agent',
@@ -36,7 +39,8 @@ export async function initCommand(cwd: string) {
     'verifier.agent': { path: './agents/verifier.agent.md' },
   }, null, 2);
   const scriptRegistry = JSON.stringify({
-    'archive-part': './archive.sh'
+    'archive-part': './archive.sh',
+    'test-runner': './run-tests.sh'
   }, null, 2);
 
   fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), workflowYaml);
