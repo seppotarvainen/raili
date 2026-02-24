@@ -103,7 +103,7 @@ Scripts are referenced by name and resolved via registry mapping.
 ### 5. Manual Transition Support - DONE
 
 States can define manual transitions requiring user confirmation via CLI
-prompt.
+prompt. Manual approvals are modeled as instances of a reusable engine state `manual-approve` that reads an originating state's `approval` block and routes based on the user's response.
 
 ### 6. Transition Handling - DONE
 
@@ -208,11 +208,10 @@ states:
     type: agent
     agent: planner.agent
     prompt: "Work according to your rules"
-    transition:
-      manual:
-        question: "Is the plan correct?"
-        PASSED: execute
-        FAILED: analyze
+    approval:
+      question: "Is the plan correct?"
+      PASSED: execute
+      FAILED: analyze
 
   archive:
     type: script
