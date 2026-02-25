@@ -4,6 +4,7 @@ import * as path from 'path';
 import { loadWorkflowConfig, buildStateMachine, validateStateMachine } from './workflowLoader';
 import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from "./registryValidator";
 import { loadContext } from './context';
+import { Engine } from './engine/Engine';
 
 export async function runCommand(cwd: string) {
   const railiDir = path.join(cwd, '.raili');
@@ -40,23 +41,13 @@ export async function runCommand(cwd: string) {
   // Load execution context
   const context = loadContext(cwd);
 
-  // TODO: Implement execution engine loop
-  // - Start from context.currentState or stateMachine.initial
-  // - Execute state handlers
-  // - Resolve transitions
-  // - Update and persist context
-
-  console.log(`Workflow loaded: ${Object.keys(stateMachine.states).length} states defined`);
-  console.log(`Initial state: ${stateMachine.initial}`);
-  console.log(`Current state: ${context.stateHistory.length > 0 ? context.stateHistory[context.stateHistory.length - 1].state : 'none'}`);
-  console.log(`✓ All agents and scripts are properly configured`);
-
-  // For MVP, return loaded configuration
-  return {
-    workflow: workflowConfig,
+  const engine = new Engine({
     stateMachine,
-    agents,
-    scripts,
-    context
-  };
+    agentRegistry: agents,
+    scriptRegistry: scripts,
+    context,
+    cwd,
+  });
+
+  await engine.run();
 }

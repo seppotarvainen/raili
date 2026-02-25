@@ -4,13 +4,18 @@ import os from 'os';
 import { runCommand } from '../src/run';
 
 jest.mock('../src/registryValidator');
+jest.mock('../src/engine/Engine');
+
 const registryValidator = require('../src/registryValidator');
+const { Engine } = require('../src/engine/Engine');
 
 describe('runCommand', () => {
   let tmpdir: string;
   beforeEach(() => {
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-test-'));
     jest.resetAllMocks();
+    // Default mock: Engine.run resolves immediately
+    Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
   afterEach(() => {
     fs.rmSync(tmpdir, { recursive: true, force: true });
@@ -39,24 +44,26 @@ describe('runCommand', () => {
     await expect(runCommand(tmpdir)).rejects.toThrow('Agent registry JSON parse error');
   });
 
-  test('returns parsed registries when valid', async () => {
+  test('constructs Engine and calls run() when valid', async () => {
     const railiDir = path.join(tmpdir, '.raili');
     fs.mkdirSync(railiDir);
 
-    // Create minimal workflow
     const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
     fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
-
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({ a: { path: './x' } }));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({ s: { path: './y' } }));
 
-    // mock validators to avoid touching filesystem
     registryValidator.validateAgentRegistry.mockImplementation(() => ({ a: { path: './x' } }));
     registryValidator.validateScriptRegistry.mockImplementation(() => ({ s: { path: './y' } }));
+    registryValidator.validateWorkflowReferences.mockImplementation(() => {});
 
-    const res = await runCommand(tmpdir);
-    expect(res.agents).toEqual({ a: { path: './x' } });
-    expect(res.scripts).toEqual({ s: { path: './y' } });
+    const mockRun = jest.fn().mockResolvedValue(undefined);
+    Engine.mockImplementation(() => ({ run: mockRun }));
+
+    await runCommand(tmpdir);
+
+    expect(Engine).toHaveBeenCalledTimes(1);
+    expect(mockRun).toHaveBeenCalledTimes(1);
   });
 });
 

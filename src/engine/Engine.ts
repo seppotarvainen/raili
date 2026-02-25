@@ -1,0 +1,119 @@
+import { StateMachine, WorkflowContext } from '../types';
+import { AgentRegistry } from '../agentRegistry';
+import { ScriptRegistry } from '../scriptRegistry';
+import { addStateToHistory, saveContext, getCurrentState } from '../context';
+import { runAgentState } from './AgentStateRunner';
+import { runScriptState } from './ScriptStateRunner';
+import { runApprovalStep } from './ApproveStateRunner';
+
+/** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */
+export type StateOutcome = string;
+
+export interface EngineConfig {
+  stateMachine: StateMachine;
+  agentRegistry: AgentRegistry;
+  scriptRegistry: ScriptRegistry;
+  context: WorkflowContext;
+  cwd: string;
+}
+
+/**
+ * Resolves the next state from a state's routing config and an outcome key.
+ * Throws immediately if outcome is not mapped (fail-fast).
+ */
+function resolveNextState(stateId: string, routing: Record<string, string>, outcome: string): string {
+  const next = routing[outcome];
+  if (!next) {
+    throw new Error(
+      `State '${stateId}': outcome '${outcome}' has no matching transition (defined: ${Object.keys(routing).join(', ')})`
+    );
+  }
+  return next;
+}
+
+export class Engine {
+  private readonly stateMachine: StateMachine;
+  private readonly agentRegistry: AgentRegistry;
+  private readonly scriptRegistry: ScriptRegistry;
+  private context: WorkflowContext;
+  private readonly cwd: string;
+
+  constructor(config: EngineConfig) {
+    this.stateMachine = config.stateMachine;
+    this.agentRegistry = config.agentRegistry;
+    this.scriptRegistry = config.scriptRegistry;
+    this.context = config.context;
+    this.cwd = config.cwd;
+  }
+
+  /**
+   * Run the workflow from the current (or initial) state until a terminal state is reached.
+   */
+  async run(): Promise<void> {
+    const currentStateId = getCurrentState(this.context) ?? this.stateMachine.initial;
+
+    // Record initial state if history is empty
+    if (this.context.stateHistory.length === 0) {
+      this.context = addStateToHistory(this.context, currentStateId);
+      saveContext(this.cwd, this.context);
+    }
+
+    let stateId = currentStateId;
+
+    while (true) {
+      const stateDef = this.stateMachine.states[stateId];
+      if (!stateDef) {
+        throw new Error(`Engine: state '${stateId}' not found in state machine`);
+      }
+
+      const { config } = stateDef;
+
+      // Terminal state: no routing defined, stop execution
+      if (!config.on && !config.transitions && !config.approval) {
+        console.log(`✓ Reached terminal state: ${stateId}`);
+        break;
+      }
+
+      console.log(`→ Executing state: ${stateId} (type: ${config.type})`);
+
+      let outcome: string;
+
+      // Execute the state handler
+      if (config.type === 'agent') {
+        outcome = runAgentState(stateDef, this.agentRegistry, this.cwd);
+      } else if (config.type === 'script') {
+        outcome = runScriptState(stateDef, this.scriptRegistry, this.cwd);
+      } else {
+        // type: engine — no side effects, falls through to approval or transitions
+        outcome = 'PASSED';
+      }
+
+      console.log(`  outcome: ${outcome}`);
+
+      // If the state has an approval block, run it before routing
+      if (config.approval) {
+        const approvalOutcome = runApprovalStep(stateId, config.approval);
+        const nextStateId = resolveNextState(stateId, {
+          PASSED: config.approval.PASSED,
+          FAILED: config.approval.FAILED,
+        }, approvalOutcome);
+
+        console.log(`  approval: ${approvalOutcome} → ${nextStateId}`);
+        this.context = addStateToHistory(this.context, nextStateId);
+        saveContext(this.cwd, this.context);
+        stateId = nextStateId;
+        continue;
+      }
+
+      // Route via `on:` or `transitions:`
+      const routing = config.on ?? config.transitions!;
+      const nextStateId = resolveNextState(stateId, routing, outcome);
+
+      console.log(`  → ${nextStateId}`);
+      this.context = addStateToHistory(this.context, nextStateId);
+      saveContext(this.cwd, this.context);
+      stateId = nextStateId;
+    }
+  }
+}
+
