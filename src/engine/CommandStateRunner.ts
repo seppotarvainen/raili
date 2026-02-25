@@ -1,5 +1,5 @@
-import { spawnSync } from 'child_process';
 import { StateDef } from '../types';
+import { executeCommand } from '../handlers/commandHandler';
 import type { StateOutcome } from './Engine';
 
 /**
@@ -7,27 +7,20 @@ import type { StateOutcome } from './Engine';
  * - If state uses `on:`, exit code determines PASSED / FAILED.
  * - If state uses `transitions:`, last line of stdout is the outcome key.
  *
- * The command is executed via `sh -c` so pipes, redirects, etc. all work.
  * `directory` is optional — defaults to cwd.
  */
 export function runCommandState(state: StateDef, cwd: string): StateOutcome {
   const command = state.config.command!;
   const workdir = state.config.directory ?? cwd;
 
-  const result = spawnSync('sh', ['-c', command], {
-    cwd: workdir,
-    encoding: 'utf8',
-  });
-
-  const output = result.stdout ?? '';
-  const success = result.status === 0 && !result.error;
+  const result = executeCommand(command, workdir);
 
   if (state.config.on) {
-    return success ? 'PASSED' : 'FAILED';
+    return result.success ? 'PASSED' : 'FAILED';
   }
 
   if (state.config.transitions) {
-    const lastLine = output.trimEnd().split('\n').pop()?.trim() ?? '';
+    const lastLine = result.output.trimEnd().split('\n').pop()?.trim() ?? '';
     if (!lastLine) {
       throw new Error(
         `State '${state.id}': command produced no output — expected a transition key as last stdout line`
@@ -41,6 +34,6 @@ export function runCommandState(state: StateDef, cwd: string): StateOutcome {
     return lastLine;
   }
 
-  return success ? 'PASSED' : 'FAILED';
+  return result.success ? 'PASSED' : 'FAILED';
 }
 
