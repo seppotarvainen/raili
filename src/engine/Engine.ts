@@ -4,6 +4,7 @@ import { ScriptRegistry } from '../scriptRegistry';
 import { addStateToHistory, saveContext, getCurrentState } from '../context';
 import { runAgentState } from './AgentStateRunner';
 import { runScriptState } from './ScriptStateRunner';
+import { runCommandState } from './CommandStateRunner';
 import { runApprovalStep } from './ApproveStateRunner';
 
 /** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */
@@ -83,6 +84,8 @@ export class Engine {
         outcome = runAgentState(stateDef, this.agentRegistry, this.cwd);
       } else if (config.type === 'script') {
         outcome = runScriptState(stateDef, this.scriptRegistry, this.cwd);
+      } else if (config.type === 'command') {
+        outcome = runCommandState(stateDef, this.cwd);
       } else {
         // type: engine — no side effects, falls through to approval or transitions
         outcome = 'PASSED';

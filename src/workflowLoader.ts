@@ -114,8 +114,8 @@ export function validateStateMachine(machine: StateMachine): void {
 
     // Validate state config
     const config = def.config;
-    if (!config.type || !['agent', 'script', 'engine'].includes(config.type)) {
-      throw new Error(`Invalid state '${id}': type must be 'agent', 'script', or 'engine'`);
+    if (!config.type || !['agent', 'script', 'command', 'engine'].includes(config.type)) {
+      throw new Error(`Invalid state '${id}': type must be 'agent', 'script', 'command', or 'engine'`);
     }
 
     if (config.on && config.transitions) {
@@ -128,6 +128,10 @@ export function validateStateMachine(machine: StateMachine): void {
 
     if (config.type === 'script' && !config.script) {
       throw new Error(`Invalid state '${id}': script type requires 'script' property`);
+    }
+
+    if (config.type === 'command' && !config.command) {
+      throw new Error(`Invalid state '${id}': command type requires 'command' property`);
     }
   }
 }

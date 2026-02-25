@@ -1,7 +1,7 @@
 // Shared types for workflow configuration and state machine
 
 // Workflow configuration loaded from workflow.yaml
-export type StateType = 'agent' | 'script' | 'engine';
+export type StateType = 'agent' | 'script' | 'command' | 'engine';
 
 export interface ApprovalConfig {
   question: string;
@@ -13,10 +13,12 @@ export interface StateConfig {
   type: StateType;
   agent?: string;        // For type: agent
   script?: string;       // For type: script
+  command?: string;      // For type: command — inline shell command
+  directory?: string;    // For type: command — working directory (defaults to cwd)
   prompt?: string;       // Optional prompt for agent
-  approval?: ApprovalConfig;  // For manual approval after this state
-  transitions?: Record<string, string>;  // Conditional transitions (e.g., verify state routing)
-  on?: Record<string, string>;  // Explicit outcome-based transitions (PASSED, FAILED, etc.)
+  approval?: ApprovalConfig;
+  transitions?: Record<string, string>;
+  on?: Record<string, string>;
 }
 
 export interface WorkflowConfig {
