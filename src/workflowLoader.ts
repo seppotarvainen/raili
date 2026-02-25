@@ -118,6 +118,10 @@ export function validateStateMachine(machine: StateMachine): void {
       throw new Error(`Invalid state '${id}': type must be 'agent', 'script', or 'engine'`);
     }
 
+    if (config.on && config.transitions) {
+      throw new Error(`Invalid state '${id}': cannot have both 'on' and 'transitions' — use 'on' for binary PASSED/FAILED outcomes, 'transitions' for named outcomes`);
+    }
+
     if (config.type === 'agent' && !config.agent) {
       throw new Error(`Invalid state '${id}': agent type requires 'agent' property`);
     }

@@ -190,6 +190,33 @@ describe('workflowLoader', () => {
       expect(() => validateStateMachine(machine)).toThrow("script type requires 'script' property");
     });
 
+    test('throws if state has both on and transitions', () => {
+      const machine = {
+        initial: 'verify',
+        states: {
+          verify: {
+            id: 'verify',
+            config: {
+              type: 'agent' as const,
+              agent: 'verifier',
+              on: { PASSED: 'done' },
+              transitions: { tests_failed: 'done' },
+            },
+            transitions: ['done'],
+          },
+          done: {
+            id: 'done',
+            config: { type: 'engine' as const },
+            transitions: [],
+          },
+        },
+      };
+
+      expect(() => validateStateMachine(machine)).toThrow(
+        "cannot have both 'on' and 'transitions'"
+      );
+    });
+
     test('validates valid state machine', () => {
       const machine = {
         initial: 'init',

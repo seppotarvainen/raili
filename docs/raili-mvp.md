@@ -78,10 +78,11 @@ This command should be implemented as a simple, deterministic formatter that rea
 - `raili run` must validate existence and correctness of `.raili/` and
   registries before execution.
 
-### 1. Fixed State Machine Skeleton - DONE
+### 1. Workflow-Driven State Machine - DONE
 
-Raili uses a predefined workflow structure (e.g.,
-`init → analyze → plan → execute → verify → archive → done`).\
+Raili's state machine is fully defined by `workflow.yaml` — it is the
+single source of truth for states and transitions.\
+The engine builds the state machine from the workflow config at startup.\
 States are not dynamically created in MVP.
 
 ### 2. Configurable State Behavior - DONE
@@ -103,7 +104,21 @@ Scripts are referenced by name and resolved via registry mapping.
 ### 5. Manual Transition Support - DONE
 
 States can define manual transitions requiring user confirmation via CLI
-prompt. Manual approvals are modeled as instances of a reusable engine state `manual-approve` that reads an originating state's `approval` block and routes based on the user's response.
+prompt. If a state in `workflow.yaml` has an `approval` block, the engine
+automatically pauses after that state completes and prompts the user before
+transitioning. No separate `manual-approve` state is needed in the workflow.
+
+Example:
+
+```yaml
+plan:
+  type: agent
+  agent: planner.agent
+  approval:
+    question: "Is the plan correct?"
+    PASSED: execute
+    FAILED: plan
+```
 
 ### 6. Transition Handling - DONE
 
@@ -217,6 +232,56 @@ states:
     type: script
     script: archive-part
 ```
+
+------------------------------------------------------------------------
+
+## Architecture Decisions
+
+### AD-1: Manual approval is inline, not a separate state - DECIDED (2026-02-24)
+
+Manual approval is triggered automatically by the engine when a state has
+an `approval` block in `workflow.yaml`. There is no explicit `manual-approve`
+state in the workflow. This keeps workflows clean and the approval contract
+co-located with the state it belongs to.
+
+### AD-2: How does an agent or script signal its outcome to the engine? - DECIDED (2026-02-25)
+
+Two mutually exclusive transition styles exist in `workflow.yaml`. A state must use one or the other, not both.
+
+**`on:` — binary outcomes (PASSED / FAILED)**
+
+Used when the handler either succeeded or failed. The engine uses the
+process exit code: `0` → `PASSED`, non-zero → `FAILED`.
+
+```yaml
+execute:
+  type: agent
+  agent: executor.agent
+  on:
+    PASSED: test
+    FAILED: execute
+```
+
+**`transitions:` — named outcomes**
+
+Used when a handler needs to route to more than two states. The engine
+reads the **last line of stdout** after execution and matches it against
+the keys in `transitions:`. If the value does not match any key, the
+engine throws immediately (fail-fast).
+
+```yaml
+verify:
+  type: agent
+  agent: verifier.agent
+  transitions:
+    tests_failed: execute
+    commit_required: commit
+    ready_for_archive: archive
+```
+
+The agent or script is responsible for printing exactly one outcome token
+as its last stdout line (e.g. `echo "commit_required"`). This applies equally
+to agent and script states. A state may not have both `on:` and `transitions:`.
 
 ------------------------------------------------------------------------
 

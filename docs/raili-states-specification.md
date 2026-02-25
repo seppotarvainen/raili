@@ -14,35 +14,38 @@ stateDiagram-v2
 
     init --> analyze
 
-    analyze --> approve_analysis
-    approve_analysis --> plan : PASSED
-    approve_analysis --> analyze : FAILED
+    analyze --> analyze : FAILED (approval)
+    analyze --> plan : PASSED (approval)
 
-    plan --> approve_plan
-    approve_plan --> execute : PASSED
-    approve_plan --> plan : FAILED
+    plan --> plan : FAILED (approval)
+    plan --> execute : PASSED (approval)
 
-    execute --> test
+    execute --> test : PASSED
+    execute --> execute : FAILED
 
-    test --> verify : tests passed
-    test --> execute : tests failed
+    test --> verify : PASSED
+    test --> execute : FAILED
 
-    verify --> commit : commit required
-    verify --> execute : progress incomplete
-    verify --> approve_archive : ready for archive
+    verify --> commit : commit_required
+    verify --> execute : tests_failed / progress_incomplete
+    verify --> archive : ready_for_archive (approval)
 
-    commit --> verify
+    commit --> verify : PASSED
+    commit --> commit : FAILED
 
-    approve_archive --> archive : PASSED
-    approve_archive --> execute : FAILED
-
-    archive --> analyze : more parts
-    archive --> done : no more parts
+    archive --> analyze : more_parts
+    archive --> done : no_more_parts
 
     done --> [*]
 ```
 
-approve_* states are instances of the reusable manual approval state, with context determining the question and next states.
+States with an `approval` block in `workflow.yaml` automatically pause for
+user confirmation after execution. The engine handles this inline — there are
+no separate `approve_*` states in the workflow.
+
+States with a `transitions:` block signal their outcome via the **last line
+of stdout**. The engine matches it against the transition keys and routes
+accordingly. A state may not have both `on:` and `transitions:`.
 
 ---
 
@@ -94,76 +97,34 @@ On fail:
 
 ---
 
-3. Manual-Approve (Reusable)
+# 3. Manual Approval (Inline)
 
-type: engine  
+type: engine (inline behavior, not a separate state)
 run: manual
 
-Generic human approval gate used after states that require explicit confirmation (e.g., analyze, plan, archive).
+When a state in `workflow.yaml` has an `approval` block, the engine
+automatically pauses after that state completes and prompts the user
+before transitioning. No separate state is needed.
 
 The engine:
 
-1. Reads the **previous state** from `stateHistory` (the state that led to manual-approve). This is always the latest state according to timestamp.
-2. Loads that state's definition from `workflow.yaml`.
-3. Reads:
-   - `approval.question`
-   - `approval.PASSED`
-   - `approval.FAILED`
-4. Prompts the user (CLI).
-5. Transitions according to the workflow definition.
-
-### Inputs
-
-- `context.stateHistory` (last state before manual-approve)
-- `workflow.yaml` state definition for that state
-
-Example context.stateHistory (raili engine always creates entries in this format, so the engine can reliably read the last state and its timestamp):
-
-```
-[
-  {
-    "state": "analyze",
-    "enteredAt": "2026-02-20T12:00:00Z"
-  }
-]
-```
+1. Executes the state handler normally.
+2. Checks if the state config has an `approval` block.
+3. If yes, prompts the user with `approval.question`.
+4. Routes to `approval.PASSED` or `approval.FAILED` based on user input.
 
 Example workflow.yaml snippet:
 
 ```yaml
 plan:
   type: agent
+  agent: planner.agent
   approval:
     question: "Is the implementation plan correct?"
     PASSED: execute
     FAILED: plan
 ```
 
-### Outputs
-
-- User decision (PASSED / FAILED)
-
-- New state appended to `stateHistory`
-
-  ```
-  {
-    "state": "execute",
-    "enteredAt": "2026-02-20T12:45:00Z"
-  }
-  ```
-
-
-### Success Criteria
-
-- User explicitly PASSED the approval.
-
-### On success
-
-- Transition to `approval.PASSED` (from workflow.yaml)
-
-### On fail
-
-- Transition to `approval.FAILED` (from workflow.yaml)
 
 ---
 
@@ -264,22 +225,24 @@ Inputs:
 - commit message files (if any)
 
 Decision Logic:
-- If tests failed → execute
-- If progress indicates commit required → commit
-- If progress incomplete → execute
-- If progress complete → manual-approve (archive approval)
+- If tests failed → `tests_failed`
+- If progress indicates commit required → `commit_required`
+- If progress incomplete → `progress_incomplete`
+- If progress complete → `ready_for_archive`
 
 Outputs:
-- Internal routing decision
+- Last stdout line: one of `tests_failed`, `commit_required`,
+  `progress_incomplete`, `ready_for_archive`
 
-On success:
-- execute
-- commit
-- manual-approve (archive)
-- archive (if no approval required)
+The engine reads the last stdout line and routes via `transitions:`.
+If `ready_for_archive` is returned and the state has an `approval` block,
+the engine pauses for user confirmation before transitioning to archive.
 
-On fail:
-- execute
+On named outcomes:
+- `tests_failed` → execute
+- `commit_required` → commit
+- `progress_incomplete` → execute
+- `ready_for_archive` → archive (with approval)
 
 ---
 
@@ -324,16 +287,14 @@ Inputs:
 Outputs:
 - Archived ptN files
 - Updated workflow context
+- Last stdout line: `more_parts` or `no_more_parts`
 
 Success Criteria:
 - Archive script succeeds
 
-On success:
-- analyze (if more ptN remain)
-- done (if no more parts)
-
-On fail:
-- retry archive
+On named outcomes:
+- `more_parts` → analyze
+- `no_more_parts` → done
 
 ---
 
@@ -362,6 +323,7 @@ On fail:
 
 - Only agents perform cognitive tasks.
 - Only scripts perform shell operations.
-- Manual approval is centralized in a single reusable state.
-- Progress file is the single source of truth.
+- Manual approval is inline: a state with an `approval` block in `workflow.yaml` automatically pauses the engine for user confirmation.
+- Binary outcomes use `on: PASSED/FAILED` (exit code). Named outcomes use `transitions:` (last stdout line). A state may not have both.
+- Progress file is the single source of truth for work status.
 - Engine controls all transitions deterministically.
