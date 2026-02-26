@@ -24,6 +24,7 @@ export interface StateConfig {
 export interface WorkflowConfig {
   initial: string;
   states: Record<string, StateConfig>;
+  include?: string[];  // Paths to sub-workflow files, relative to .raili/
 }
 
 // Runtime state machine (derived from workflow config)

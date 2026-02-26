@@ -16,7 +16,7 @@ describe('workflowLoader', () => {
 
   describe('loadWorkflowConfig', () => {
     test('throws if workflow.yaml does not exist', () => {
-      expect(() => loadWorkflowConfig(tmpdir)).toThrow('workflow.yaml not found');
+        expect(() => loadWorkflowConfig(tmpdir)).toThrow('Workflow file not found');
     });
 
     test('throws if workflow.yaml is invalid', () => {
@@ -51,6 +51,96 @@ describe('workflowLoader', () => {
       const config = loadWorkflowConfig(tmpdir);
       expect(config.initial).toBe('init');
       expect(config.states.init.type).toBe('engine');
+    });
+
+    test('merges states from included sub-workflow', () => {
+      const railiDir = path.join(tmpdir, '.raili');
+      fs.mkdirSync(railiDir);
+
+      fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), [
+        'initial: init',
+        'include:',
+        '  - frontend.workflow.yaml',
+        'states:',
+        '  init:',
+        '    type: engine',
+        '    transitions:',
+        '      go: implement-frontend',
+      ].join('\n'));
+
+      fs.writeFileSync(path.join(railiDir, 'frontend.workflow.yaml'), [
+        'states:',
+        '  implement-frontend:',
+        '    type: agent',
+        '    agent: frontend-coder.agent',
+      ].join('\n'));
+
+      const config = loadWorkflowConfig(tmpdir);
+      expect(config.states['implement-frontend']).toBeDefined();
+      expect(config.states['implement-frontend'].agent).toBe('frontend-coder.agent');
+    });
+
+    test('throws if sub-workflow defines initial', () => {
+      const railiDir = path.join(tmpdir, '.raili');
+      fs.mkdirSync(railiDir);
+
+      fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), [
+        'initial: init',
+        'include:',
+        '  - sub.workflow.yaml',
+        'states:',
+        '  init:',
+        '    type: engine',
+      ].join('\n'));
+
+      fs.writeFileSync(path.join(railiDir, 'sub.workflow.yaml'), [
+        'initial: implement',
+        'states:',
+        '  implement:',
+        '    type: agent',
+        '    agent: coder.agent',
+      ].join('\n'));
+
+      expect(() => loadWorkflowConfig(tmpdir)).toThrow("Sub-workflow file must not define 'initial'");
+    });
+
+    test('throws on duplicate state names across included files', () => {
+      const railiDir = path.join(tmpdir, '.raili');
+      fs.mkdirSync(railiDir);
+
+      fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), [
+        'initial: init',
+        'include:',
+        '  - sub.workflow.yaml',
+        'states:',
+        '  init:',
+        '    type: engine',
+      ].join('\n'));
+
+      fs.writeFileSync(path.join(railiDir, 'sub.workflow.yaml'), [
+        'states:',
+        '  init:',
+        '    type: agent',
+        '    agent: coder.agent',
+      ].join('\n'));
+
+      expect(() => loadWorkflowConfig(tmpdir)).toThrow("Duplicate state 'init'");
+    });
+
+    test('throws if included file does not exist', () => {
+      const railiDir = path.join(tmpdir, '.raili');
+      fs.mkdirSync(railiDir);
+
+      fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), [
+        'initial: init',
+        'include:',
+        '  - missing.workflow.yaml',
+        'states:',
+        '  init:',
+        '    type: engine',
+      ].join('\n'));
+
+      expect(() => loadWorkflowConfig(tmpdir)).toThrow('Workflow file not found');
     });
   });
 
