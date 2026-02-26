@@ -4,6 +4,9 @@
   "description": "Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution.",
   "main": "dist/cli.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "raili": "./dist/cli.js"
+  },
   "directories": {
     "doc": "docs"
   },
@@ -12,7 +15,8 @@
     "start": "node dist/cli.js",
     "test": "jest --runInBand",
     "lint": "echo 'no linter configured'",
-    "knip": "knip"
+    "knip": "knip",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "agent",

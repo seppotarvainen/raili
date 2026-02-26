@@ -81,6 +81,16 @@ export function addStateToHistory(context: WorkflowContext, state: string): Work
 }
 
 /**
+ * Clear the persisted context file (used for a clean run)
+ */
+export function clearContext(cwd: string): void {
+  const contextPath = path.join(cwd, '.raili', 'context.json');
+  if (fs.existsSync(contextPath)) {
+    fs.unlinkSync(contextPath);
+  }
+}
+
+/**
  * Initialize context with ticket information and initial state
  */
 export function initializeContext(ticketId: string, description: string, initialState: string): WorkflowContext {

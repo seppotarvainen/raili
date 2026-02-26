@@ -3,10 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { loadWorkflowConfig, buildStateMachine, validateStateMachine } from './workflowLoader';
 import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from "./registryValidator";
-import { loadContext } from './context';
+import { loadContext, clearContext } from './context';
 import { Engine } from './engine/Engine';
 
-export async function runCommand(cwd: string) {
+export type RunMode = 'continue' | 'clean';
+
+export async function runCommand(cwd: string, mode: RunMode = 'continue') {
   const railiDir = path.join(cwd, '.raili');
   if (!fs.existsSync(railiDir) || !fs.statSync(railiDir).isDirectory()) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');
@@ -37,6 +39,11 @@ export async function runCommand(cwd: string) {
 
   // Validate that all workflow references exist in registries (fail-fast)
   validateWorkflowReferences(workflowConfig, agents, scripts);
+
+  // Clear persisted context for a clean run
+  if (mode === 'clean') {
+    clearContext(cwd);
+  }
 
   // Load execution context
   const context = loadContext(cwd);

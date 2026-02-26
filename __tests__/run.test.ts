@@ -65,5 +65,55 @@ describe('runCommand', () => {
     expect(Engine).toHaveBeenCalledTimes(1);
     expect(mockRun).toHaveBeenCalledTimes(1);
   });
+
+  test('clean mode deletes context.json before running', async () => {
+    const railiDir = path.join(tmpdir, '.raili');
+    fs.mkdirSync(railiDir);
+
+    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
+    fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
+
+    // Write an existing context
+    const existingContext = JSON.stringify({ stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }] });
+    fs.writeFileSync(path.join(railiDir, 'context.json'), existingContext);
+
+    registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
+    registryValidator.validateScriptRegistry.mockImplementation(() => ({}));
+    registryValidator.validateWorkflowReferences.mockImplementation(() => {});
+
+    Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
+
+    await runCommand(tmpdir, 'clean');
+
+    expect(fs.existsSync(path.join(railiDir, 'context.json'))).toBe(false);
+  });
+
+  test('continue mode preserves existing context.json', async () => {
+    const railiDir = path.join(tmpdir, '.raili');
+    fs.mkdirSync(railiDir);
+
+    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
+    fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
+
+    // Write an existing context
+    const existingContext = JSON.stringify({ stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }] });
+    fs.writeFileSync(path.join(railiDir, 'context.json'), existingContext);
+
+    registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
+    registryValidator.validateScriptRegistry.mockImplementation(() => ({}));
+    registryValidator.validateWorkflowReferences.mockImplementation(() => {});
+
+    Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
+
+    await runCommand(tmpdir, 'continue');
+
+    expect(fs.existsSync(path.join(railiDir, 'context.json'))).toBe(true);
+    expect(fs.readFileSync(path.join(railiDir, 'context.json'), 'utf8')).toBe(existingContext);
+  });
 });
+
 

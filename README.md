@@ -49,6 +49,13 @@ npx ts-node src/cli.ts init
 npx ts-node src/cli.ts run
 ```
 
+Installing globally during development:
+
+```bash
+npm run build
+npm install -g .
+```
+
 Notes
 - `raili init` will fail if `.raili/` already exists to avoid accidental overwrites.
 - `raili run` currently only validates and returns parsed registries (MVP). No agents or scripts are executed by the core.
