@@ -94,7 +94,7 @@ export class Engine {
 
       // If the state has an approval block, run it before routing
       if (config.approval) {
-        const approvalOutcome = runApprovalStep(stateId, config.approval);
+        const approvalOutcome = await runApprovalStep(stateId, config.approval);
         const nextStateId = resolveNextState(stateId, {
           PASSED: config.approval.PASSED,
           FAILED: config.approval.FAILED,
