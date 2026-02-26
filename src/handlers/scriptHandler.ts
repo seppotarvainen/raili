@@ -1,11 +1,11 @@
-import { spawnSync } from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { ScriptRegistry } from '../scriptRegistry';
 
 export type ScriptExecutionResult = { success: boolean; output: string };
 
-export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: string): ScriptExecutionResult {
+export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: string): Promise<ScriptExecutionResult> {
   const entry = registry[scriptId];
   if (!entry) throw new Error(`Script '${scriptId}' not found in registry`);
 
@@ -14,11 +14,27 @@ export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: s
     throw new Error(`Script file not found: ${fullPath}`);
   }
 
-  const result = spawnSync('sh', [fullPath], { cwd, encoding: 'utf8' });
+  return new Promise((resolve) => {
+    const child = spawn('sh', [fullPath], { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
 
-  const output = result.stdout ?? '';
-  const stderr = result.stderr ?? '';
-  const success = result.status === 0 && !result.error;
+    let stdout = '';
+    let stderr = '';
 
-  return { success, output: success ? output : stderr || output };
+    child.stdout.on('data', (chunk: Buffer) => {
+      const text = chunk.toString();
+      process.stdout.write(text);
+      stdout += text;
+    });
+
+    child.stderr.on('data', (chunk: Buffer) => {
+      const text = chunk.toString();
+      process.stderr.write(text);
+      stderr += text;
+    });
+
+    child.on('close', (code) => {
+      const success = code === 0;
+      resolve({ success, output: success ? stdout : stderr || stdout });
+    });
+  });
 }

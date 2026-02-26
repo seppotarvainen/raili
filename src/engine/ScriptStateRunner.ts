@@ -9,9 +9,9 @@ import type { StateOutcome } from './Engine';
  * - If state uses `on:`, success flag determines PASSED / FAILED.
  * - If state uses `transitions:`, last line of stdout is the outcome key.
  */
-export function runScriptState(state: StateDef, registry: ScriptRegistry, cwd: string): StateOutcome {
+export async function runScriptState(state: StateDef, registry: ScriptRegistry, cwd: string): Promise<StateOutcome> {
   const scriptId = state.config.script!;
-  const result = executeScript(registry, scriptId, cwd);
+  const result = await executeScript(registry, scriptId, cwd);
 
   if (state.config.on) {
     return result.success ? 'PASSED' : 'FAILED';

@@ -72,7 +72,7 @@ export class Engine {
 
       // Terminal state: no routing defined, stop execution
       if (!config.on && !config.transitions && !config.approval) {
-        console.log(colors.bgGreen(`✓ Reached terminal state: ${stateId}`));
+        console.log(`✓ Reached terminal state: ${stateId}`);
         break;
       }
 
@@ -84,7 +84,7 @@ export class Engine {
       if (config.type === 'agent') {
         outcome = await runAgentState(stateDef, this.agentRegistry, this.cwd);
       } else if (config.type === 'script') {
-        outcome = runScriptState(stateDef, this.scriptRegistry, this.cwd);
+        outcome = await runScriptState(stateDef, this.scriptRegistry, this.cwd);
       } else if (config.type === 'command') {
         outcome = runCommandState(stateDef, this.cwd);
       } else {
