@@ -9,11 +9,11 @@ import type { StateOutcome } from './Engine';
  *
  * `directory` is optional — defaults to cwd.
  */
-export function runCommandState(state: StateDef, cwd: string): StateOutcome {
+export async function runCommandState(state: StateDef, cwd: string): Promise<StateOutcome> {
   const command = state.config.command!;
   const workdir = state.config.directory ?? cwd;
 
-  const result = executeCommand(command, workdir);
+  const result = await executeCommand(command, workdir);
 
   if (state.config.on) {
     return result.success ? 'PASSED' : 'FAILED';

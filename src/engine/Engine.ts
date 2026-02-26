@@ -86,7 +86,7 @@ export class Engine {
       } else if (config.type === 'script') {
         outcome = await runScriptState(stateDef, this.scriptRegistry, this.cwd);
       } else if (config.type === 'command') {
-        outcome = runCommandState(stateDef, this.cwd);
+        outcome = await runCommandState(stateDef, this.cwd);
       } else {
         // type: engine — no side effects, falls through to approval or transitions
         outcome = 'PASSED';

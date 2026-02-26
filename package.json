@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/cli.js",
-    "test": "jest --runInBand",
+    "test": "jest -f",
     "lint": "echo 'no linter configured'",
     "knip": "knip"
   },
