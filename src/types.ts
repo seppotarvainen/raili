@@ -5,12 +5,14 @@ export type StateType = 'agent' | 'script' | 'command' | 'engine';
 
 export interface ApprovalConfig {
   question: string;
+  notify?: string;   // Optional shell command to run before showing the approval prompt
   PASSED: string;
   FAILED: string;
 }
 
 export interface StateConfig {
   type: StateType;
+  notify?: string;       // Optional shell command to run when this state is entered
   agent?: string;        // For type: agent
   script?: string;       // For type: script
   command?: string;      // For type: command — inline shell command

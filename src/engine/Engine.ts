@@ -6,6 +6,7 @@ import { runAgentState } from './AgentStateRunner';
 import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
 import { runApprovalStep } from './ApproveStateRunner';
+import { runNotify } from '../handlers/notifyHandler';
 import colors from 'colors/safe';
 
 /** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */
@@ -78,6 +79,11 @@ export class Engine {
 
       console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
 
+      // Fire state-level notify on entry, before the handler runs
+      if (config.notify) {
+        await runNotify(config.notify, this.cwd);
+      }
+
       let outcome: string;
 
       // Execute the state handler
@@ -94,7 +100,9 @@ export class Engine {
 
       // If the state has an approval block, run it before routing
       if (config.approval) {
-        const approvalOutcome = await runApprovalStep(stateId, config.approval);
+        const approvalOutcome = await runApprovalStep(stateId, config.approval, {
+          cwd: this.cwd,
+        });
         const nextStateId = resolveNextState(stateId, {
           PASSED: config.approval.PASSED,
           FAILED: config.approval.FAILED,
