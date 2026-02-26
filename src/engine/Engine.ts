@@ -6,6 +6,7 @@ import { runAgentState } from './AgentStateRunner';
 import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
 import { runApprovalStep } from './ApproveStateRunner';
+import colors from 'colors/safe';
 
 /** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */
 export type StateOutcome = string;
@@ -71,11 +72,11 @@ export class Engine {
 
       // Terminal state: no routing defined, stop execution
       if (!config.on && !config.transitions && !config.approval) {
-        console.log(`✓ Reached terminal state: ${stateId}`);
+        console.log(colors.bgGreen(`✓ Reached terminal state: ${stateId}`));
         break;
       }
 
-      console.log(`→ Executing state: ${stateId} (type: ${config.type})`);
+      console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
 
       let outcome: string;
 
@@ -90,8 +91,6 @@ export class Engine {
         // type: engine — no side effects, falls through to approval or transitions
         outcome = 'PASSED';
       }
-
-      console.log(`  outcome: ${outcome}`);
 
       // If the state has an approval block, run it before routing
       if (config.approval) {
