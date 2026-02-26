@@ -9,9 +9,9 @@ import type { StateOutcome } from './Engine';
  * - If state uses `on:`, exit code determines PASSED / FAILED.
  * - If state uses `transitions:`, last line of stdout is the outcome key.
  */
-export function runAgentState(state: StateDef, registry: AgentRegistry, cwd: string): StateOutcome {
+export async function runAgentState(state: StateDef, registry: AgentRegistry, cwd: string): Promise<StateOutcome> {
   const agentId = state.config.agent!;
-  const result = executeAgent(registry, agentId, cwd);
+  const result = await executeAgent(registry, agentId, cwd);
 
   if (state.config.on) {
     return result.success ? 'PASSED' : 'FAILED';

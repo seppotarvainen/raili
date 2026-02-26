@@ -82,7 +82,7 @@ export class Engine {
 
       // Execute the state handler
       if (config.type === 'agent') {
-        outcome = runAgentState(stateDef, this.agentRegistry, this.cwd);
+        outcome = await runAgentState(stateDef, this.agentRegistry, this.cwd);
       } else if (config.type === 'script') {
         outcome = runScriptState(stateDef, this.scriptRegistry, this.cwd);
       } else if (config.type === 'command') {
