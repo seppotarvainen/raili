@@ -1,12 +1,13 @@
 # Raili (MVP)
 
-Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution.
+Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution. See [workflow-yaml.md](docs/workflow-yaml.md) for workflow configuration.
 
 This repository contains the Raili MVP core: a thin CLI that validates a `.raili/` configuration directory and registries.
 
 Prerequisites
 - Node.js (12+ recommended)
 - npm
+- copilot cli
 
 Install dev dependencies
 
@@ -56,13 +57,7 @@ npm run build
 npm install -g .
 ```
 
-Notes
-- `raili init` will fail if `.raili/` already exists to avoid accidental overwrites.
-- `raili run` currently only validates and returns parsed registries (MVP). No agents or scripts are executed by the core.
 
-Contributing / Next steps
-- Implement the deterministic state machine (xstate) and a thin engine that orchestrates transitions.
-- Implement handler registries and mockable handler implementations.
 
 License: UNLICENSED
 
