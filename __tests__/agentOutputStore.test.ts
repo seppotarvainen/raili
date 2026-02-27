@@ -14,11 +14,29 @@ afterEach(() => {
   fs.rmSync(tmpdir, { recursive: true, force: true });
 });
 
-test('saveAgentOutput creates outputs dir and writes file', () => {
+test('saveAgentOutput creates outputs dir and writes file on first run', () => {
   saveAgentOutput(tmpdir, 'code', 'agent was here');
   const p = path.join(tmpdir, '.raili', 'outputs', 'code.md');
   expect(fs.existsSync(p)).toBe(true);
   expect(fs.readFileSync(p, 'utf8')).toBe('agent was here');
+});
+
+test('saveAgentOutput appends with separator on subsequent runs', () => {
+  saveAgentOutput(tmpdir, 'code', 'first run');
+  saveAgentOutput(tmpdir, 'code', 'second run');
+  const content = fs.readFileSync(path.join(tmpdir, '.raili', 'outputs', 'code.md'), 'utf8');
+  expect(content).toContain('first run');
+  expect(content).toContain('second run');
+  expect(content).toContain('--- Run ');
+});
+
+test('saveAgentOutput accumulates all runs in order', () => {
+  saveAgentOutput(tmpdir, 'code', 'run one');
+  saveAgentOutput(tmpdir, 'code', 'run two');
+  saveAgentOutput(tmpdir, 'code', 'run three');
+  const content = fs.readFileSync(path.join(tmpdir, '.raili', 'outputs', 'code.md'), 'utf8');
+  expect(content.indexOf('run one')).toBeLessThan(content.indexOf('run two'));
+  expect(content.indexOf('run two')).toBeLessThan(content.indexOf('run three'));
 });
 
 test('loadAgentOutputPath returns path when file exists', () => {

@@ -8,14 +8,19 @@ function outputPath(cwd: string, stateId: string): string {
 }
 
 /**
- * Save agent output for a state to .raili/outputs/<stateId>.md
+ * Append agent output for a state to .raili/outputs/<stateId>.md.
+ * Each run is separated by a timestamped header so the agent sees full history.
  */
 export function saveAgentOutput(cwd: string, stateId: string, output: string): void {
   const dir = path.join(cwd, '.raili', OUTPUTS_DIR);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(outputPath(cwd, stateId), output, 'utf8');
+  const separator = `\n\n--- Run ${new Date().toISOString()} ---\n\n`;
+  const entry = fs.existsSync(outputPath(cwd, stateId))
+    ? separator + output
+    : output;
+  fs.appendFileSync(outputPath(cwd, stateId), entry, 'utf8');
 }
 
 /**

@@ -40,6 +40,7 @@ function setupAgent(model?: string, frontmatterModel?: string) {
 }
 
 beforeEach(() => {
+  spawn.mockClear();
   spawn.mockImplementation(() => fakeChild('agent output', '', 0));
 });
 
@@ -93,27 +94,47 @@ test('throws when agent not in registry', () => {
   expect(() => executeAgent(registry, 'missing.agent', TMP)).toThrow("Agent 'missing.agent' not found in registry");
 });
 
-test('sets RAILI_AGENT_CONTEXT env var when previousOutputPath is provided', async () => {
+test('uses default prompt when no previousOutputPath given', async () => {
   const registry = setupAgent();
-  await executeAgent(registry, 'analyzer.agent', TMP, '/tmp/previous.md');
+  await executeAgent(registry, 'analyzer.agent', TMP);
   expect(spawn).toHaveBeenCalledWith(
     'copilot',
-    expect.any(Array),
-    expect.objectContaining({ env: expect.objectContaining({ RAILI_AGENT_CONTEXT: '/tmp/previous.md' }) }),
+    expect.arrayContaining(['--prompt', 'Work according to your rules']),
+    expect.any(Object),
   );
 });
 
-test('does not set RAILI_AGENT_CONTEXT when previousOutputPath is null', async () => {
+test('injects previous output content into prompt when previousOutputPath is provided', async () => {
   const registry = setupAgent();
-  await executeAgent(registry, 'analyzer.agent', TMP, null);
-  const spawnCall = spawn.mock.calls[0];
-  expect(spawnCall[2].env?.RAILI_AGENT_CONTEXT).toBeUndefined();
+  const prevFile = path.join(TMP, 'previous.md');
+  fs.writeFileSync(prevFile, 'I already did X');
+
+  await executeAgent(registry, 'analyzer.agent', TMP, prevFile);
+
+  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const promptIndex = spawnArgs.indexOf('--prompt');
+  const prompt = spawnArgs[promptIndex + 1];
+  expect(prompt).toContain('Work according to your rules');
+  expect(prompt).toContain('I already did X');
 });
 
-test('does not set RAILI_AGENT_CONTEXT when previousOutputPath is omitted', async () => {
+test('uses default prompt when previousOutputPath is null', async () => {
   const registry = setupAgent();
-  await executeAgent(registry, 'analyzer.agent', TMP);
-  const spawnCall = spawn.mock.calls[0];
-  expect(spawnCall[2].env?.RAILI_AGENT_CONTEXT).toBeUndefined();
+  await executeAgent(registry, 'analyzer.agent', TMP, null);
+  expect(spawn).toHaveBeenCalledWith(
+    'copilot',
+    expect.arrayContaining(['--prompt', 'Work according to your rules']),
+    expect.any(Object),
+  );
+});
+
+test('uses default prompt when previousOutputPath points to nonexistent file', async () => {
+  const registry = setupAgent();
+  await executeAgent(registry, 'analyzer.agent', TMP, '/nonexistent/path.md');
+  expect(spawn).toHaveBeenCalledWith(
+    'copilot',
+    expect.arrayContaining(['--prompt', 'Work according to your rules']),
+    expect.any(Object),
+  );
 });
 

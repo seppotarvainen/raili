@@ -28,16 +28,18 @@ export function executeAgent(registry: AgentRegistry, agentId: string, cwd: stri
   const frontmatterModel = parseFrontmatterModel(content);
   const model = entry.model ?? frontmatterModel;
 
-  const args = [`--agent=${agentId}`, '--prompt', 'Work according to your rules', '--yolo'];
-  if (model) args.splice(1, 0, `--model=${model}`);
-
-  const env: NodeJS.ProcessEnv = { ...process.env };
-  if (previousOutputPath) {
-    env.RAILI_AGENT_CONTEXT = previousOutputPath;
+  let prompt = 'Work according to your rules';
+  if (previousOutputPath && fs.existsSync(previousOutputPath)) {
+    const previousOutput = fs.readFileSync(previousOutputPath, 'utf8');
+    prompt = `Work according to your rules.\n\nYour previous output was:\n${previousOutput}`;
   }
 
+  const args = [`--agent=${agentId}`, '--prompt', prompt, '--yolo'];
+  if (model) args.splice(1, 0, `--model=${model}`);
+
+
   return new Promise((resolve) => {
-    const child = spawn('copilot', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], env });
+    const child = spawn('copilot', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
 
     let stdout = '';
     let stderr = '';
