@@ -60,7 +60,6 @@ test('does not save output when agent produces no output', async () => {
   expect(mockSave).not.toHaveBeenCalled();
 });
 
-
 test('returns PASSED on success with on: block', async () => {
   const outcome = await runAgentState(makeState(), registry, cwd);
   expect(outcome).toBe('PASSED');

@@ -22,9 +22,23 @@ beforeEach(() => {
 });
 
 describe('store_output', () => {
-  test('saves output when store_output is true', async () => {
+  test('saves stdout when store_output is true', async () => {
     await runScriptState(makeState({ store_output: true }), {}, '/cwd');
     expect(mockSave).toHaveBeenCalledWith('/cwd', 'hello', 'script output');
+  });
+
+  test('saves stderr when only stderr has content', async () => {
+    executeScript.mockResolvedValue({ success: false, stdout: '', stderr: 'script error' });
+    await runScriptState(makeState({ store_output: true }), {}, '/cwd');
+    expect(mockSave).toHaveBeenCalledWith('/cwd', 'hello', 'script error');
+  });
+
+  test('saves combined stdout and stderr when both have content', async () => {
+    executeScript.mockResolvedValue({ success: true, stdout: 'out', stderr: 'err' });
+    await runScriptState(makeState({ store_output: true }), {}, '/cwd');
+    const saved = mockSave.mock.calls[0][2];
+    expect(saved).toContain('out');
+    expect(saved).toContain('err');
   });
 
   test('does not save output when store_output is false', async () => {
@@ -37,7 +51,7 @@ describe('store_output', () => {
     expect(mockSave).not.toHaveBeenCalled();
   });
 
-  test('does not save when output is empty', async () => {
+  test('does not save when both stdout and stderr are empty', async () => {
     executeScript.mockResolvedValue({ success: true, stdout: '', stderr: '' });
     await runScriptState(makeState({ store_output: true }), {}, '/cwd');
     expect(mockSave).not.toHaveBeenCalled();

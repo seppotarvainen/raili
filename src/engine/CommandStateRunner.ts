@@ -17,8 +17,9 @@ export async function runCommandState(state: StateDef, cwd: string): Promise<Sta
 
   const result = await executeCommand(command, workdir);
 
-  if (state.config.store_output && result.stdout) {
-    saveOutput(cwd, state.id, result.stdout);
+  if (state.config.store_output) {
+    const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
+    if (combined) saveOutput(cwd, state.id, combined);
   }
 
   if (state.config.on) {
