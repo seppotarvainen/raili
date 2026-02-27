@@ -92,3 +92,28 @@ test('throws when agent not in registry', () => {
   const registry = setupAgent();
   expect(() => executeAgent(registry, 'missing.agent', TMP)).toThrow("Agent 'missing.agent' not found in registry");
 });
+
+test('sets RAILI_AGENT_CONTEXT env var when previousOutputPath is provided', async () => {
+  const registry = setupAgent();
+  await executeAgent(registry, 'analyzer.agent', TMP, '/tmp/previous.md');
+  expect(spawn).toHaveBeenCalledWith(
+    'copilot',
+    expect.any(Array),
+    expect.objectContaining({ env: expect.objectContaining({ RAILI_AGENT_CONTEXT: '/tmp/previous.md' }) }),
+  );
+});
+
+test('does not set RAILI_AGENT_CONTEXT when previousOutputPath is null', async () => {
+  const registry = setupAgent();
+  await executeAgent(registry, 'analyzer.agent', TMP, null);
+  const spawnCall = spawn.mock.calls[0];
+  expect(spawnCall[2].env?.RAILI_AGENT_CONTEXT).toBeUndefined();
+});
+
+test('does not set RAILI_AGENT_CONTEXT when previousOutputPath is omitted', async () => {
+  const registry = setupAgent();
+  await executeAgent(registry, 'analyzer.agent', TMP);
+  const spawnCall = spawn.mock.calls[0];
+  expect(spawnCall[2].env?.RAILI_AGENT_CONTEXT).toBeUndefined();
+});
+

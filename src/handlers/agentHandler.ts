@@ -15,7 +15,7 @@ function parseFrontmatterModel(content: string): string | undefined {
   return modelLine ? modelLine.replace(/^model:\s*/, '').trim() : undefined;
 }
 
-export function executeAgent(registry: AgentRegistry, agentId: string, cwd: string): Promise<AgentExecutionResult> {
+export function executeAgent(registry: AgentRegistry, agentId: string, cwd: string, previousOutputPath?: string | null): Promise<AgentExecutionResult> {
   const entry = registry[agentId];
   if (!entry) throw new Error(`Agent '${agentId}' not found in registry`);
 
@@ -31,8 +31,13 @@ export function executeAgent(registry: AgentRegistry, agentId: string, cwd: stri
   const args = [`--agent=${agentId}`, '--prompt', 'Work according to your rules', '--yolo'];
   if (model) args.splice(1, 0, `--model=${model}`);
 
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  if (previousOutputPath) {
+    env.RAILI_AGENT_CONTEXT = previousOutputPath;
+  }
+
   return new Promise((resolve) => {
-    const child = spawn('copilot', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('copilot', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], env });
 
     let stdout = '';
     let stderr = '';

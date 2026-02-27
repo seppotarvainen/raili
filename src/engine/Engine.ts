@@ -7,6 +7,7 @@ import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
 import { runApprovalStep } from './ApproveStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
+import { clearAgentOutputs } from '../agentOutputStore';
 import colors from 'colors/safe';
 
 /** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */
@@ -70,6 +71,11 @@ export class Engine {
       }
 
       const { config } = stateDef;
+
+      // On state entry: clear outputs and fire notify before anything else
+      if (config.reset_outputs?.length) {
+        clearAgentOutputs(this.cwd, config.reset_outputs);
+      }
 
       if (config.notify) {
         await runNotify(config.notify, this.cwd);

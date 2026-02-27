@@ -13,6 +13,8 @@ export interface ApprovalConfig {
 export interface StateConfig {
   type: StateType;
   notify?: string;       // Optional shell command to run when this state is entered
+  store_output?: boolean;          // Save agent output to .raili/outputs/<stateId>.md
+  reset_outputs?: string[];        // Clear saved outputs for these state IDs on entry
   agent?: string;        // For type: agent
   script?: string;       // For type: script
   command?: string;      // For type: command — inline shell command
