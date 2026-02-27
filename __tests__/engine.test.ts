@@ -151,3 +151,52 @@ test('clears reset_outputs before notify and handler run', async () => {
   expect(callOrder).toEqual(['clear', 'notify', 'agent']);
 });
 
+test('throws when state exceeds max_visits', async () => {
+  mockRunCommand.mockResolvedValue('FAILED');
+  const engine = makeEngine({
+    start: {
+      id: 'start',
+      config: { type: 'command', command: 'echo hi', max_visits: 3, on: { PASSED: 'done', FAILED: 'start' } },
+      transitions: ['done', 'start'],
+    },
+    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+  });
+
+  await expect(engine.run()).rejects.toThrow("State 'start' exceeded max_visits limit of 3");
+  expect(mockRunCommand).toHaveBeenCalledTimes(3);
+});
+
+test('does not throw when visits are within max_visits', async () => {
+  mockRunCommand.mockResolvedValue('PASSED');
+  const engine = makeEngine({
+    start: {
+      id: 'start',
+      config: { type: 'command', command: 'echo hi', max_visits: 3, on: { PASSED: 'done', FAILED: 'start' } },
+      transitions: ['done', 'start'],
+    },
+    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+  });
+
+  await expect(engine.run()).resolves.not.toThrow();
+});
+
+test('max_visits counter resets independently per state', async () => {
+  let callCount = 0;
+  mockRunCommand.mockImplementation(async () => {
+    callCount++;
+    return callCount <= 2 ? 'RETRY' : 'PASSED';
+  });
+
+  const engine = makeEngine({
+    start: {
+      id: 'start',
+      config: { type: 'command', command: 'echo hi', max_visits: 5, transitions: { RETRY: 'start', PASSED: 'done' } },
+      transitions: ['start', 'done'],
+    },
+    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+  });
+
+  await expect(engine.run()).resolves.not.toThrow();
+  expect(mockRunCommand).toHaveBeenCalledTimes(3);
+});
+

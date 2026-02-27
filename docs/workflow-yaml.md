@@ -26,6 +26,7 @@ Every key under `states:` is a **state ID**. Each state has the following fields
 | `on` | map | ❌ | Binary routing: maps `PASSED` and/or `FAILED` to next state IDs. Exit code 0 = PASSED, non-zero = FAILED |
 | `transitions` | map | ❌ | Named routing: maps arbitrary outcome keys to next state IDs. Last line of stdout must match a key exactly |
 | `approval` | object | ❌ | Prompts the user for manual approval before routing. See [Approval block](#approval-block) |
+| `max_visits` | number | ❌ | Maximum number of times this state may be entered in a single run. Throws immediately on the (N+1)th entry, before any side effects run. Applies to all state types |
 
 > `on` and `transitions` are mutually exclusive. A state with neither is **terminal** — execution stops there.
 
@@ -105,6 +106,28 @@ Added under a state's `approval:` key. Prompts the user in the terminal after th
 
 ---
 
+## Kill switch (`max_visits`)
+
+`max_visits` prevents infinite loops by hard-stopping execution when a state is entered more than N times in a single run.
+
+```yaml
+code:
+  type: agent
+  agent: coder
+  max_visits: 5          # engine throws on the 6th entry
+  store_output: true
+  on:
+    PASSED: test
+    FAILED: code
+```
+
+**Behaviour:**
+- The count is per-run and per-state — it resets every time you start `raili run`
+- The engine throws **before** any side effects (notify, reset_outputs, handler) on the exceeding visit
+- Because Raili saves state to `context.json` on every transition, re-running after a `max_visits` error will resume from the state that exceeded the limit — giving you a clean retry without losing earlier progress
+
+---
+
 ## Agent output memory
 
 When `store_output: true` is set on an agent state, Raili maintains a history file at `.raili/outputs/<stateId>.md`. The full history is **always appended** to that file (each run separated by a `--- Run <timestamp> ---` header), so you have a complete audit trail on disk.
@@ -153,6 +176,7 @@ states:
     type: agent
     agent: coder
     store_output: true
+    max_visits: 5
     on:
       PASSED: test
       FAILED: done

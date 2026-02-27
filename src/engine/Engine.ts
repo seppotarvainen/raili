@@ -41,6 +41,7 @@ export class Engine {
   private readonly scriptRegistry: ScriptRegistry;
   private context: WorkflowContext;
   private readonly cwd: string;
+  private readonly visitCounts = new Map<string, number>();
 
   constructor(config: EngineConfig) {
     this.stateMachine = config.stateMachine;
@@ -71,6 +72,17 @@ export class Engine {
       }
 
       const { config } = stateDef;
+
+      // On state entry: enforce max_visits first
+      if (config.max_visits !== undefined) {
+        const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
+        this.visitCounts.set(stateId, visits);
+        if (visits > config.max_visits) {
+          throw new Error(
+            `State '${stateId}' exceeded max_visits limit of ${config.max_visits}`
+          );
+        }
+      }
 
       // On state entry: clear outputs and fire notify before anything else
       if (config.reset_outputs?.length) {
