@@ -1,12 +1,12 @@
 import { Engine, EngineConfig } from '../src/engine/Engine';
-import * as outputStore from '../src/agentOutputStore';
+import * as outputStore from '../src/outputStore';
 import * as notifyHandler from '../src/handlers/notifyHandler';
 import * as agentStateRunner from '../src/engine/AgentStateRunner';
 import * as scriptStateRunner from '../src/engine/ScriptStateRunner';
 import * as commandStateRunner from '../src/engine/CommandStateRunner';
 import { StateMachine, WorkflowContext } from '../src/types';
 
-jest.mock('../src/agentOutputStore');
+jest.mock('../src/outputStore');
 jest.mock('../src/handlers/notifyHandler');
 jest.mock('../src/engine/AgentStateRunner');
 jest.mock('../src/engine/ScriptStateRunner');

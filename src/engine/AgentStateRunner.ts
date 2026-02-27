@@ -1,7 +1,7 @@
 import { StateDef } from '../types';
 import { AgentRegistry } from '../agentRegistry';
 import { executeAgent } from '../handlers/agentHandler';
-import { saveAgentOutput, loadAgentOutputPath } from '../agentOutputStore';
+import { saveOutput, loadAgentOutputPath } from '../outputStore';
 import type { StateOutcome } from './Engine';
 
 
@@ -19,8 +19,8 @@ export async function runAgentState(state: StateDef, registry: AgentRegistry, cw
   const result = await executeAgent(registry, agentId, cwd, previousOutputPath);
 
   // Step 3: save output if configured
-  if (state.config.store_output && result.output) {
-    saveAgentOutput(cwd, state.id, result.output);
+  if (state.config.store_output && result.stdout) {
+    saveOutput(cwd, state.id, result.stdout);
   }
 
   if (state.config.on) {
@@ -28,7 +28,7 @@ export async function runAgentState(state: StateDef, registry: AgentRegistry, cw
   }
 
   if (state.config.transitions) {
-    const lastLine = result.output.trimEnd().split('\n').pop()?.trim() ?? '';
+    const lastLine = result.stdout.trimEnd().split('\n').pop()?.trim() ?? '';
     if (!lastLine) {
       throw new Error(
         `State '${state.id}': agent produced no output — expected a transition key as last stdout line`

@@ -78,7 +78,7 @@ test('returns success and stdout on exit code 0', async () => {
   const registry = setupAgent();
   const res = await executeAgent(registry, 'analyzer.agent', TMP);
   expect(res.success).toBe(true);
-  expect(res.output).toBe('agent output');
+  expect(res.stdout).toBe('agent output');
 });
 
 test('returns failure on non-zero exit code', async () => {
@@ -86,7 +86,7 @@ test('returns failure on non-zero exit code', async () => {
   const registry = setupAgent();
   const res = await executeAgent(registry, 'analyzer.agent', TMP);
   expect(res.success).toBe(false);
-  expect(res.output).toBe('error occurred');
+  expect(res.stderr).toContain('error occurred');
 });
 
 test('throws when agent not in registry', () => {

@@ -8,10 +8,10 @@ function outputPath(cwd: string, stateId: string): string {
 }
 
 /**
- * Append agent output for a state to .raili/outputs/<stateId>.md.
- * Each run is separated by a timestamped header so the agent sees full history.
+ * Append output for a state to .raili/outputs/<stateId>.md.
+ * Each run is separated by a timestamped header so the full history is preserved.
  */
-export function saveAgentOutput(cwd: string, stateId: string, output: string): void {
+export function saveOutput(cwd: string, stateId: string, output: string): void {
   const dir = path.join(cwd, '.raili', OUTPUTS_DIR);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });

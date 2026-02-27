@@ -7,7 +7,7 @@ import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
 import { runApprovalStep } from './ApproveStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
-import { clearAgentOutputs } from '../agentOutputStore';
+import { clearAgentOutputs } from '../outputStore';
 import colors from 'colors/safe';
 
 /** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */

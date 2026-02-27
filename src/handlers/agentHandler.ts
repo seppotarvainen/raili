@@ -5,7 +5,8 @@ import { AgentRegistry } from '../agentRegistry';
 
 export type AgentExecutionResult = {
   success: boolean;
-  output: string;
+  stdout: string;
+  stderr: string;
 };
 
 function parseFrontmatterModel(content: string): string | undefined {
@@ -57,8 +58,7 @@ export function executeAgent(registry: AgentRegistry, agentId: string, cwd: stri
     });
 
     child.on('close', (code) => {
-      const success = code === 0;
-      resolve({ success, output: success ? stdout : stderr || stdout });
+      resolve({ success: code === 0, stdout, stderr });
     });
   });
 }

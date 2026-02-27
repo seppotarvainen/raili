@@ -42,7 +42,7 @@ test('executeScript returns stdout on success', async () => {
   const loaded = setupRegistry();
   const res = await executeScript(loaded, 'archive-part', TMP);
   expect(res.success).toBe(true);
-  expect(res.output.trim()).toBe('hello');
+  expect(res.stdout.trim()).toBe('hello');
 });
 
 test('executeScript returns failure on non-zero exit', async () => {
@@ -50,7 +50,7 @@ test('executeScript returns failure on non-zero exit', async () => {
   const loaded = setupRegistry();
   const res = await executeScript(loaded, 'archive-part', TMP);
   expect(res.success).toBe(false);
-  expect(res.output).toContain('error msg');
+  expect(res.stderr).toContain('error msg');
 });
 
 test('executeScript throws when script not in registry', () => {

@@ -1,13 +1,13 @@
 import { runAgentState } from '../src/engine/AgentStateRunner';
 import * as agentHandler from '../src/handlers/agentHandler';
-import * as outputStore from '../src/agentOutputStore';
+import * as outputStore from '../src/outputStore';
 import { StateDef } from '../src/types';
 
 jest.mock('../src/handlers/agentHandler');
-jest.mock('../src/agentOutputStore');
+jest.mock('../src/outputStore');
 
 const mockExecuteAgent = agentHandler.executeAgent as jest.MockedFunction<typeof agentHandler.executeAgent>;
-const mockSave = outputStore.saveAgentOutput as jest.MockedFunction<typeof outputStore.saveAgentOutput>;
+const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
 const mockLoad = outputStore.loadAgentOutputPath as jest.MockedFunction<typeof outputStore.loadAgentOutputPath>;
 
 const registry = {};
@@ -23,7 +23,7 @@ function makeState(overrides: Partial<StateDef['config']> = {}): StateDef {
 
 beforeEach(() => {
   jest.resetAllMocks();
-  mockExecuteAgent.mockResolvedValue({ success: true, output: 'agent output' });
+  mockExecuteAgent.mockResolvedValue({ success: true, stdout: 'agent output', stderr: '' });
   mockLoad.mockReturnValue(null);
 });
 
@@ -55,7 +55,7 @@ test('does not save output when store_output is omitted', async () => {
 });
 
 test('does not save output when agent produces no output', async () => {
-  mockExecuteAgent.mockResolvedValue({ success: true, output: '' });
+  mockExecuteAgent.mockResolvedValue({ success: true, stdout: '', stderr: '' });
   await runAgentState(makeState({ store_output: true, on: { PASSED: 'done', FAILED: 'code' } }), registry, cwd);
   expect(mockSave).not.toHaveBeenCalled();
 });
@@ -67,7 +67,7 @@ test('returns PASSED on success with on: block', async () => {
 });
 
 test('returns FAILED on failure with on: block', async () => {
-  mockExecuteAgent.mockResolvedValue({ success: false, output: 'error' });
+  mockExecuteAgent.mockResolvedValue({ success: false, stdout: '', stderr: 'error' });
   const outcome = await runAgentState(makeState(), registry, cwd);
   expect(outcome).toBe('FAILED');
 });

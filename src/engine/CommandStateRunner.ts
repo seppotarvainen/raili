@@ -1,11 +1,13 @@
 import { StateDef } from '../types';
 import { executeCommand } from '../handlers/commandHandler';
+import { saveOutput } from '../outputStore';
 import type { StateOutcome } from './Engine';
 
 /**
  * Runs an inline shell command defined in workflow.yaml and returns the outcome string.
  * - If state uses `on:`, exit code determines PASSED / FAILED.
  * - If state uses `transitions:`, last line of stdout is the outcome key.
+ * - If store_output is true, appends output to .raili/outputs/<stateId>.md.
  *
  * `directory` is optional — defaults to cwd.
  */
@@ -15,12 +17,16 @@ export async function runCommandState(state: StateDef, cwd: string): Promise<Sta
 
   const result = await executeCommand(command, workdir);
 
+  if (state.config.store_output && result.stdout) {
+    saveOutput(cwd, state.id, result.stdout);
+  }
+
   if (state.config.on) {
     return result.success ? 'PASSED' : 'FAILED';
   }
 
   if (state.config.transitions) {
-    const lastLine = result.output.trimEnd().split('\n').pop()?.trim() ?? '';
+    const lastLine = result.stdout.trimEnd().split('\n').pop()?.trim() ?? '';
     if (!lastLine) {
       throw new Error(
         `State '${state.id}': command produced no output — expected a transition key as last stdout line`
@@ -36,4 +42,3 @@ export async function runCommandState(state: StateDef, cwd: string): Promise<Sta
 
   return result.success ? 'PASSED' : 'FAILED';
 }
-

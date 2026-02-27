@@ -2,8 +2,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { ScriptRegistry } from '../scriptRegistry';
-
-export type ScriptExecutionResult = { success: boolean; output: string };
+export type ScriptExecutionResult = { success: boolean; stdout: string; stderr: string };
 
 export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: string): Promise<ScriptExecutionResult> {
   const entry = registry[scriptId];
@@ -33,8 +32,7 @@ export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: s
     });
 
     child.on('close', (code) => {
-      const success = code === 0;
-      resolve({ success, output: success ? stdout : stderr || stdout });
+      resolve({ success: code === 0, stdout, stderr });
     });
   });
 }
