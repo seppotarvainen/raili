@@ -71,6 +71,10 @@ export class Engine {
 
       const { config } = stateDef;
 
+      if (config.notify) {
+        await runNotify(config.notify, this.cwd);
+      }
+
       // Terminal state: no routing defined, stop execution
       if (!config.on && !config.transitions && !config.approval) {
         console.log(`✓ Reached terminal state: ${stateId}`);
@@ -79,10 +83,6 @@ export class Engine {
 
       console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
 
-      // Fire state-level notify on entry, before the handler runs
-      if (config.notify) {
-        await runNotify(config.notify, this.cwd);
-      }
 
       let outcome: string;
 
