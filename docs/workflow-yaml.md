@@ -41,7 +41,7 @@ Runs a Copilot agent defined in `.github/agents/`.
 |---|---|---|---|
 | `agent` | string | ✅ | Agent ID as registered in `agent-registry.json` |
 | `model` | string | ❌ | Override the model for this invocation (e.g. `gpt-4o`, `claude-sonnet-4.6`) |
-| `store_output` | boolean | ❌ | If `true`, appends agent output to `.raili/outputs/<stateId>.md` after each run. On the next run the full history is injected into the agent's prompt |
+| `store_output` | boolean | ❌ | If `true`, appends agent output to `.raili/outputs/<stateId>.md` after each run. On the next run, only the **most recent** run is injected into the agent's prompt (full history is kept on disk for auditing) |
 
 > If you need routing, use `transitions:`, see above.
 
@@ -107,7 +107,9 @@ Added under a state's `approval:` key. Prompts the user in the terminal after th
 
 ## Agent output memory
 
-When `store_output: true` is set on an agent state, Raili maintains a history file at `.raili/outputs/<stateId>.md`. On each subsequent run, the full history is appended to the agent's prompt so it knows what it has tried before.
+When `store_output: true` is set on an agent state, Raili maintains a history file at `.raili/outputs/<stateId>.md`. The full history is **always appended** to that file (each run separated by a `--- Run <timestamp> ---` header), so you have a complete audit trail on disk.
+
+However, only the **last run** is injected into the agent's prompt on the next invocation — not the full history. This keeps the prompt size bounded regardless of how many iterations have accumulated, avoiding context window exhaustion.
 
 To reset the memory at the start of a new work cycle, use `reset_outputs` on the state that begins the cycle:
 

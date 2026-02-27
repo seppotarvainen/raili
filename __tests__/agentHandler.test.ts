@@ -138,3 +138,21 @@ test('uses default prompt when previousOutputPath points to nonexistent file', a
   );
 });
 
+test('injects only the last run when history file has multiple runs', async () => {
+  const registry = setupAgent();
+  const historyFile = path.join(TMP, 'history.md');
+  fs.writeFileSync(
+    historyFile,
+    'first run output\n\n--- Run 2026-01-01T00:00:00.000Z ---\n\nsecond run output\n\n--- Run 2026-02-01T00:00:00.000Z ---\n\nthird run output',
+  );
+
+  await executeAgent(registry, 'analyzer.agent', TMP, historyFile);
+
+  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const promptIndex = spawnArgs.indexOf('--prompt');
+  const prompt = spawnArgs[promptIndex + 1];
+  expect(prompt).toContain('third run output');
+  expect(prompt).not.toContain('first run output');
+  expect(prompt).not.toContain('second run output');
+});
+

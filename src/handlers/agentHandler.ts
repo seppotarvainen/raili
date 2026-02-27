@@ -31,8 +31,13 @@ export function executeAgent(registry: AgentRegistry, agentId: string, cwd: stri
 
   let prompt = 'Work according to your rules';
   if (previousOutputPath && fs.existsSync(previousOutputPath)) {
-    const previousOutput = fs.readFileSync(previousOutputPath, 'utf8');
-    prompt = `Work according to your rules.\n\nYour previous output was:\n${previousOutput}`;
+    const fullHistory = fs.readFileSync(previousOutputPath, 'utf8');
+    const lastRunMarker = '--- Run ';
+    const lastMarkerIdx = fullHistory.lastIndexOf(lastRunMarker);
+    const lastRun = lastMarkerIdx !== -1
+      ? fullHistory.slice(lastMarkerIdx).trim()
+      : fullHistory.trim();
+    prompt = `Work according to your rules.\n\nYour previous output was:\n${lastRun}`;
   }
 
   const args = [`--agent=${agentId}`, '--prompt', prompt, '--yolo'];
