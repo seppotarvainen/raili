@@ -36,7 +36,7 @@ Every key under `states:` is a **state ID**. Each state has the following fields
 
 ### Type: `agent`
 
-Runs a Copilot agent defined in `.github/agents/`.
+Runs a Copilot agent defined in `.github/agents/`. In case your agent is designed to run in a loop, consider adding `max_visits` to prevent infinite loops and using `store_output` to maintain memory between runs.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
