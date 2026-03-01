@@ -29,7 +29,7 @@ export interface StateConfig {
 export interface WorkflowConfig {
   initial: string;
   states: Record<string, StateConfig>;
-  vars?: string[];         // Declared variable names — raili prompts for these on a clean run
+  inputs?: string[];       // Declared input names — raili prompts for these on a clean run
   include?: string[];      // Paths to sub-workflow files, relative to .raili/
 }
 

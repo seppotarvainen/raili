@@ -10,7 +10,7 @@
 |---|---|---|---|
 | `initial` | string | ✅ | The state the workflow starts from |
 | `states` | map | ✅ | All state definitions, keyed by state ID |
-| `vars` | string[] | ❌ | Declared variable names. On a clean run, Raili prompts for any that are not supplied via `--var` flags |
+| `inputs` | string[] | ❌ | Declared input names. On a clean run, Raili prompts for any that are not supplied via `--var` flags |
 | `include` | string[] | ❌ | Paths to sub-workflow YAML files, relative to `.raili/`. States are merged in — no duplicate IDs allowed |
 
 ---
@@ -108,12 +108,12 @@ Added under a state's `approval:` key. Prompts the user in the terminal after th
 
 ---
 
-## Vars
+## Inputs
 
-`vars` declares the user-supplied variables your workflow needs. Raili asks for them interactively at the start of a clean run, stores them in `context.json`, and sets them as `RAILI_VAR_*` environment variables for the entire process lifetime.
+`inputs` declares the user-supplied variables your workflow needs. Raili asks for them interactively at the start of a clean run, stores them in `context.json`, and sets them as `RAILI_VAR_*` environment variables for the entire process lifetime.
 
 ```yaml
-vars:
+inputs:
   - ticket_id
   - description
   - branch
@@ -121,7 +121,7 @@ vars:
 
 **Supplying values:**
 
-- **Interactive** (default) — on a clean run, Raili prompts for each declared var not supplied via a flag:
+- **Interactive** (default) — on a clean run, Raili prompts for each declared input not supplied via a flag:
   ```
   ticket_id: PROJ-123
   description: Fix login bug
@@ -130,17 +130,17 @@ vars:
   ```
   raili run --clean --var ticket_id=PROJ-123 --var description="Fix login bug"
   ```
-- **Continue run** — vars are already in `context.json`, no prompting occurs.
+- **Continue run** — inputs are already in `context.json`, no prompting occurs.
 
 **Env var naming:**
 
-| Declared var | Env var |
+| Declared input | Env var |
 |---|---|
 | `ticket_id` | `RAILI_VAR_TICKET_ID` |
 | `description` | `RAILI_VAR_DESCRIPTION` |
 | `branch` | `RAILI_VAR_BRANCH` |
 
-**Using vars in your workflow:**
+**Using inputs in your workflow:**
 
 Because they are plain env vars, they work everywhere a shell is involved:
 
@@ -163,9 +163,9 @@ analyze:
   prompt: "Analyze ticket $RAILI_VAR_TICKET_ID: $RAILI_VAR_DESCRIPTION"
 ```
 
-Agents do **not** receive vars automatically — you choose what to pass via the `prompt:` field. This keeps agent behaviour explicit and visible in the workflow.
+Agents do **not** receive inputs automatically — you choose what to pass via the `prompt:` field. This keeps agent behaviour explicit and visible in the workflow.
 
-> `vars` is entirely optional. If you don't declare any, Raili never prompts and no env vars are set.
+> `inputs` is entirely optional. If you don't declare any, Raili never prompts and no env vars are set.
 
 ---
 
@@ -213,7 +213,7 @@ analyze:
 ```yaml
 initial: init
 
-vars:
+inputs:
   - ticket_id
   - description
 

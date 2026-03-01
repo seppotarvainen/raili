@@ -32,12 +32,12 @@ function promptLine(rl: readline.Interface, question: string): Promise<string> {
   return new Promise((resolve) => rl.question(question, resolve));
 }
 
-/** Prompt the user for any declared vars that weren't supplied via --var flags */
+/** Prompt the user for any declared inputs that weren't supplied via --var flags */
 async function collectVars(cwd: string, flagVars: Record<string, string>): Promise<Record<string, string>> {
   let declared: string[] = [];
   try {
     const config = loadWorkflowConfig(cwd);
-    declared = config.vars ?? [];
+    declared = config.inputs ?? [];
   } catch {
     // If workflow can't be loaded here, run() will fail with a proper error
   }
