@@ -28,13 +28,12 @@ describe('context', () => {
     test('returns empty context if file does not exist', () => {
       const ctx = loadContext(tmpdir);
       expect(ctx.stateHistory).toEqual([]);
-      expect(ctx.ticketId).toBeUndefined();
+      expect(ctx.vars).toBeUndefined();
     });
 
     test('loads existing context from file', () => {
       const contextData = {
-        ticketId: 'TICKET-123',
-        description: 'Test ticket',
+        vars: { ticket_id: 'TICKET-123', description: 'Test ticket' },
         stateHistory: [
           { state: 'init', enteredAt: '2026-02-24T10:00:00Z' },
           { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z' },
@@ -43,7 +42,7 @@ describe('context', () => {
       fs.writeFileSync(path.join(railiDir, 'context.json'), JSON.stringify(contextData));
 
       const ctx = loadContext(tmpdir);
-      expect(ctx.ticketId).toBe('TICKET-123');
+      expect(ctx.vars?.ticket_id).toBe('TICKET-123');
       expect(ctx.stateHistory).toHaveLength(2);
       expect(ctx.stateHistory[0].state).toBe('init');
     });
@@ -57,8 +56,7 @@ describe('context', () => {
   describe('saveContext', () => {
     test('saves context to file', () => {
       const ctx = {
-        ticketId: 'TICKET-456',
-        description: 'Another test',
+        vars: { ticket_id: 'TICKET-456', description: 'Another test' },
         stateHistory: [{ state: 'init', enteredAt: '2026-02-24T12:00:00Z' }],
       };
 
@@ -66,7 +64,7 @@ describe('context', () => {
 
       const saved = fs.readFileSync(path.join(railiDir, 'context.json'), 'utf8');
       const parsed = JSON.parse(saved);
-      expect(parsed.ticketId).toBe('TICKET-456');
+      expect(parsed.vars.ticket_id).toBe('TICKET-456');
       expect(parsed.stateHistory).toHaveLength(1);
     });
 
@@ -119,7 +117,7 @@ describe('context', () => {
   describe('addStateToHistory', () => {
     test('appends new state with timestamp', () => {
       const ctx = {
-        ticketId: 'TICKET-789',
+        vars: { ticket_id: 'TICKET-789' },
         stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }],
       };
 
@@ -127,7 +125,7 @@ describe('context', () => {
       expect(updated.stateHistory).toHaveLength(2);
       expect(updated.stateHistory[1].state).toBe('analyze');
       expect(updated.stateHistory[1].enteredAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-      expect(updated.ticketId).toBe('TICKET-789'); // Preserves other properties
+      expect(updated.vars?.ticket_id).toBe('TICKET-789'); // Preserves other properties
     });
 
     test('does not mutate original context', () => {
@@ -142,14 +140,18 @@ describe('context', () => {
   });
 
   describe('initializeContext', () => {
-    test('creates new context with initial state', () => {
-      const ctx = initializeContext('TICKET-999', 'Test description', 'init');
+    test('creates new context with vars', () => {
+      const ctx = initializeContext({ ticket_id: 'TICKET-999', description: 'Test description' });
 
-      expect(ctx.ticketId).toBe('TICKET-999');
-      expect(ctx.description).toBe('Test description');
-      expect(ctx.stateHistory).toHaveLength(1);
-      expect(ctx.stateHistory[0].state).toBe('init');
-      expect(ctx.stateHistory[0].enteredAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(ctx.vars?.ticket_id).toBe('TICKET-999');
+      expect(ctx.vars?.description).toBe('Test description');
+      expect(ctx.stateHistory).toHaveLength(0);
+    });
+
+    test('creates context with empty vars', () => {
+      const ctx = initializeContext({});
+      expect(ctx.vars).toEqual({});
+      expect(ctx.stateHistory).toHaveLength(0);
     });
   });
 });

@@ -156,3 +156,37 @@ test('injects only the last run when history file has multiple runs', async () =
   expect(prompt).not.toContain('second run output');
 });
 
+test('uses custom prompt when prompt param is provided', async () => {
+  const registry = setupAgent();
+  await executeAgent(registry, 'analyzer.agent', TMP, null, 'Analyze ticket $RAILI_VAR_TICKET_ID');
+
+  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const promptIndex = spawnArgs.indexOf('--prompt');
+  expect(spawnArgs[promptIndex + 1]).toBe('Analyze ticket $RAILI_VAR_TICKET_ID');
+});
+
+test('appends previous output to custom prompt when both are provided', async () => {
+  const registry = setupAgent();
+  const prevFile = path.join(TMP, 'prev_custom.md');
+  fs.writeFileSync(prevFile, 'previous work');
+
+  await executeAgent(registry, 'analyzer.agent', TMP, prevFile, 'Do the thing');
+
+  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const promptIndex = spawnArgs.indexOf('--prompt');
+  const prompt = spawnArgs[promptIndex + 1];
+  expect(prompt).toContain('Do the thing');
+  expect(prompt).toContain('previous work');
+});
+
+test('spawn inherits process.env so RAILI_VAR_* set by run.ts are available', async () => {
+  process.env.RAILI_VAR_TICKET_ID = 'PROJ-999';
+  const registry = setupAgent();
+  await executeAgent(registry, 'analyzer.agent', TMP);
+
+  // env is not passed explicitly — child inherits process.env by default
+  const spawnOptions = spawn.mock.calls[0][2] as any;
+  expect(spawnOptions.env).toBeUndefined();
+  expect(process.env.RAILI_VAR_TICKET_ID).toBe('PROJ-999');
+  delete process.env.RAILI_VAR_TICKET_ID;
+});

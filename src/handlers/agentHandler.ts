@@ -16,7 +16,13 @@ function parseFrontmatterModel(content: string): string | undefined {
   return modelLine ? modelLine.replace(/^model:\s*/, '').trim() : undefined;
 }
 
-export function executeAgent(registry: AgentRegistry, agentId: string, cwd: string, previousOutputPath?: string | null): Promise<AgentExecutionResult> {
+export function executeAgent(
+  registry: AgentRegistry,
+  agentId: string,
+  cwd: string,
+  previousOutputPath?: string | null,
+  prompt?: string,
+): Promise<AgentExecutionResult> {
   const entry = registry[agentId];
   if (!entry) throw new Error(`Agent '${agentId}' not found in registry`);
 
@@ -29,7 +35,7 @@ export function executeAgent(registry: AgentRegistry, agentId: string, cwd: stri
   const frontmatterModel = parseFrontmatterModel(content);
   const model = entry.model ?? frontmatterModel;
 
-  let prompt = 'Work according to your rules';
+  let resolvedPrompt = prompt ?? 'Work according to your rules';
   if (previousOutputPath && fs.existsSync(previousOutputPath)) {
     const fullHistory = fs.readFileSync(previousOutputPath, 'utf8');
     const lastRunMarker = '--- Run ';
@@ -37,15 +43,17 @@ export function executeAgent(registry: AgentRegistry, agentId: string, cwd: stri
     const lastRun = lastMarkerIdx !== -1
       ? fullHistory.slice(lastMarkerIdx).trim()
       : fullHistory.trim();
-    prompt = `Work according to your rules.\n\nYour previous output was:\n${lastRun}`;
+    resolvedPrompt = `${resolvedPrompt}\n\nYour previous output was:\n${lastRun}`;
   }
 
-  const args = [`--agent=${agentId}`, '--prompt', prompt, '--yolo'];
+  const args = [`--agent=${agentId}`, '--prompt', resolvedPrompt, '--yolo'];
   if (model) args.splice(1, 0, `--model=${model}`);
 
-
   return new Promise((resolve) => {
-    const child = spawn('copilot', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('copilot', args, {
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
     let stdout = '';
     let stderr = '';

@@ -73,6 +73,7 @@ export function loadWorkflowConfig(cwd: string): WorkflowConfig {
   return {
     initial: main.initial,
     states: mergedStates,
+    vars: main.vars,
     include: main.include,
   } as WorkflowConfig;
 }

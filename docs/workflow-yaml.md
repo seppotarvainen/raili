@@ -10,6 +10,7 @@
 |---|---|---|---|
 | `initial` | string | ✅ | The state the workflow starts from |
 | `states` | map | ✅ | All state definitions, keyed by state ID |
+| `vars` | string[] | ❌ | Declared variable names. On a clean run, Raili prompts for any that are not supplied via `--var` flags |
 | `include` | string[] | ❌ | Paths to sub-workflow YAML files, relative to `.raili/`. States are merged in — no duplicate IDs allowed |
 
 ---
@@ -42,6 +43,7 @@ Runs a Copilot agent defined in `.github/agents/`. In case your agent is designe
 |---|---|---|---|
 | `agent` | string | ✅ | Agent ID as registered in `agent-registry.json` |
 | `model` | string | ❌ | Override the model for this invocation (e.g. `gpt-4o`, `claude-sonnet-4.6`) |
+| `prompt` | string | ❌ | Prompt sent to the agent. Defaults to `"Work according to your rules"`. You can reference vars here: `"Analyze ticket $RAILI_VAR_TICKET_ID"` |
 | `store_output` | boolean | ❌ | If `true`, appends agent output to `.raili/outputs/<stateId>.md` after each run. On the next run, only the **most recent** run is injected into the agent's prompt (full history is kept on disk for auditing) |
 
 > If you need routing, use `transitions:`, see above.
@@ -106,6 +108,67 @@ Added under a state's `approval:` key. Prompts the user in the terminal after th
 
 ---
 
+## Vars
+
+`vars` declares the user-supplied variables your workflow needs. Raili asks for them interactively at the start of a clean run, stores them in `context.json`, and sets them as `RAILI_VAR_*` environment variables for the entire process lifetime.
+
+```yaml
+vars:
+  - ticket_id
+  - description
+  - branch
+```
+
+**Supplying values:**
+
+- **Interactive** (default) — on a clean run, Raili prompts for each declared var not supplied via a flag:
+  ```
+  ticket_id: PROJ-123
+  description: Fix login bug
+  ```
+- **Flags** — skip the prompt by passing values directly:
+  ```
+  raili run --clean --var ticket_id=PROJ-123 --var description="Fix login bug"
+  ```
+- **Continue run** — vars are already in `context.json`, no prompting occurs.
+
+**Env var naming:**
+
+| Declared var | Env var |
+|---|---|
+| `ticket_id` | `RAILI_VAR_TICKET_ID` |
+| `description` | `RAILI_VAR_DESCRIPTION` |
+| `branch` | `RAILI_VAR_BRANCH` |
+
+**Using vars in your workflow:**
+
+Because they are plain env vars, they work everywhere a shell is involved:
+
+```yaml
+# In a command
+notify_ticket:
+  type: command
+  command: echo "Working on $RAILI_VAR_TICKET_ID"
+
+# In a notify handler
+analyze:
+  type: agent
+  agent: analyzer
+  notify: "viesti.sh 'Starting $RAILI_VAR_TICKET_ID'"
+
+# In an agent prompt — the explicit way to give an agent context
+analyze:
+  type: agent
+  agent: analyzer
+  prompt: "Analyze ticket $RAILI_VAR_TICKET_ID: $RAILI_VAR_DESCRIPTION"
+```
+
+Agents do **not** receive vars automatically — you choose what to pass via the `prompt:` field. This keeps agent behaviour explicit and visible in the workflow.
+
+> `vars` is entirely optional. If you don't declare any, Raili never prompts and no env vars are set.
+
+---
+
 ## Kill switch (`max_visits`)
 
 `max_visits` prevents infinite loops by hard-stopping execution when a state is entered more than N times in a single run.
@@ -150,6 +213,10 @@ analyze:
 ```yaml
 initial: init
 
+vars:
+  - ticket_id
+  - description
+
 states:
 
   # Entry point — clears agent memory for a new cycle
@@ -165,6 +232,7 @@ states:
     type: agent
     agent: analyzer
     model: gpt-4o
+    prompt: "Analyze ticket $RAILI_VAR_TICKET_ID: $RAILI_VAR_DESCRIPTION"
     store_output: true
     notify: "msg.sh 'Starting analysis...'"
     transitions:

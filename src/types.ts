@@ -29,7 +29,8 @@ export interface StateConfig {
 export interface WorkflowConfig {
   initial: string;
   states: Record<string, StateConfig>;
-  include?: string[];  // Paths to sub-workflow files, relative to .raili/
+  vars?: string[];         // Declared variable names — raili prompts for these on a clean run
+  include?: string[];      // Paths to sub-workflow files, relative to .raili/
 }
 
 // Runtime state machine (derived from workflow config)
@@ -51,8 +52,7 @@ export interface StateHistoryEntry {
 }
 
 export interface WorkflowContext {
-  ticketId?: string;
-  description?: string;
+  vars?: Record<string, string>;   // User-supplied variables (e.g. ticket_id, description)
   stateHistory: StateHistoryEntry[];
 }
 

@@ -30,13 +30,18 @@ beforeEach(() => {
 test('passes previous output path to executeAgent when available', async () => {
   mockLoad.mockReturnValue('/tmp/.raili/outputs/code.md');
   await runAgentState(makeState(), registry, cwd);
-  expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, '/tmp/.raili/outputs/code.md');
+  expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, '/tmp/.raili/outputs/code.md', undefined);
 });
 
 test('passes null to executeAgent when no previous output exists', async () => {
   mockLoad.mockReturnValue(null);
   await runAgentState(makeState(), registry, cwd);
-  expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null);
+  expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null, undefined);
+});
+
+test('forwards state prompt to executeAgent', async () => {
+  await runAgentState(makeState({ prompt: 'Analyze $RAILI_VAR_TICKET_ID' }), registry, cwd);
+  expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null, 'Analyze $RAILI_VAR_TICKET_ID');
 });
 
 test('saves output when store_output is true', async () => {

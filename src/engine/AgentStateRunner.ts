@@ -16,7 +16,7 @@ export async function runAgentState(state: StateDef, registry: AgentRegistry, cw
   const previousOutputPath = loadAgentOutputPath(cwd, state.id);
 
   const agentId = state.config.agent!;
-  const result = await executeAgent(registry, agentId, cwd, previousOutputPath);
+  const result = await executeAgent(registry, agentId, cwd, previousOutputPath, state.config.prompt);
 
   if (state.config.store_output) {
     const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');

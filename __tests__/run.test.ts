@@ -114,6 +114,30 @@ describe('runCommand', () => {
     expect(fs.existsSync(path.join(railiDir, 'context.json'))).toBe(true);
     expect(fs.readFileSync(path.join(railiDir, 'context.json'), 'utf8')).toBe(existingContext);
   });
+
+  test('vars are set on process.env as RAILI_VAR_* and stored in context', async () => {
+    const railiDir = path.join(tmpdir, '.raili');
+    fs.mkdirSync(railiDir);
+
+    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
+    fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
+
+    registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
+    registryValidator.validateScriptRegistry.mockImplementation(() => ({}));
+    registryValidator.validateWorkflowReferences.mockImplementation(() => {});
+    Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
+
+    await runCommand(tmpdir, 'clean', { ticket_id: 'PROJ-42', description: 'Do the thing' });
+
+    expect(process.env.RAILI_VAR_TICKET_ID).toBe('PROJ-42');
+    expect(process.env.RAILI_VAR_DESCRIPTION).toBe('Do the thing');
+
+    // Cleanup
+    delete process.env.RAILI_VAR_TICKET_ID;
+    delete process.env.RAILI_VAR_DESCRIPTION;
+  });
 });
 
 

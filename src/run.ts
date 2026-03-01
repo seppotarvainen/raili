@@ -8,7 +8,7 @@ import { Engine } from './engine/Engine';
 
 export type RunMode = 'continue' | 'clean';
 
-export async function runCommand(cwd: string, mode: RunMode = 'continue') {
+export async function runCommand(cwd: string, mode: RunMode = 'continue', vars: Record<string, string> = {}) {
   const railiDir = path.join(cwd, '.raili');
   if (!fs.existsSync(railiDir) || !fs.statSync(railiDir).isDirectory()) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');
@@ -45,8 +45,18 @@ export async function runCommand(cwd: string, mode: RunMode = 'continue') {
     clearContext(cwd);
   }
 
-  // Load execution context
-  const context = loadContext(cwd);
+  // Load execution context, then apply vars
+  let context = loadContext(cwd);
+  if (Object.keys(vars).length > 0) {
+    context = { ...context, vars: { ...context.vars, ...vars } };
+  }
+
+  // Expose all vars as RAILI_VAR_* env vars for the entire process lifetime.
+  // Scripts, commands, notify handlers and agent prompts can all reference them.
+  const allVars = context.vars ?? {};
+  for (const [key, value] of Object.entries(allVars)) {
+    process.env[`RAILI_VAR_${key.toUpperCase()}`] = value;
+  }
 
   const engine = new Engine({
     stateMachine,

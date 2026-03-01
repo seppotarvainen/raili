@@ -91,18 +91,12 @@ export function clearContext(cwd: string): void {
 }
 
 /**
- * Initialize context with ticket information and initial state
+ * Initialize a fresh context with user-supplied vars.
  */
-export function initializeContext(ticketId: string, description: string, initialState: string): WorkflowContext {
+export function initializeContext(vars: Record<string, string>): WorkflowContext {
   return {
-    ticketId,
-    description,
-    stateHistory: [
-      {
-        state: initialState,
-        enteredAt: new Date().toISOString(),
-      },
-    ],
+    vars,
+    stateHistory: [],
   };
 }
 
