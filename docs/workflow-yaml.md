@@ -121,7 +121,13 @@ inputs:
 
 **Supplying values:**
 
-- **Interactive** (default) — on a clean run, Raili prompts for each declared input not supplied via a flag:
+- **`vars.yaml`** — create `.raili/vars.yaml` (gitignored) to pre-fill values without typing them every run:
+  ```yaml
+  # .raili/vars.yaml
+  ticket_id: PROJ-123
+  description: Fix login bug
+  ```
+- **Interactive** (default) — on a clean run, Raili prompts for each declared input not supplied via a flag or vars.yaml:
   ```
   ticket_id: PROJ-123
   description: Fix login bug
@@ -131,6 +137,10 @@ inputs:
   raili run --clean --var ticket_id=PROJ-123 --var description="Fix login bug"
   ```
 - **Continue run** — inputs are already in `context.json`, no prompting occurs.
+
+**Precedence (highest to lowest):** `--var` flags → `vars.yaml` → interactive prompt
+
+> Only keys declared in `inputs:` are read from `vars.yaml`. Any extra keys in the file are silently ignored — workflow.yaml remains the single source of truth for what a workflow needs.
 
 **Env var naming:**
 
