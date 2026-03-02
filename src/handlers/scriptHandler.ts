@@ -1,14 +1,15 @@
-import { spawn } from 'child_process';
+import {spawn} from 'child_process';
 import fs from 'fs';
-import path from 'path';
-import { ScriptRegistry } from '../scriptRegistry';
+import {ScriptRegistry} from '../scriptRegistry';
+import {resolveRegistryPath} from '../pathUtils';
+
 export type ScriptExecutionResult = { success: boolean; stdout: string; stderr: string };
 
 export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: string): Promise<ScriptExecutionResult> {
   const entry = registry[scriptId];
   if (!entry) throw new Error(`Script '${scriptId}' not found in registry`);
 
-  const fullPath = path.resolve(cwd, entry.path);
+  const fullPath = resolveRegistryPath(cwd, entry.path);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`Script file not found: ${fullPath}`);
   }

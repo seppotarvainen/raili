@@ -1,7 +1,7 @@
-import { spawn } from 'child_process';
+import {spawn} from 'child_process';
 import fs from 'fs';
-import path from 'path';
-import { AgentRegistry } from '../agentRegistry';
+import {AgentRegistry} from '../agentRegistry';
+import {resolveRegistryPath} from '../pathUtils';
 
 export type AgentExecutionResult = {
   success: boolean;
@@ -26,7 +26,7 @@ export function executeAgent(
   const entry = registry[agentId];
   if (!entry) throw new Error(`Agent '${agentId}' not found in registry`);
 
-  const fullPath = path.resolve(cwd, entry.path);
+  const fullPath = resolveRegistryPath(cwd, entry.path);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`Agent file not found: ${fullPath}`);
   }
