@@ -1,8 +1,19 @@
-# workflow.yaml Reference
+# Raili Development & Usage Guide
+
+# Architectural Principles
+
+- Only "agents" perform cognitive tasks.
+- Only "scripts" and command perform shell operations.
+- State "engine" is only used for convenience states with no side effects. They'll always return `PASSED`.
+- Manual approval is inline: a state with an `approval` block in `workflow.yaml` automatically pauses the engine for user confirmation.
+- Binary outcomes use `on: PASSED/FAILED` (exit code). Named outcomes use `transitions:` (last stdout line). A state may not have both.
+- Engine controls all transitions deterministically.
 
 `workflow.yaml` lives in `.raili/` and defines the entire state machine — states, transitions, agents, scripts, notifications, and approval prompts.
 
 ---
+
+# Workflow YAML Reference
 
 ## Top-level fields
 
