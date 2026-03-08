@@ -8,6 +8,7 @@ import { runCommand, RunMode } from './run';
 import { loadContext, getCurrentState } from './context';
 import { loadWorkflowConfig } from './workflowLoader';
 import colors from "colors/safe";
+import { printHelp } from './cli/help';
 
 const args = process.argv.slice(2);
 const cmd = args[0];
@@ -113,6 +114,16 @@ async function promptRunMode(cwd: string): Promise<RunMode> {
 
 async function main() {
   try {
+    // Early, deterministic help handling (read-only). Support -h and --help only.
+    if (cmd === '--help' || cmd === '-h') {
+      printHelp();
+      process.exit(0);
+    }
+    if (cmd && (hasFlag('--help') || hasFlag('-h'))) {
+      printHelp(cmd);
+      process.exit(0);
+    }
+
     if (cmd === 'init') {
       await initCommand(process.cwd());
     } else if (cmd === 'run') {
