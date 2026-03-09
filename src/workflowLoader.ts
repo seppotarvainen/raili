@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { WorkflowConfig, StateMachine, StateDef } from './types';
+import { validateWorkflowConfig } from './schemaValidator';
 
 /**
  * Parse a single YAML file into a raw object, with basic structural checks.
@@ -70,12 +71,17 @@ export function loadWorkflowConfig(cwd: string): WorkflowConfig {
     }
   }
 
-  return {
+  const config = {
     initial: main.initial,
     states: mergedStates,
     inputs: main.inputs,
     include: main.include,
   } as WorkflowConfig;
+
+  // Validate the complete workflow config against schema
+  validateWorkflowConfig(config);
+
+  return config;
 }
 
 /**

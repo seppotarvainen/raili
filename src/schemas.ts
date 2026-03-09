@@ -1,0 +1,145 @@
+// Schema definitions for validating workflow configuration
+// These mirror the TypeScript interfaces in types.ts but are enumerable at runtime
+
+export type FieldType = 'string' | 'boolean' | 'number' | 'object' | 'array' | 'record';
+
+export interface FieldSchema {
+  required: boolean;
+  type: FieldType;
+  enum?: string[];  // For restricted value sets
+  description?: string;
+  validate?: 'mutual-exclusive-with-transitions' | 'on-requires-passed' | 'record-keys-enum';  // Custom validation rule
+  recordKeyEnum?: string[];  // If type is 'record', restrict allowed keys to these values
+  validForTypes?: ('agent' | 'script' | 'command' | 'engine')[];  // If set, field is only valid for these state types
+}
+
+export interface ObjectSchema {
+  [key: string]: FieldSchema;
+}
+
+// ApprovalConfig schema
+export const ApprovalConfigSchema: ObjectSchema = {
+  question: {
+    required: true,
+    type: 'string',
+    description: 'Question to ask for approval'
+  },
+  notify: {
+    required: false,
+    type: 'string',
+    description: 'Optional shell command to run before showing the approval prompt'
+  },
+  PASSED: {
+    required: true,
+    type: 'string',
+    description: 'Next state if approval is passed'
+  },
+  FAILED: {
+    required: true,
+    type: 'string',
+    description: 'Next state if approval is failed'
+  }
+};
+
+// StateConfig schema
+export const StateConfigSchema: ObjectSchema = {
+  type: {
+    required: true,
+    type: 'string',
+    enum: ['agent', 'script', 'command', 'engine'],
+    description: 'Type of state handler'
+  },
+  notify: {
+    required: false,
+    type: 'string',
+    description: 'Optional shell command to run when this state is entered'
+  },
+  store_output: {
+    required: false,
+    type: 'boolean',
+    description: 'Save agent output to .raili/outputs/<stateId>.md'
+  },
+  reset_outputs: {
+    required: false,
+    type: 'array',
+    description: 'Clear saved outputs for these state IDs on entry'
+  },
+  max_visits: {
+    required: false,
+    type: 'number',
+    description: 'Throw if this state is entered more than N times'
+  },
+  agent: {
+    required: false,
+    type: 'string',
+    description: 'Agent name (for type: agent)',
+    validForTypes: ['agent']
+  },
+  script: {
+    required: false,
+    type: 'string',
+    description: 'Script path (for type: script)',
+    validForTypes: ['script']
+  },
+  command: {
+    required: false,
+    type: 'string',
+    description: 'Inline shell command (for type: command)',
+    validForTypes: ['command']
+  },
+  directory: {
+    required: false,
+    type: 'string',
+    description: 'Working directory for command execution',
+    validForTypes: ['command']
+  },
+  prompt: {
+    required: false,
+    type: 'string',
+    description: 'Optional prompt for agent',
+    validForTypes: ['agent']
+  },
+  approval: {
+    required: false,
+    type: 'object',
+    description: 'Approval configuration'
+  },
+  transitions: {
+    required: false,
+    type: 'record',
+    description: 'State transitions keyed by output/result',
+    validate: 'mutual-exclusive-with-transitions'
+  },
+  on: {
+    required: false,
+    type: 'record',
+    description: 'Binary outcomes (PASSED/FAILED) for exit code-based routing',
+    validate: 'on-requires-passed',
+    recordKeyEnum: ['PASSED', 'FAILED']
+  }
+};
+
+// WorkflowConfig schema
+export const WorkflowConfigSchema: ObjectSchema = {
+  initial: {
+    required: true,
+    type: 'string',
+    description: 'ID of the initial state'
+  },
+  states: {
+    required: true,
+    type: 'record',
+    description: 'State definitions keyed by state ID'
+  },
+  inputs: {
+    required: false,
+    type: 'array',
+    description: 'Declared input names — raili prompts for these on a clean run'
+  },
+  include: {
+    required: false,
+    type: 'array',
+    description: 'Paths to sub-workflow files, relative to .raili/'
+  }
+};
+
