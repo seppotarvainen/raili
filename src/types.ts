@@ -28,6 +28,7 @@ export interface StateConfig {
 
 export interface WorkflowConfig {
   initial: string;
+  error?: string; // Optional named error state to route to on unhandled exceptions
   states: Record<string, StateConfig>;
   inputs?: string[];       // Declared input names — raili prompts for these on a clean run
   include?: string[];      // Paths to sub-workflow files, relative to .raili/
@@ -42,6 +43,7 @@ export interface StateDef {
 
 export interface StateMachine {
   initial: string;
+  error?: string; // Optional runtime-resolved error state id
   states: Record<string, StateDef>;
 }
 
@@ -55,4 +57,3 @@ export interface WorkflowContext {
   vars?: Record<string, string>;   // User-supplied variables (e.g. ticket_id, description)
   stateHistory: StateHistoryEntry[];
 }
-

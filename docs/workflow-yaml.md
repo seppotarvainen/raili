@@ -20,9 +20,51 @@
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `initial` | string | ✅ | The state the workflow starts from |
+| `error` | string | ❌ | Optional ID of a terminal state to route to if the engine encounters an unhandled exception during execution |
 | `states` | map | ✅ | All state definitions, keyed by state ID |
 | `inputs` | string[] | ❌ | Declared input names. On a clean run, Raili prompts for any that are not supplied via `--var` flags |
 | `include` | string[] | ❌ | Paths to sub-workflow YAML files, relative to `.raili/`. States are merged in — no duplicate IDs allowed |
+
+---
+
+## Error state
+
+Raili supports an optional top-level `error:` field that names a state to which the engine will deterministically route if an unhandled exception escapes the normal state handler/routing logic.
+
+Key points:
+
+- `error` is optional. If present, its value must be the ID of a state defined under `states:`.
+- The declared error state must be terminal: it must NOT have `on:`, `transitions:`, or an `approval:` block. The workflow validator enforces this (fail-fast).
+- The error state behaves like any other state on entry: the engine will run its `reset_outputs` and `notify` entry actions (if present) and then stop — the error state is always treated as terminal.
+- `notify` on the error state is best-effort: failures while running the notification do not crash the engine further.
+
+Why use an `error` state?
+
+- Provides a single place to handle unexpected failures (for example: send a Slack/email notification, run a cleanup script, or record a human-facing message).
+- Keeps the engine thin and deterministic: instead of trying to recover automatically, the engine routes to a known state where you can surface and handle the failure.
+
+Example — declare an error state for notifications and cleanup:
+
+```yaml
+initial: start
+error: error_state
+
+states:
+  start:
+    type: command
+    command: ./run-workflow.sh
+
+  error_state:
+    type: engine
+    notify: "msg.sh 'Workflow failed — please investigate'"
+    reset_outputs:
+      - code
+```
+
+Notes on behavior
+
+- The engine will append the `error_state` to the context history and persist `context.json` so runs are auditable and you can resume after addressing the problem.
+- The `error` state cannot perform routing — it is intentionally terminal. If you need human intervention then a separate `approval:` block on a different state is the right place for it.
 
 ---
 
@@ -345,4 +387,3 @@ states:
 - `notify` commands are **best-effort** — a failure is logged as a warning but does not abort the workflow.
 - `reset_outputs` only clears files under `.raili/outputs/`. It has no effect if no output has been stored yet.
 - Sub-workflow files (`include`) must not define `initial` and must not reuse state IDs from the main workflow.
-

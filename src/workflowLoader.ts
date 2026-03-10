@@ -129,10 +129,16 @@ export function buildStateMachine(config: WorkflowConfig): StateMachine {
     };
   }
 
-  return {
+  const machine: StateMachine = {
     initial: config.initial,
     states,
   };
+
+  if (config.error) {
+    machine.error = config.error;
+  }
+
+  return machine;
 }
 
 /**
@@ -187,5 +193,15 @@ export function validateStateMachine(machine: StateMachine): void {
       throw new Error(`Invalid state '${id}': command type requires 'command' property`);
     }
   }
-}
 
+  // Validate declared error state exists in machine and is terminal
+  if (machine.error) {
+    if (!(machine.error in machine.states)) {
+      throw new Error(`Invalid state machine: declared error state '${machine.error}' not found in states`);
+    }
+    const errDef = machine.states[machine.error];
+    if (errDef.transitions.length > 0) {
+      throw new Error(`Invalid state machine: error state '${machine.error}' must be terminal and have no transitions`);
+    }
+  }
+}

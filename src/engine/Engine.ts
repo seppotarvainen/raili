@@ -66,82 +66,109 @@ export class Engine {
     let stateId = currentStateId;
 
     while (true) {
-      const stateDef = this.stateMachine.states[stateId];
-      if (!stateDef) {
-        throw new Error(`Engine: state '${stateId}' not found in state machine`);
-      }
-
-      const { config } = stateDef;
-
-      // On state entry: enforce max_visits first
-      if (config.max_visits !== undefined) {
-        const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
-        this.visitCounts.set(stateId, visits);
-        if (visits > config.max_visits) {
-          throw new Error(
-            `State '${stateId}' exceeded max_visits limit of ${config.max_visits}`
-          );
+      try {
+        const stateDef = this.stateMachine.states[stateId];
+        if (!stateDef) {
+          throw new Error(`Engine: state '${stateId}' not found in state machine`);
         }
-      }
 
-      // On state entry: clear outputs and fire notify before anything else
-      if (config.reset_outputs?.length) {
-        clearAgentOutputs(this.cwd, config.reset_outputs);
-      }
+        const { config } = stateDef;
 
-      if (config.notify) {
-        await runNotify(config.notify, this.cwd);
-      }
+        // On state entry: enforce max_visits first
+        if (config.max_visits !== undefined) {
+          const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
+          this.visitCounts.set(stateId, visits);
+          if (visits > config.max_visits) {
+            throw new Error(
+              `State '${stateId}' exceeded max_visits limit of ${config.max_visits}`
+            );
+          }
+        }
 
-      // Terminal state: no routing defined, stop execution
-      if (!config.on && !config.transitions && !config.approval) {
-        console.log(`✓ Reached terminal state: ${stateId}`);
-        break;
-      }
+        // On state entry: clear outputs and fire notify before anything else
+        if (config.reset_outputs?.length) {
+          clearAgentOutputs(this.cwd, config.reset_outputs);
+        }
 
-      console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
+        if (config.notify) {
+          await runNotify(config.notify, this.cwd);
+        }
+
+        // Terminal state: no routing defined, stop execution
+        if (!config.on && !config.transitions && !config.approval) {
+          console.log(`✓ Reached terminal state: ${stateId}`);
+          break;
+        }
+
+        console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
 
 
-      let outcome: string;
+        let outcome: string;
 
-      // Execute the state handler
-      if (config.type === 'agent') {
-        outcome = await runAgentState(stateDef, this.agentRegistry, this.cwd);
-      } else if (config.type === 'script') {
-        outcome = await runScriptState(stateDef, this.scriptRegistry, this.cwd);
-      } else if (config.type === 'command') {
-        outcome = await runCommandState(stateDef, this.cwd);
-      } else {
-        // type: engine — no side effects, falls through to approval or transitions
-        outcome = 'PASSED';
-      }
+        // Execute the state handler
+        if (config.type === 'agent') {
+          outcome = await runAgentState(stateDef, this.agentRegistry, this.cwd);
+        } else if (config.type === 'script') {
+          outcome = await runScriptState(stateDef, this.scriptRegistry, this.cwd);
+        } else if (config.type === 'command') {
+          outcome = await runCommandState(stateDef, this.cwd);
+        } else {
+          // type: engine — no side effects, falls through to approval or transitions
+          outcome = 'PASSED';
+        }
 
-      // If the state has an approval block, run it before routing
-      if (config.approval) {
-        const approvalOutcome = await runApprovalStep(stateId, config.approval, {
-          cwd: this.cwd,
-        });
-        const nextStateId = resolveNextState(stateId, {
-          PASSED: config.approval.PASSED,
-          FAILED: config.approval.FAILED,
-        }, approvalOutcome);
+        // If the state has an approval block, run it before routing
+        if (config.approval) {
+          const approvalOutcome = await runApprovalStep(stateId, config.approval, {
+            cwd: this.cwd,
+          });
+          const nextStateId = resolveNextState(stateId, {
+            PASSED: config.approval.PASSED,
+            FAILED: config.approval.FAILED,
+          }, approvalOutcome);
 
-        console.log(`  approval: ${approvalOutcome} → ${nextStateId}`);
+          console.log(`  approval: ${approvalOutcome} → ${nextStateId}`);
+          this.context = addStateToHistory(this.context, nextStateId);
+          saveContext(this.cwd, this.context);
+          stateId = nextStateId;
+          continue;
+        }
+
+        // Route via `on:` or `transitions:`
+        const routing = config.on ?? config.transitions!;
+        const nextStateId = resolveNextState(stateId, routing, outcome);
+
+        console.log(`  → ${nextStateId}`);
         this.context = addStateToHistory(this.context, nextStateId);
         saveContext(this.cwd, this.context);
         stateId = nextStateId;
-        continue;
+      } catch (err) {
+        // Unhandled exception during state execution/routing — route to error state if configured
+        if (this.stateMachine.error) {
+          const errStateId = this.stateMachine.error;
+          const errDef = this.stateMachine.states[errStateId];
+          if (!errDef) {
+            throw new Error(`Engine encountered error and declared error state '${errStateId}' not found`);
+          }
+          // On entry: clear outputs and run notify for the error state (like normal entry)
+          const errConfig = errDef.config;
+          if (errConfig.reset_outputs?.length) {
+            clearAgentOutputs(this.cwd, errConfig.reset_outputs);
+          }
+          if (errConfig.notify) {
+            // best-effort notify before exiting
+            try { await runNotify(errConfig.notify, this.cwd); } catch {}
+          }
+
+          // Record error state and persist context, then stop (error state must be terminal)
+          this.context = addStateToHistory(this.context, errStateId);
+          saveContext(this.cwd, this.context);
+          console.log(`! Engine: unhandled error occurred — routed to error state: ${errStateId}`);
+          return;
+        }
+        // Re-throw if no error state configured
+        throw err;
       }
-
-      // Route via `on:` or `transitions:`
-      const routing = config.on ?? config.transitions!;
-      const nextStateId = resolveNextState(stateId, routing, outcome);
-
-      console.log(`  → ${nextStateId}`);
-      this.context = addStateToHistory(this.context, nextStateId);
-      saveContext(this.cwd, this.context);
-      stateId = nextStateId;
     }
   }
 }
-

@@ -126,6 +126,11 @@ export const WorkflowConfigSchema: ObjectSchema = {
     type: 'string',
     description: 'ID of the initial state'
   },
+  error: {
+    required: false,
+    type: 'string',
+    description: 'Optional ID of the error state to route to on unhandled exceptions'
+  },
   states: {
     required: true,
     type: 'record',
@@ -142,4 +147,3 @@ export const WorkflowConfigSchema: ObjectSchema = {
     description: 'Paths to sub-workflow files, relative to .raili/'
   }
 };
-

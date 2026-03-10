@@ -230,6 +230,18 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     }
   }
 
+  // If an 'error' state is declared, ensure it exists
+  if (config.error) {
+    if (!config.states || !(config.error in config.states)) {
+      throw new SchemaValidationError(`Error state '${config.error}' does not exist in states`);
+    }
+    // Ensure the error state is terminal: no on, no transitions, no approval
+    const errState = config.states[config.error];
+    if (errState.on || errState.transitions || errState.approval) {
+      throw new SchemaValidationError(`Error state '${config.error}' must be terminal and must not have 'on', 'transitions', or 'approval'`);
+    }
+  }
+
   // Validate each state in states
   if (config.states && typeof config.states === 'object') {
     for (const [stateId, stateConfig] of Object.entries(config.states)) {
@@ -250,4 +262,3 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
 
   return config as WorkflowConfig;
 }
-
