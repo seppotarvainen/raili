@@ -45,3 +45,13 @@ export function clearAgentOutputs(cwd: string, stateIds: string[]): void {
   }
 }
 
+/**
+ * Delete all output files by removing the entire .raili/outputs directory.
+ * Silent if the directory does not exist.
+ */
+export function clearAllOutputs(cwd: string): void {
+  const outputsDir = path.join(cwd, '.raili', OUTPUTS_DIR);
+  if (fs.existsSync(outputsDir)) {
+    fs.rmSync(outputsDir, { recursive: true, force: true });
+  }
+}

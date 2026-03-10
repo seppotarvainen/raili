@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { saveOutput, loadAgentOutputPath, clearAgentOutputs } from '../src/outputStore';
+import {saveOutput, loadAgentOutputPath, clearAgentOutputs, clearAllOutputs} from '../src/outputStore';
 
 let tmpdir: string;
 
@@ -69,3 +69,24 @@ test('clearAgentOutputs deletes multiple files', () => {
   expect(loadAgentOutputPath(tmpdir, 'code')).toBeNull();
   expect(loadAgentOutputPath(tmpdir, 'analyze')).toBeNull();
 });
+
+test('clearAllOutputs removes entire outputs directory', () => {
+  saveOutput(tmpdir, 'code', 'output 1');
+  saveOutput(tmpdir, 'analyze', 'output 2');
+  saveOutput(tmpdir, 'plan', 'output 3');
+
+  const outputsDir = path.join(tmpdir, '.raili', 'outputs');
+  expect(fs.existsSync(outputsDir)).toBe(true);
+
+  clearAllOutputs(tmpdir);
+
+  expect(fs.existsSync(outputsDir)).toBe(false);
+  expect(loadAgentOutputPath(tmpdir, 'code')).toBeNull();
+  expect(loadAgentOutputPath(tmpdir, 'analyze')).toBeNull();
+  expect(loadAgentOutputPath(tmpdir, 'plan')).toBeNull();
+});
+
+test('clearAllOutputs is silent when outputs directory does not exist', () => {
+  expect(() => clearAllOutputs(tmpdir)).not.toThrow();
+});
+

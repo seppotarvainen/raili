@@ -7,8 +7,11 @@ import {
   getCurrentState,
   getPreviousState,
   addStateToHistory,
-  initializeContext,
+  initializeContext, clearContext,
 } from '../src/context';
+import * as outputStore from '../src/outputStore';
+
+jest.mock('../src/outputStore');
 
 describe('context', () => {
   let tmpdir: string;
@@ -152,6 +155,43 @@ describe('context', () => {
       const ctx = initializeContext({});
       expect(ctx.vars).toEqual({});
       expect(ctx.stateHistory).toHaveLength(0);
+    });
+  });
+
+  describe('clearContext', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    test('deletes context.json', () => {
+      const contextPath = path.join(railiDir, 'context.json');
+      fs.writeFileSync(contextPath, JSON.stringify({ stateHistory: [] }));
+      expect(fs.existsSync(contextPath)).toBe(true);
+
+      clearContext(tmpdir);
+
+      expect(fs.existsSync(contextPath)).toBe(false);
+    });
+
+    test('calls clearAllOutputs', () => {
+      clearContext(tmpdir);
+      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir);
+    });
+
+    test('is silent if context.json does not exist', () => {
+      expect(() => clearContext(tmpdir)).not.toThrow();
+      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir);
+    });
+
+    test('clears both context.json and outputs when both exist', () => {
+      const contextPath = path.join(railiDir, 'context.json');
+      fs.writeFileSync(contextPath, JSON.stringify({ stateHistory: [] }));
+      expect(fs.existsSync(contextPath)).toBe(true);
+
+      clearContext(tmpdir);
+
+      expect(fs.existsSync(contextPath)).toBe(false);
+      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir);
     });
   });
 });

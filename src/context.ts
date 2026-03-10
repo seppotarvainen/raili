@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { WorkflowContext, StateHistoryEntry } from './types';
+import {clearAllOutputs} from "./outputStore";
 
 /**
  * Load workflow context from .raili/context.json
@@ -81,13 +82,14 @@ export function addStateToHistory(context: WorkflowContext, state: string): Work
 }
 
 /**
- * Clear the persisted context file (used for a clean run)
+ * Clear the persisted context file and all output files (used for a clean run)
  */
 export function clearContext(cwd: string): void {
   const contextPath = path.join(cwd, '.raili', 'context.json');
   if (fs.existsSync(contextPath)) {
     fs.unlinkSync(contextPath);
   }
+  clearAllOutputs(cwd);
 }
 
 /**
