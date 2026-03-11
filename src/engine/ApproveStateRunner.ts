@@ -1,10 +1,13 @@
 import { ApprovalConfig } from '../types';
 import { handleManualTransition } from '../handlers/manualHandler';
 import { runNotify } from '../handlers/notifyHandler';
+import { interpolateString } from '../variableInterpolation';
 import type { StateOutcome } from './Engine';
+import { WorkflowContext } from '../types';
 
 export interface ApprovalStepOptions {
   cwd: string;
+  context?: WorkflowContext;
 }
 
 /**
@@ -22,8 +25,12 @@ export async function runApprovalStep(
     await runNotify(approval.notify, options.cwd);
   }
 
+  // Interpolate the question with variables from context
+  const vars = options.context?.vars ?? {};
+  const interpolatedQuestion = interpolateString(approval.question, vars);
+
   const result = await handleManualTransition({
-    question: approval.question,
+    question: interpolatedQuestion,
     options: {
       PASSED: approval.PASSED,
       FAILED: approval.FAILED,

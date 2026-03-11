@@ -1,7 +1,8 @@
-import { StateDef } from '../types';
+import { StateDef, WorkflowContext } from '../types';
 import { AgentRegistry } from '../agentRegistry';
 import { executeAgent } from '../handlers/agentHandler';
 import { saveOutput, loadAgentOutputPath } from '../outputStore';
+import { interpolateString } from '../variableInterpolation';
 import type { StateOutcome } from './Engine';
 
 
@@ -9,14 +10,22 @@ import type { StateOutcome } from './Engine';
  * Runs an agent state and returns the outcome string.
  * - Loads previous output path and passes it to the agent via RAILI_AGENT_CONTEXT env var
  * - Stores output to .raili/outputs/<stateId>.md if store_output is true
+ * - Interpolates prompt with variables from vars
  * Note: reset_outputs is handled by the Engine on state entry, before this is called.
  */
-export async function runAgentState(state: StateDef, registry: AgentRegistry, cwd: string): Promise<StateOutcome> {
+export async function runAgentState(state: StateDef, registry: AgentRegistry, cwd: string, vars?: Record<string, string>): Promise<StateOutcome> {
   // Step 1: load previous output path for this state (may be null)
   const previousOutputPath = loadAgentOutputPath(cwd, state.id);
 
   const agentId = state.config.agent!;
-  const result = await executeAgent(registry, agentId, cwd, previousOutputPath, state.config.prompt);
+
+  // Interpolate the prompt with variables from vars
+  let interpolatedPrompt = state.config.prompt;
+  if (interpolatedPrompt && vars) {
+    interpolatedPrompt = interpolateString(interpolatedPrompt, vars);
+  }
+
+  const result = await executeAgent(registry, agentId, cwd, previousOutputPath, interpolatedPrompt);
 
   if (state.config.store_output) {
     const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');

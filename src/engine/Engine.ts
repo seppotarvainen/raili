@@ -107,7 +107,7 @@ export class Engine {
 
         // Execute the state handler
         if (config.type === 'agent') {
-          outcome = await runAgentState(stateDef, this.agentRegistry, this.cwd);
+          outcome = await runAgentState(stateDef, this.agentRegistry, this.cwd, this.context?.vars);
         } else if (config.type === 'script') {
           outcome = await runScriptState(stateDef, this.scriptRegistry, this.cwd);
         } else if (config.type === 'command') {
@@ -121,6 +121,7 @@ export class Engine {
         if (config.approval) {
           const approvalOutcome = await runApprovalStep(stateId, config.approval, {
             cwd: this.cwd,
+            context: this.context,
           });
           const nextStateId = resolveNextState(stateId, {
             PASSED: config.approval.PASSED,
