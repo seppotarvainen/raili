@@ -96,8 +96,30 @@ Runs a Copilot agent defined in `.github/agents/`. In case your agent is designe
 |---|---|---|---|
 | `agent` | string | ✅ | Agent ID as registered in `agent-registry.json` |
 | `model` | string | ❌ | Override the model for this invocation (e.g. `gpt-4o`, `claude-sonnet-4.6`) |
-| `prompt` | string | ❌ | Prompt sent to the agent. Defaults to `"Work according to your rules"`. You can reference vars here: `"Analyze ticket $RAILI_VAR_TICKET_ID"` |
+| `prompt` | string | ❌ | Prompt sent to the agent. Defaults to `"Work according to your rules"`. Supports variable interpolation with `${variable_name}` syntax for workflow inputs. Env vars like `$RAILI_VAR_TICKET_ID` also work here as shell variables |
 | `store_output` | boolean | ❌ | If `true`, appends agent output to `.raili/outputs/<stateId>.md` after each run. On the next run, only the **most recent** run is injected into the agent's prompt (full history is kept on disk for auditing) |
+
+**Variable interpolation in agent prompts:**
+
+Use `${variable_name}` to reference workflow inputs:
+
+```yaml
+analyze:
+  type: agent
+  agent: analyzer
+  prompt: "Analyze ticket ${ticket_id} (${branch}): ${description}"
+```
+
+Or use environment variables in a shell-expanded string:
+
+```yaml
+analyze:
+  type: agent
+  agent: analyzer
+  prompt: "Analyze ticket $RAILI_VAR_TICKET_ID from branch $RAILI_VAR_BRANCH"
+```
+
+Both approaches work — choose based on whether you're using YAML interpolation or shell variable expansion.
 
 > If you need routing, use `transitions:`, see above.
 
@@ -145,10 +167,30 @@ Added under a state's `approval:` key. Prompts the user in the terminal after th
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `question` | string | ✅ | The question shown to the user |
+| `question` | string | ✅ | The question shown to the user. Supports variable interpolation with `${variable_name}` syntax |
 | `PASSED` | string | ✅ | Next state if the user presses Enter (approves) |
 | `FAILED` | string | ✅ | Next state if the user types a reason (rejects) |
 | `notify` | string | ❌ | Shell command run after the handler finishes but **before** the prompt is shown — ideal for sending a Slack/email notification that approval is needed |
+
+**Variable interpolation in approval questions:**
+
+Use `${variable_name}` to reference workflow inputs in approval questions:
+
+```yaml
+review:
+  type: engine
+  approval:
+    question: |
+      Did you update ticket ${ticket_id}?
+      Title: ${title}
+      Description: ${description}
+      
+      Proceed with deployment?
+    PASSED: deploy
+    FAILED: edit
+```
+
+If a referenced variable is not defined, the workflow fails immediately with a clear error message.
 
 ---
 
@@ -205,7 +247,9 @@ inputs:
 
 **Using inputs in your workflow:**
 
-Because they are plain env vars, they work everywhere a shell is involved:
+Inputs can be used in two ways:
+
+1. **In shell contexts** (commands, notify handlers) — they are available as `$RAILI_VAR_*` environment variables:
 
 ```yaml
 # In a command
@@ -218,13 +262,34 @@ analyze:
   type: agent
   agent: analyzer
   notify: "viesti.sh 'Starting $RAILI_VAR_TICKET_ID'"
+```
 
-# In an agent prompt — the explicit way to give an agent context
+2. **In YAML text fields** (agent prompts, approval questions) — use `${variable_name}` syntax (lowercase, no prefix):
+
+```yaml
+# In an agent prompt
 analyze:
   type: agent
   agent: analyzer
-  prompt: "Analyze ticket $RAILI_VAR_TICKET_ID: $RAILI_VAR_DESCRIPTION"
+  prompt: "Analyze ticket ${ticket_id}: ${description}"
+
+# In an approval question
+review:
+  type: engine
+  approval:
+    question: |
+      Update ticket ${ticket_id} with title "${title}"?
+      Description: ${description}
+      
+      Approve?
+    PASSED: deploy
+    FAILED: edit
 ```
+
+**Variable interpolation:**
+- Use `${variable_name}` in approval questions and agent prompts (exact input name, lowercase)
+- Missing variables throw an error immediately (fail-fast)
+- Use `$$` to escape a literal dollar sign: `$$100` becomes `$100`
 
 Agents do **not** receive inputs automatically — you choose what to pass via the `prompt:` field. This keeps agent behaviour explicit and visible in the workflow.
 
@@ -295,7 +360,7 @@ states:
     type: agent
     agent: analyzer
     model: gpt-4o
-    prompt: "Analyze ticket $RAILI_VAR_TICKET_ID: $RAILI_VAR_DESCRIPTION"
+    prompt: "Analyze ticket ${ticket_id}: ${description}"
     store_output: true
     notify: "msg.sh 'Starting analysis...'"
     transitions:
