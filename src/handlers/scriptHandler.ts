@@ -15,7 +15,7 @@ export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: s
   }
 
   return new Promise((resolve) => {
-    const child = spawn('sh', [fullPath], { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(fullPath, [], { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
 
     let stdout = '';
     let stderr = '';
