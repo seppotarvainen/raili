@@ -1,7 +1,7 @@
 // Pure, deterministic help formatter for the Raili CLI.
 // Loads help topics from generated-docs.ts (built from documentation/ markdown files)
 
-import { HELP_TOPICS, AVAILABLE_TOPICS } from './generated-docs';
+import { HELP_TOPICS, USAGE_HELP, AVAILABLE_TOPICS, AVAILABLE_USAGE } from './generated-docs';
 
 export const GLOBAL_USAGE = "Usage: raili <command> [options]";
 
@@ -14,12 +14,18 @@ const COMMAND_HELP: Record<string, string> = {
 };
 
 export function formatHelp(command?: string, topic?: string): string {
-  // raili help <topic>
+  // raili help <topic> or <usage>
   if (!command && topic) {
+    // Check usage docs first
+    if (topic in USAGE_HELP) {
+      return USAGE_HELP[topic as keyof typeof USAGE_HELP];
+    }
+    // Then check feature topics
     if (topic in HELP_TOPICS) {
       return HELP_TOPICS[topic as keyof typeof HELP_TOPICS];
     }
-    return "Unknown topic: " + topic + "\n\nAvailable topics:\n" + AVAILABLE_TOPICS.join(", ");
+    const allTopics = [...AVAILABLE_USAGE, ...AVAILABLE_TOPICS];
+    return "Unknown topic: " + topic + "\n\nAvailable topics:\n" + allTopics.join(", ");
   }
 
   // raili help <command>
