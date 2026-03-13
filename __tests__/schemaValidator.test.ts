@@ -94,7 +94,7 @@ describe('SchemaValidator', () => {
         type: 'agent',
         agent: 'copilot',
         prompt: 'Analyze this',
-        store_output: true,
+        output: { store: true },
         notify: 'echo starting',
         max_visits: 5,
         reset_outputs: ['previous_state'],
@@ -324,14 +324,14 @@ describe('SchemaValidator', () => {
     });
 
     describe('Field type validation', () => {
-      it('should throw if store_output is not boolean', () => {
+      it('should throw if output is not an object', () => {
         const config = {
           type: 'agent',
           agent: 'copilot',
-          store_output: 'true' // string instead of boolean
+          output: 'true' // string instead of object
         };
         expect(() => validateStateConfig(config, 'test_state')).toThrow(
-          /field.*store_output.*expected boolean/i
+          /field.*output.*expected object/i
         );
       });
 
@@ -581,10 +581,10 @@ describe('SchemaValidator', () => {
               agent: 'copilot'
             }
           },
-          store_output_size: 100
+          invalid_field: 100
         });
       } catch (error) {
-        expect((error as SchemaValidationError).message).toContain('store_output_size');
+        expect((error as SchemaValidationError).message).toContain('invalid_field');
         expect((error as SchemaValidationError).message).toMatch(/unrecognized|unknown/i);
       }
     });

@@ -17,6 +17,30 @@ export interface ObjectSchema {
   [key: string]: FieldSchema;
 }
 
+// OutputConfig schema
+export const OutputConfigSchema: ObjectSchema = {
+  store: {
+    required: true,
+    type: 'boolean',
+    description: 'Save output to .raili/outputs/<stateId>.md'
+  },
+  tail: {
+    required: false,
+    type: 'number',
+    description: 'Keep only the last N lines of output'
+  },
+  include_search_pattern: {
+    required: false,
+    type: 'string',
+    description: 'Regex pattern to search for matching lines'
+  },
+  include_after: {
+    required: false,
+    type: 'number',
+    description: 'Include N lines after each matched line'
+  }
+};
+
 // ApprovalConfig schema
 export const ApprovalConfigSchema: ObjectSchema = {
   question: {
@@ -54,10 +78,10 @@ export const StateConfigSchema: ObjectSchema = {
     type: 'string',
     description: 'Optional shell command to run when this state is entered'
   },
-  store_output: {
+  output: {
     required: false,
-    type: 'boolean',
-    description: 'Save agent output to .raili/outputs/<stateId>.md'
+    type: 'object',
+    description: 'Structured output configuration (store, tail, filter patterns)'
   },
   reset_outputs: {
     required: false,

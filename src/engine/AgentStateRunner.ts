@@ -9,7 +9,7 @@ import type { StateOutcome } from './Engine';
 /**
  * Runs an agent state and returns the outcome string.
  * - Loads previous output path and passes it to the agent via RAILI_AGENT_CONTEXT env var
- * - Stores output to .raili/outputs/<stateId>.md if store_output is true
+ * - Stores output to .raili/outputs/<stateId>.md if output.store is true
  * - Interpolates prompt with variables from vars
  * Note: reset_outputs is handled by the Engine on state entry, before this is called.
  */
@@ -27,9 +27,10 @@ export async function runAgentState(state: StateDef, registry: AgentRegistry, cw
 
   const result = await executeAgent(registry, agentId, cwd, previousOutputPath, interpolatedPrompt);
 
-  if (state.config.store_output) {
+  // Store output if configured
+  if (state.config.output) {
     const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-    if (combined) saveOutput(cwd, state.id, combined);
+    if (combined) saveOutput(cwd, state.id, combined, state.config.output);
   }
 
   if (state.config.on) {

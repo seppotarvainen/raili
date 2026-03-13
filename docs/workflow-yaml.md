@@ -90,14 +90,14 @@ Every key under `states:` is a **state ID**. Each state has the following fields
 
 ### Type: `agent`
 
-Runs a Copilot agent defined in `.github/agents/`. In case your agent is designed to run in a loop, consider adding `max_visits` to prevent infinite loops and using `store_output` to maintain memory between runs.
+Runs a Copilot agent defined in `.github/agents/`. In case your agent is designed to run in a loop, consider adding `max_visits` to prevent infinite loops and using `output:` to maintain memory between runs.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `agent` | string | ✅ | Agent ID as registered in `agent-registry.json` |
 | `model` | string | ❌ | Override the model for this invocation (e.g. `gpt-4o`, `claude-sonnet-4.6`) |
 | `prompt` | string | ❌ | Prompt sent to the agent. Defaults to `"Work according to your rules"`. Supports variable interpolation with `${variable_name}` syntax for workflow inputs. Env vars like `$RAILI_VAR_TICKET_ID` also work here as shell variables |
-| `store_output` | boolean | ❌ | If `true`, appends agent output to `.raili/outputs/<stateId>.md` after each run. On the next run, only the **most recent** run is injected into the agent's prompt (full history is kept on disk for auditing) |
+| `output` | object | ❌ | Structured output configuration (store, tail, filter patterns). See [Output configuration](#output-configuration) for details |
 
 **Variable interpolation in agent prompts:**
 
@@ -153,6 +153,74 @@ No-op state — performs no side effects. Useful as a branch point, start state,
 ---
 
 ### Notifications
+
+| Field | Type | Description |
+|---|---|---|
+| `notify` | string | Shell command run when this state is **entered**, before anything else (including the handler). Works for all state types, including terminal states |
+| `reset_outputs` | string[] | List of state IDs whose saved output files (`.raili/outputs/<id>.md`) are deleted when this state is entered. Useful for clearing agent memory at the start of a new cycle. Works for all state types |
+| `output` | object | Structured output configuration. See [Output configuration](#output-configuration) for details |
+
+---
+
+## Output configuration
+
+The `output:` field lets you control what gets stored and how:
+
+```yaml
+output:
+  store: true                           # Enable output storage
+  tail: 100                            # Keep only the last 100 lines
+  include_search_pattern: ".*FAIL.*"   # Regex to match lines to include
+  include_after: 30                    # Include 30 lines after each match
+```
+
+**How filtering works:**
+
+1. **`include_search_pattern`** — if specified, only lines matching this regex are included. For each match, `include_after` additional lines are also included. This is useful for capturing error context without storing massive logs.
+2. **`tail`** — if specified, only the last N lines are kept. Applied after pattern matching.
+
+**Examples:**
+
+```yaml
+# Example 1: Test state — store only failing tests + context
+test:
+  type: script
+  script: npm-test
+  output:
+    store: true
+    include_search_pattern: "FAIL|ERROR"
+    include_after: 5
+
+# Example 2: Build state — keep last 100 lines to avoid bloating context
+build:
+  type: command
+  command: npm run build
+  output:
+    store: true
+    tail: 100
+
+# Example 3: Agent state — full output (backward compatible)
+analyze:
+  type: agent
+  agent: analyzer
+  output:
+    store: true
+```
+
+**Legacy syntax (still supported):**
+
+```yaml
+# Old syntax — full output stored
+analyze:
+  type: agent
+  agent: analyzer
+  output:
+    store: true  # Simple way to store all output
+```
+
+---
+
+## Notifications
 
 | Field | Type | Description |
 |---|---|---|
@@ -306,7 +374,8 @@ code:
   type: agent
   agent: coder
   max_visits: 5          # engine throws on the 6th entry
-  store_output: true
+  output:
+    store: true
   on:
     PASSED: test
     FAILED: code
@@ -321,9 +390,41 @@ code:
 
 ## Agent output memory
 
-When `store_output: true` is set on an agent state, Raili maintains a history file at `.raili/outputs/<stateId>.md`. The full history is **always appended** to that file (each run separated by a `--- Run <timestamp> ---` header), so you have a complete audit trail on disk.
+When `output: { store: true }` is set on an agent state, Raili maintains a history file at `.raili/outputs/<stateId>.md`. The full history is **always appended** to that file (each run separated by a `--- Run <timestamp> ---` header), so you have a complete audit trail on disk.
 
 However, only the **last run** is injected into the agent's prompt on the next invocation — not the full history. This keeps the prompt size bounded regardless of how many iterations have accumulated, avoiding context window exhaustion.
+
+**Context management strategies:**
+
+1. **Full output** — useful during active development:
+   ```yaml
+   code:
+     type: agent
+     agent: coder
+     output:
+       store: true  # Full output stored
+   ```
+
+2. **Filtered output** — keep only error/warning lines to avoid bloating the prompt:
+   ```yaml
+   test:
+     type: script
+     script: npm-test
+     output:
+       store: true
+       include_search_pattern: "FAIL|ERROR|PASSED"
+       include_after: 3  # Include 3 lines after each match
+   ```
+
+3. **Tail output** — keep only the last N lines:
+   ```yaml
+   build:
+     type: command
+     command: npm run build
+     output:
+       store: true
+       tail: 100  # Keep last 100 lines
+   ```
 
 To reset the memory at the start of a new work cycle, use `reset_outputs` on the state that begins the cycle:
 
@@ -361,7 +462,8 @@ states:
     agent: analyzer
     model: gpt-4o
     prompt: "Analyze ticket ${ticket_id}: ${description}"
-    store_output: true
+    output:
+      store: true
     notify: "msg.sh 'Starting analysis...'"
     transitions:
       ready_to_code: code
@@ -371,7 +473,8 @@ states:
   code:
     type: agent
     agent: coder
-    store_output: true
+    output:
+      store: true
     max_visits: 5
     on:
       PASSED: test

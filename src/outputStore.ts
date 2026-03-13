@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { OutputConfig } from './types';
 
 const OUTPUTS_DIR = 'outputs';
 
@@ -8,18 +9,74 @@ function outputPath(cwd: string, stateId: string): string {
 }
 
 /**
+ * Filter output based on OutputConfig settings.
+ * Applies in order: search pattern (with after lines), then tail.
+ */
+export function filterOutput(output: string, config: OutputConfig): string {
+  let result = output;
+
+  // Step 1: Apply include_search_pattern if specified
+  if (config.include_search_pattern) {
+    try {
+      const pattern = new RegExp(config.include_search_pattern);
+      const lines = result.split('\n');
+      const filtered: string[] = [];
+      const afterCount = config.include_after ?? 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (pattern.test(lines[i])) {
+          // Add matching line and the next 'afterCount' lines
+          filtered.push(lines[i]);
+          for (let j = 1; j <= afterCount && i + j < lines.length; j++) {
+            filtered.push(lines[i + j]);
+          }
+        }
+      }
+
+      // Only use filtered result if matches were found
+      if (filtered.length > 0) {
+        result = filtered.join('\n');
+      }
+    } catch (e) {
+      console.warn(`Invalid regex pattern in include_search_pattern: ${config.include_search_pattern}`);
+    }
+  }
+
+  // Step 2: Apply tail if specified
+  if (config.tail && config.tail > 0) {
+    const lines = result.split('\n');
+    if (lines.length > config.tail) {
+      result = lines.slice(-config.tail).join('\n');
+    }
+  }
+
+  return result;
+}
+
+/**
  * Append output for a state to .raili/outputs/<stateId>.md.
  * Each run is separated by a timestamped header so the full history is preserved.
  */
-export function saveOutput(cwd: string, stateId: string, output: string): void {
+export function saveOutput(cwd: string, stateId: string, output: string, outputConfig?: OutputConfig): void {
+  if (!outputConfig || !outputConfig.store) {
+    return;
+  }
+
+  // Filter output based on config
+  const filteredOutput = filterOutput(output, outputConfig);
+
+  if (!filteredOutput) {
+    return;
+  }
+
   const dir = path.join(cwd, '.raili', OUTPUTS_DIR);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
   const separator = `\n\n--- Run ${new Date().toISOString()} ---\n\n`;
   const entry = fs.existsSync(outputPath(cwd, stateId))
-    ? separator + output
-    : output;
+    ? separator + filteredOutput
+    : filteredOutput;
   fs.appendFileSync(outputPath(cwd, stateId), entry, 'utf8');
 }
 

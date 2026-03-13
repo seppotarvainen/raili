@@ -19,34 +19,37 @@ describe('runCommandState', () => {
     };
   }
 
-  describe('store_output', () => {
-    test('saves stdout when store_output is true', async () => {
+  describe('output', () => {
+    test('saves stdout when output store is true', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'test results', stderr: '' });
-      await runCommandState(makeState({ store_output: true, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
-      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test results');
+      const outputConfig = { store: true };
+      await runCommandState(makeState({ output: outputConfig, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
+      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test results', outputConfig);
     });
 
-    test('saves stderr when store_output is true and stderr has content', async () => {
+    test('saves stderr when output store is true and stderr has content', async () => {
       executeCommand.mockResolvedValue({ success: false, stdout: '', stderr: 'test summary' });
-      await runCommandState(makeState({ store_output: true, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
-      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test summary');
+      const outputConfig = { store: true };
+      await runCommandState(makeState({ output: outputConfig, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
+      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test summary', outputConfig);
     });
 
     test('saves combined stdout and stderr when both have content', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'stdout part', stderr: 'stderr part' });
-      await runCommandState(makeState({ store_output: true, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
+      const outputConfig = { store: true };
+      await runCommandState(makeState({ output: outputConfig, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
       const saved = mockSave.mock.calls[0][2];
       expect(saved).toContain('stdout part');
       expect(saved).toContain('stderr part');
     });
 
-    test('does not save when store_output is false', async () => {
+    test('does not save when output is omitted', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'test results', stderr: '' });
-      await runCommandState(makeState({ store_output: false, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
+      await runCommandState(makeState({ on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
       expect(mockSave).not.toHaveBeenCalled();
     });
 
-    test('does not save output when store_output is omitted', async () => {
+    test('does not save output when output config is omitted', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'test results', stderr: '' });
       await runCommandState(makeState({ on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
       expect(mockSave).not.toHaveBeenCalled();
@@ -54,7 +57,8 @@ describe('runCommandState', () => {
 
     test('does not save when both stdout and stderr are empty', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: '', stderr: '' });
-      await runCommandState(makeState({ store_output: true, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
+      const outputConfig = { store: true };
+      await runCommandState(makeState({ output: outputConfig, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
       expect(mockSave).not.toHaveBeenCalled();
     });
   });

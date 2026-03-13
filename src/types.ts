@@ -1,7 +1,16 @@
 // Shared types for workflow configuration and state machine
 
 // Workflow configuration loaded from workflow.yaml
+import {deprecate} from "node:util";
+
 export type StateType = 'agent' | 'script' | 'command' | 'engine';
+
+export interface OutputConfig {
+  store: boolean;                    // Save output to .raili/outputs/<stateId>.md
+  tail?: number;                     // Keep only the last N lines of output
+  include_search_pattern?: string;   // Regex pattern to search for matching lines
+  include_after?: number;            // Include N lines after each matched line
+}
 
 export interface ApprovalConfig {
   question: string;
@@ -13,7 +22,10 @@ export interface ApprovalConfig {
 export interface StateConfig {
   type: StateType;
   notify?: string;       // Optional shell command to run when this state is entered
-  store_output?: boolean;          // Save agent output to .raili/outputs/<stateId>.md
+export interface StateConfig {
+  type: StateType;
+  notify?: string;       // Optional shell command to run when this state is entered
+  output?: OutputConfig;           // Structured output configuration
   reset_outputs?: string[];        // Clear saved outputs for these state IDs on entry
   max_visits?: number;             // Throw if this state is entered more than N times
   agent?: string;        // For type: agent

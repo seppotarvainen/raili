@@ -15,15 +15,15 @@ afterEach(() => {
 });
 
 test('saveOutput creates outputs dir and writes file on first run', () => {
-  saveOutput(tmpdir, 'code', 'agent was here');
+  saveOutput(tmpdir, 'code', 'agent was here', { store: true });
   const p = path.join(tmpdir, '.raili', 'outputs', 'code.md');
   expect(fs.existsSync(p)).toBe(true);
   expect(fs.readFileSync(p, 'utf8')).toBe('agent was here');
 });
 
 test('saveOutput appends with separator on subsequent runs', () => {
-  saveOutput(tmpdir, 'code', 'first run');
-  saveOutput(tmpdir, 'code', 'second run');
+  saveOutput(tmpdir, 'code', 'first run', { store: true });
+  saveOutput(tmpdir, 'code', 'second run', { store: true });
   const content = fs.readFileSync(path.join(tmpdir, '.raili', 'outputs', 'code.md'), 'utf8');
   expect(content).toContain('first run');
   expect(content).toContain('second run');
@@ -31,16 +31,16 @@ test('saveOutput appends with separator on subsequent runs', () => {
 });
 
 test('saveOutput accumulates all runs in order', () => {
-  saveOutput(tmpdir, 'code', 'run one');
-  saveOutput(tmpdir, 'code', 'run two');
-  saveOutput(tmpdir, 'code', 'run three');
+  saveOutput(tmpdir, 'code', 'run one', { store: true });
+  saveOutput(tmpdir, 'code', 'run two', { store: true });
+  saveOutput(tmpdir, 'code', 'run three', { store: true });
   const content = fs.readFileSync(path.join(tmpdir, '.raili', 'outputs', 'code.md'), 'utf8');
   expect(content.indexOf('run one')).toBeLessThan(content.indexOf('run two'));
   expect(content.indexOf('run two')).toBeLessThan(content.indexOf('run three'));
 });
 
 test('loadAgentOutputPath returns path when file exists', () => {
-  saveOutput(tmpdir, 'code', 'previous output');
+  saveOutput(tmpdir, 'code', 'previous output', { store: true });
   const result = loadAgentOutputPath(tmpdir, 'code');
   expect(result).toBe(path.join(tmpdir, '.raili', 'outputs', 'code.md'));
 });
@@ -51,8 +51,8 @@ test('loadAgentOutputPath returns null when file does not exist', () => {
 });
 
 test('clearAgentOutputs deletes specified files', () => {
-  saveOutput(tmpdir, 'code', 'some output');
-  saveOutput(tmpdir, 'analyze', 'other output');
+  saveOutput(tmpdir, 'code', 'some output', { store: true });
+  saveOutput(tmpdir, 'analyze', 'other output', { store: true });
   clearAgentOutputs(tmpdir, ['code']);
   expect(loadAgentOutputPath(tmpdir, 'code')).toBeNull();
   expect(loadAgentOutputPath(tmpdir, 'analyze')).not.toBeNull();
@@ -63,17 +63,17 @@ test('clearAgentOutputs is silent when files do not exist', () => {
 });
 
 test('clearAgentOutputs deletes multiple files', () => {
-  saveOutput(tmpdir, 'code', 'c');
-  saveOutput(tmpdir, 'analyze', 'a');
+  saveOutput(tmpdir, 'code', 'c', { store: true });
+  saveOutput(tmpdir, 'analyze', 'a', { store: true });
   clearAgentOutputs(tmpdir, ['code', 'analyze']);
   expect(loadAgentOutputPath(tmpdir, 'code')).toBeNull();
   expect(loadAgentOutputPath(tmpdir, 'analyze')).toBeNull();
 });
 
 test('clearAllOutputs removes entire outputs directory', () => {
-  saveOutput(tmpdir, 'code', 'output 1');
-  saveOutput(tmpdir, 'analyze', 'output 2');
-  saveOutput(tmpdir, 'plan', 'output 3');
+  saveOutput(tmpdir, 'code', 'output 1', { store: true });
+  saveOutput(tmpdir, 'analyze', 'output 2', { store: true });
+  saveOutput(tmpdir, 'plan', 'output 3', { store: true });
 
   const outputsDir = path.join(tmpdir, '.raili', 'outputs');
   expect(fs.existsSync(outputsDir)).toBe(true);

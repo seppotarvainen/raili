@@ -44,24 +44,21 @@ test('forwards state prompt to executeAgent', async () => {
   expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null, 'Analyze $RAILI_VAR_TICKET_ID');
 });
 
-test('saves output when store_output is true', async () => {
-  await runAgentState(makeState({ store_output: true, on: { PASSED: 'done', FAILED: 'code' } }), registry, cwd);
-  expect(mockSave).toHaveBeenCalledWith(cwd, 'code', 'agent output');
+test('saves output when output config store is true', async () => {
+  const outputConfig = { store: true };
+  await runAgentState(makeState({ output: outputConfig, on: { PASSED: 'done', FAILED: 'code' } }), registry, cwd);
+  expect(mockSave).toHaveBeenCalledWith(cwd, 'code', 'agent output', outputConfig);
 });
 
-test('does not save output when store_output is false', async () => {
-  await runAgentState(makeState({ store_output: false, on: { PASSED: 'done', FAILED: 'code' } }), registry, cwd);
-  expect(mockSave).not.toHaveBeenCalled();
-});
-
-test('does not save output when store_output is omitted', async () => {
+test('does not save output when output config is omitted', async () => {
   await runAgentState(makeState(), registry, cwd);
   expect(mockSave).not.toHaveBeenCalled();
 });
 
 test('does not save output when agent produces no output', async () => {
   mockExecuteAgent.mockResolvedValue({ success: true, stdout: '', stderr: '' });
-  await runAgentState(makeState({ store_output: true, on: { PASSED: 'done', FAILED: 'code' } }), registry, cwd);
+  const outputConfig = { store: true };
+  await runAgentState(makeState({ output: outputConfig, on: { PASSED: 'done', FAILED: 'code' } }), registry, cwd);
   expect(mockSave).not.toHaveBeenCalled();
 });
 

@@ -7,7 +7,7 @@ import type { StateOutcome } from './Engine';
  * Runs an inline shell command defined in workflow.yaml and returns the outcome string.
  * - If state uses `on:`, exit code determines PASSED / FAILED.
  * - If state uses `transitions:`, last line of stdout is the outcome key.
- * - If store_output is true, appends output to .raili/outputs/<stateId>.md.
+ * - If output.store is true, appends output to .raili/outputs/<stateId>.md.
  *
  * `directory` is optional — defaults to cwd.
  */
@@ -17,9 +17,10 @@ export async function runCommandState(state: StateDef, cwd: string): Promise<Sta
 
   const result = await executeCommand(command, workdir);
 
-  if (state.config.store_output) {
+  // Store output if configured
+  if (state.config.output) {
     const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-    if (combined) saveOutput(cwd, state.id, combined);
+    if (combined) saveOutput(cwd, state.id, combined, state.config.output);
   }
 
   if (state.config.on) {
