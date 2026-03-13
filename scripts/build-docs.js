@@ -38,11 +38,8 @@ rootFiles.forEach(file => {
 
   const help = helpLines.join('\n').trim();
 
-  // Everything after the blockquote is docs content
-  const docsContent = lines
-    .slice(blockquoteEnd === -1 ? lines.length : blockquoteEnd)
-    .join('\n')
-    .trim();
+  // For docs: use the entire file content (title + help + rest)
+  const docsContent = lines.join('\n').trim();
 
   const topicKey = file.replace('.md', '');
   sections[topicKey] = {
@@ -81,11 +78,8 @@ if (fs.existsSync(usageDir)) {
 
     const help = helpLines.join('\n').trim();
 
-    // Everything after the blockquote is docs content
-    const docsContent = lines
-      .slice(blockquoteEnd === -1 ? lines.length : blockquoteEnd)
-      .join('\n')
-      .trim();
+    // For docs: use the entire file content (title + help + rest)
+    const docsContent = lines.join('\n').trim();
 
     const topicKey = file.replace('.md', '');
     usage[topicKey] = {
