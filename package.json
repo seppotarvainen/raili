@@ -11,7 +11,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "build": "tsc",
+    "build:docs": "node scripts/build-docs.js",
+    "build": "npm run build:docs && tsc && chmod +x dist/cli.js",
     "start": "node dist/cli.js",
     "test": "jest --runInBand",
     "lint": "echo 'no linter configured'",

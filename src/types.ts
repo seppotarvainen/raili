@@ -22,9 +22,6 @@ export interface ApprovalConfig {
 export interface StateConfig {
   type: StateType;
   notify?: string;       // Optional shell command to run when this state is entered
-export interface StateConfig {
-  type: StateType;
-  notify?: string;       // Optional shell command to run when this state is entered
   output?: OutputConfig;           // Structured output configuration
   reset_outputs?: string[];        // Clear saved outputs for these state IDs on entry
   max_visits?: number;             // Throw if this state is entered more than N times

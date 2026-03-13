@@ -1,46 +1,39 @@
 // Pure, deterministic help formatter for the Raili CLI.
-// No filesystem access, no side effects beyond formatting strings.
+// Loads help topics from generated-docs.ts (built from documentation/ markdown files)
 
-export const GLOBAL_USAGE = `Usage: raili <command>
+import { HELP_TOPICS, AVAILABLE_TOPICS } from './generated-docs';
 
-Commands:
-  init   Initialize a .raili/ directory with template files
-  run    Validate and execute the configured workflow
-
-Examples:
-  raili init
-  raili run
-  raili <command> --help
-`;
+export const GLOBAL_USAGE = "Usage: raili <command> [options]";
 
 const COMMAND_HELP: Record<string, string> = {
-  init: `Usage: raili init
-
-Initialize a new .raili/ directory with template files.
-
-Examples:
-  raili init
-`,
-
-  run: `Usage: raili run [--clean | --continue] [--var key=value ...]
-
-Validate and execute the configured workflow. Fails fast if .raili/ or registries are missing or malformed.
-
-Examples:
-  raili run
-  raili run --clean --var ticketId=123
-`,
+  init: "Usage: raili init\n\nInitialize a new .raili/ directory with template files.",
+  run: "Usage: raili run [--clean | --continue] [--var key=value ...]\n\nValidate and execute the configured workflow.",
+  help: "Usage: raili help [topic]\n\nShow help on general usage or a specific topic.",
+  docs: "Usage: raili docs [section]\n\nDisplay full workflow.yaml reference documentation.",
+  schema: "Usage: raili schema\n\nDisplay YAML workflow schema with all state fields and types.",
 };
 
-export function formatHelp(command?: string): string {
-  if (!command) return GLOBAL_USAGE.trim();
-  const txt = COMMAND_HELP[command];
-  if (txt) return txt.trim();
-  return (`Unknown command: ${command}\n\n${GLOBAL_USAGE}`).trim();
+export function formatHelp(command?: string, topic?: string): string {
+  // raili help <topic>
+  if (!command && topic) {
+    if (topic in HELP_TOPICS) {
+      return HELP_TOPICS[topic as keyof typeof HELP_TOPICS];
+    }
+    return "Unknown topic: " + topic + "\n\nAvailable topics:\n" + AVAILABLE_TOPICS.join(", ");
+  }
+
+  // raili help <command>
+  if (command && !topic) {
+    const txt = COMMAND_HELP[command];
+    if (txt) return txt.trim();
+    return ("Unknown command: " + command + "\n\n" + GLOBAL_USAGE).trim();
+  }
+
+  // raili help (no args)
+  return GLOBAL_USAGE.trim();
 }
 
-export function printHelp(command?: string): void {
-  // Keep printing deterministic and easy to mock in tests.
-  process.stdout.write(formatHelp(command) + '\n');
+export function printHelp(command?: string, topic?: string): void {
+  process.stdout.write(formatHelp(command, topic) + "\n");
 }
 

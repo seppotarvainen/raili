@@ -9,6 +9,8 @@ import { loadContext, getCurrentState } from './context';
 import { loadWorkflowConfig } from './workflowLoader';
 import colors from "colors/safe";
 import { printHelp } from './cli/help';
+import { printDocs } from './cli/docs';
+import { printSchema } from './cli/schema';
 
 const args = process.argv.slice(2);
 const cmd = args[0];
@@ -143,8 +145,26 @@ async function main() {
         : flagVars;
 
       await runCommand(process.cwd(), mode, vars);
+    } else if (cmd === 'help') {
+      // raili help [topic]
+      const topic = runArgs[0];
+      printHelp(undefined, topic);
+      process.exit(0);
+    } else if (cmd === 'docs') {
+      // raili docs [section]
+      const section = runArgs[0];
+      printDocs(section);
+      process.exit(0);
+    } else if (cmd === 'schema') {
+      // raili schema
+      printSchema();
+      process.exit(0);
+    } else if (!cmd) {
+      printHelp();
+      process.exit(0);
     } else {
-      console.error('Unknown command. Usage: raili init | raili run [--clean | --continue] [--var key=value ...]');
+      console.error(`Unknown command: ${cmd}\n`);
+      printHelp();
       process.exit(2);
     }
   } catch (err: any) {
