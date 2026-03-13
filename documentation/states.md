@@ -116,7 +116,7 @@ All states support:
 | command | on (binary) or transitions (named)     | 0 = PASSED, ≠0 = FAILED |
 | engine  | on, transitions, approval, or terminal | Always PASSED           |
 
-**Key rule:** Agents always exit 0 → use `transitions:` for routing.
+**Note:** Agents may use `on`, but agent handlers currently always return `PASSED`; for multi-outcome use `transitions`.
 
 ## Preventing Infinite Loops
 
