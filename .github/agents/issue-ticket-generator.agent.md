@@ -1,7 +1,7 @@
 ---
 description: This agent creates well-structured issue tickets for code changes, ensuring they include comprehensive context and clear acceptance criteria. It auto-generates sequential IDs, classifies the ticket type, and organizes information in a standardized format for easy implementation and tracking.
 name: issue-ticket-generator
-model: claude-haiku-4.5
+model: gpt-5-mini
 tools: ['read', 'search', 'edit']
 ---
 
