@@ -29,6 +29,17 @@ transitions:
   blocked: done
 ```
 
+A reserved `default` key may be provided as a catch-all mapping that will be used when the state's reported outcome does
+not match any explicit key. When `default` is present the engine routes to that state; when absent an unmapped outcome
+throws an error (fail-fast).
+
+```yaml
+transitions:
+  approve: merge_state
+  reject: fix_state
+  default: done   # catch-all for unknown outcomes
+```
+
 **Use for:** agent, script, command states
 
 **MUST use for agents** — this is the correct routing mechanism.

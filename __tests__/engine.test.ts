@@ -200,3 +200,34 @@ test('max_visits counter resets independently per state', async () => {
   expect(mockRunCommand).toHaveBeenCalledTimes(3);
 });
 
+test('uses default transition for agent state with unexpected outcome', async () => {
+  (mockRunAgent as jest.Mock).mockResolvedValue('UNKNOWN_OUTCOME');
+  const ctx = require('../src/context');
+  const engine = makeEngine({
+    start: { id: 'start', config: { type: 'agent', agent: 'a', transitions: { OK: 'ok', default: 'fallback' } }, transitions: ['ok', 'fallback'] },
+    fallback: { id: 'fallback', config: { type: 'engine' }, transitions: [] },
+  });
+  await engine.run();
+  expect(ctx.addStateToHistory.mock.calls.some((c: any) => c[1] === 'fallback')).toBe(true);
+});
+
+test('uses default transition for script/command state with unexpected outcome', async () => {
+  (mockRunScript as jest.Mock).mockResolvedValue('WEIRD');
+  const ctx = require('../src/context');
+  const engine = makeEngine({
+    start: { id: 'start', config: { type: 'script', script: 's', transitions: { PASSED: 'ok', default: 'rework' } }, transitions: ['ok', 'rework'] },
+    rework: { id: 'rework', config: { type: 'engine' }, transitions: [] },
+  });
+  await engine.run();
+  expect(ctx.addStateToHistory.mock.calls.some((c: any) => c[1] === 'rework')).toBe(true);
+});
+
+test('throws when outcome not mapped and no default provided', async () => {
+  (mockRunCommand as jest.Mock).mockResolvedValue('STRANGE');
+  const engine = makeEngine({
+    start: { id: 'start', config: { type: 'command', command: 'echo hi', transitions: { PASSED: 'done' } }, transitions: ['done'] },
+    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+  });
+  await expect(engine.run()).rejects.toThrow("has no matching transition");
+});
+

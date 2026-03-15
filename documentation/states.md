@@ -18,6 +18,7 @@ analyze:
   transitions:
     ready: code
     blocked: done
+    default: done  # optional catch-all mapping
 ```
 
 **Fields:**

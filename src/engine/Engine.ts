@@ -8,6 +8,7 @@ import { runCommandState } from './CommandStateRunner';
 import { runApprovalStep } from './ApproveStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
 import { clearAgentOutputs } from '../outputStore';
+import { resolveTransition } from '../transition';
 import colors from 'colors/safe';
 
 /** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */
@@ -23,10 +24,10 @@ export interface EngineConfig {
 
 /**
  * Resolves the next state from a state's routing config and an outcome key.
- * Throws immediately if outcome is not mapped (fail-fast).
+ * Throws immediately if outcome is not mapped (fail-fast). Supports reserved `default` key.
  */
 function resolveNextState(stateId: string, routing: Record<string, string>, outcome: string): string {
-  const next = routing[outcome];
+  const next = resolveTransition(routing, outcome);
   if (!next) {
     throw new Error(
       `State '${stateId}': outcome '${outcome}' has no matching transition (defined: ${Object.keys(routing).join(', ')})`
