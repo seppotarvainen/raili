@@ -136,5 +136,14 @@ step2_review:
     question: "Pass step 2?"
     PASSED: complete
     FAILED: rework
+
+## Approval reason persistence
+
+When a user declines an approval and supplies a typed reason, Raili persists that reason in two places in the workflow context:
+
+- `context.approvals`: a dedicated map keyed by `<STATE>_<OUTCOME>` (uppercased) containing the reason text. Example: `"REVIEW_FAILED": "Needs changes"
+- `context.vars`: the same key/value is mirrored into the vars map so existing notify/command logic can access the reason via the environment variable mapping (e.g. `$RAILI_VAR_REVIEW_FAILED`).
+
+Only non-empty typed reasons are persisted. PASSED approvals do not create empty entries. This keeps approval metadata separate from declared inputs while preserving env-compatible access for shell hooks.
 ```
 

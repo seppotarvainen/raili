@@ -32,6 +32,10 @@ export function loadContext(cwd: string): WorkflowContext {
     meta: e.meta ?? undefined,
   }));
 
+  // Backwards-compatible: ensure vars and approvals maps exist
+  parsed.vars = parsed.vars ?? {};
+  parsed.approvals = parsed.approvals ?? {};
+
   return parsed as WorkflowContext;
 }
 
@@ -135,6 +139,7 @@ export function clearContext(cwd: string): void {
 export function initializeContext(vars: Record<string, string>): WorkflowContext {
   return {
     vars,
+    approvals: {},
     stateHistory: [],
   };
 }
