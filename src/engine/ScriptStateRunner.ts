@@ -4,6 +4,7 @@ import { executeScript } from '../handlers/scriptHandler';
 import { saveOutput } from '../outputStore';
 import type { StateResult } from './Engine';
 import { IStateRunner } from './StateRunner';
+import { parseExports } from '../variableExports';
 
 /**
  * ScriptStateRunner - class-based implementation conforming to IStateRunner.
@@ -32,15 +33,12 @@ export class ScriptStateRunner implements IStateRunner {
       if (combined) saveOutput(cwd, state.id, combined, state.config.output);
     }
 
-    // Parse exposes if configured
+    // Parse exposes if configured (supports `name=value`, `export name=value`, case-insensitive key, and quoted values)
     const exports: Record<string,string> = {};
     if (state.config.expose && state.config.expose.length) {
-      for (const name of state.config.expose) {
-        const re = new RegExp(`^${name}=(.*)$`, 'm');
-        const m = result.stdout.match(re);
-        if (m && m[1] !== undefined) {
-          exports[name] = m[1];
-        }
+      const parsed = parseExports(result.stdout, state.config.expose);
+      for (const [k,v] of Object.entries(parsed)) {
+        exports[k] = v;
       }
     }
 
