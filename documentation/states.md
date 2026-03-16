@@ -19,6 +19,9 @@ analyze:
     ready: code
     blocked: done
     default: done  # optional catch-all mapping
+
+    # Note: if the state outputs a key not explicitly listed above, the engine will attempt to resolve it;
+    # if transitions.default is present it will be used as a catch-all. If default is absent the engine fails fast.
 ```
 
 **Fields:**

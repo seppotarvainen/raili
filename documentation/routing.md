@@ -29,9 +29,9 @@ transitions:
   blocked: done
 ```
 
-A reserved `default` key may be provided as a catch-all mapping that will be used when the state's reported outcome does
-not match any explicit key. When `default` is present the engine routes to that state; when absent an unmapped outcome
-throws an error (fail-fast).
+A reserved `default` key may be provided as a catch-all mapping that will be used when the state's reported outcome does not match any explicit key. When `default` is present the engine routes to that state; when absent an unmapped outcome throws an error (fail-fast).
+
+Note: state runners (agent/script/command) return only their reported outcome key — they must not attempt to resolve routing. The Engine (thin core) is responsible for mapping outcome keys to states and will apply `transitions.default` as a catch-all when present. This keeps routing centralized and deterministic.
 
 ```yaml
 transitions:
