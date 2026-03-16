@@ -8,14 +8,14 @@ import { Engine } from './engine/Engine';
 
 export type RunMode = 'continue' | 'clean';
 
-export async function runCommand(cwd: string, mode: RunMode = 'continue', vars: Record<string, string> = {}) {
+export async function runCommand(cwd: string, mode: RunMode = 'continue', vars: Record<string, string> = {}, workflowPath?: string) {
   const railiDir = path.join(cwd, '.raili');
   if (!fs.existsSync(railiDir) || !fs.statSync(railiDir).isDirectory()) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');
   }
 
-  // Load workflow configuration from YAML
-  const workflowConfig = loadWorkflowConfig(cwd);
+  // Load workflow configuration from YAML (allow override via --workflow flag)
+  const workflowConfig = loadWorkflowConfig(cwd, workflowPath);
 
   // Build state machine from workflow config
   const stateMachine = buildStateMachine(workflowConfig);

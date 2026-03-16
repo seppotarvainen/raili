@@ -139,12 +139,15 @@ async function main() {
       }
 
       const flagVars = parseVarFlags();
+      const workflowFlagIndex = runArgs.indexOf('--workflow');
+      const workflowPath = (workflowFlagIndex !== -1 && runArgs[workflowFlagIndex + 1]) ? runArgs[workflowFlagIndex + 1] : undefined;
+
       // Only prompt for missing vars on a clean run — continue reuses context.json
       const vars = mode === 'clean'
         ? await collectVars(process.cwd(), flagVars)
         : flagVars;
 
-      await runCommand(process.cwd(), mode, vars);
+      await runCommand(process.cwd(), mode, vars, workflowPath);
     } else if (cmd === 'help') {
       // raili help [topic]
       const topic = runArgs[0];

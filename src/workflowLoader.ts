@@ -35,11 +35,31 @@ function loadYamlFile(filePath: string, isSubWorkflow: boolean): any {
  * Load and parse workflow.yaml from .raili/ directory.
  * Merges any sub-workflow files listed under 'include:'.
  */
-export function loadWorkflowConfig(cwd: string): WorkflowConfig {
+export function loadWorkflowConfig(cwd: string, workflowPath?: string): WorkflowConfig {
   const railiDir = path.join(cwd, '.raili');
-  const workflowPath = path.join(railiDir, 'workflow.yaml');
+  let resolvedPath: string;
 
-  const main = loadYamlFile(workflowPath, false);
+  if (!workflowPath) {
+    resolvedPath = path.join(railiDir, 'workflow.yaml');
+  } else {
+    // If absolute path provided, use it
+    if (path.isAbsolute(workflowPath)) {
+      resolvedPath = workflowPath;
+    } else if (workflowPath.includes(path.sep) || workflowPath.startsWith('./') || workflowPath.startsWith('../')) {
+      // If it looks like a relative path or contains directories, resolve relative to cwd
+      resolvedPath = path.resolve(cwd, workflowPath);
+    } else {
+      // If a bare filename is provided, prefer .raili/<name> if it exists, otherwise cwd/<name>
+      const candidate = path.join(railiDir, workflowPath);
+      if (fs.existsSync(candidate)) {
+        resolvedPath = candidate;
+      } else {
+        resolvedPath = path.resolve(cwd, workflowPath);
+      }
+    }
+  }
+
+  const main = loadYamlFile(resolvedPath, false);
 
   if (!main.initial || typeof main.initial !== 'string') {
     throw new Error('workflow.yaml must define "initial" state');
