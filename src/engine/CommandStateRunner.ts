@@ -1,21 +1,24 @@
 import { StateDef } from '../types';
 import { executeCommand } from '../handlers/commandHandler';
 import { saveOutput } from '../outputStore';
-import type { StateOutcome } from './Engine';
+import type { StateResult } from './Engine';
 
 /**
- * Runs an inline shell command defined in workflow.yaml and returns the outcome string.
- * - If state uses `on:`, exit code determines PASSED / FAILED.
- * - If state uses `transitions:`, last line of stdout is the outcome key.
- * - If output.store is true, appends output to .raili/outputs/<stateId>.md.
- *
- * `directory` is optional — defaults to cwd.
+ * Runs an inline shell command defined in workflow.yaml and returns the outcome and exported vars.
  */
-export async function runCommandState(state: StateDef, cwd: string): Promise<StateOutcome> {
+export async function runCommandState(state: StateDef, cwd: string, vars?: Record<string,string>): Promise<StateResult> {
   const command = state.config.command!;
   const workdir = state.config.directory ?? cwd;
 
-  const result = await executeCommand(command, workdir);
+  // Prepare env overrides from current vars
+  const envOverrides: Record<string,string> = {};
+  if (vars) {
+    for (const [k,v] of Object.entries(vars)) {
+      envOverrides[`RAILI_VAR_${k.toUpperCase()}`] = v;
+    }
+  }
+
+  const result = await executeCommand(command, workdir, envOverrides);
 
   // Store output if configured
   if (state.config.output) {
@@ -23,19 +26,32 @@ export async function runCommandState(state: StateDef, cwd: string): Promise<Sta
     if (combined) saveOutput(cwd, state.id, combined, state.config.output);
   }
 
-  if (state.config.on) {
-    return result.success ? 'PASSED' : 'FAILED';
+  // Parse exposes if configured
+  const exports: Record<string,string> = {};
+  if (state.config.expose && state.config.expose.length) {
+    for (const name of state.config.expose) {
+      const re = new RegExp(`^${name}=(.*)$`, 'm');
+      const m = result.stdout.match(re);
+      if (m && m[1] !== undefined) {
+        exports[name] = m[1];
+      }
+    }
   }
 
-  if (state.config.transitions) {
+  let outcome: string;
+  if (state.config.on) {
+    outcome = result.success ? 'PASSED' : 'FAILED';
+  } else if (state.config.transitions) {
     const lastLine = result.stdout.trimEnd().split('\n').pop()?.trim() ?? '';
     if (!lastLine) {
       throw new Error(
         `State '${state.id}': command produced no output — expected a transition key as last stdout line`
       );
     }
-    return lastLine;
+    outcome = lastLine;
+  } else {
+    outcome = result.success ? 'PASSED' : 'FAILED';
   }
 
-  return result.success ? 'PASSED' : 'FAILED';
+  return { outcome, exports };
 }

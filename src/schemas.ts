@@ -123,6 +123,12 @@ export const StateConfigSchema: ObjectSchema = {
     description: 'Working directory for command execution',
     validForTypes: ['command']
   },
+  expose: {
+    required: false,
+    type: 'array',
+    description: "List of variable names to extract from stdout and expose as RAILI_VAR_<UPPERCASE>",
+    validForTypes: ['script', 'command']
+  },
   prompt: {
     required: false,
     type: 'string',

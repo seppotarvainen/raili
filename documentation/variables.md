@@ -94,6 +94,57 @@ run_tests_with_ticket:
     FAILED: rework
 ```
 
+### Exposing variables from scripts/commands
+
+Script and command states can explicitly expose values produced during execution back into the workflow as variables. Declare `expose: [name1, name2]` on a `script` or `command` state; after the state completes the engine will extract `name=value` lines from stdout and set `RAILI_VAR_<UPPERCASE>` for subsequent states.
+
+Example:
+
+```yaml
+produce_id:
+  type: script
+  script: gen_id
+  expose: [id]
+  on:
+    PASSED: use_id
+
+use_id:
+  type: command
+  command: "echo \"Using id $RAILI_VAR_ID\""
+  on:
+    PASSED: done
+```
+
+The engine validates that every declared `expose` name is produced (non-empty) and throws immediately if any are missing (fail-fast).
+
+## Environment Variable Mapping
+
+Variables are exported as `$RAILI_VAR_<UPPERCASE>` for shell contexts (commands, notify handlers):
+
+```yaml
+notify_start:
+  type: command
+  notify: "msg.sh 'Starting work on $RAILI_VAR_TICKET_ID'"
+
+deploy:
+  type: command
+  command: "deploy.sh $RAILI_VAR_TICKET_ID --branch $RAILI_VAR_BRANCH"
+```
+
+Scripts invoked via `script` states may also accept positional `args:` declared in the workflow. These args are forwarded to the script as-is; use `$RAILI_VAR_<UPPERCASE>` inside the script invocation if you want to include declared variables.
+
+```yaml
+run_tests_with_ticket:
+  type: script
+  script: run_tests
+  args:
+    - "$RAILI_VAR_TICKET_ID"
+    - "--report"
+  on:
+    PASSED: success
+    FAILED: rework
+```
+
 ## Environment Variable Mapping
 
 | Declared input | Env var                  | YAML reference   |

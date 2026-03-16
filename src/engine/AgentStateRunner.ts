@@ -3,7 +3,7 @@ import { AgentRegistry } from '../agentRegistry';
 import { executeAgent } from '../handlers/agentHandler';
 import { saveOutput, loadAgentOutputPath } from '../outputStore';
 import { interpolateString } from '../variableInterpolation';
-import type { StateOutcome } from './Engine';
+import type { StateResult } from './Engine';
 
 
 /**
@@ -13,7 +13,7 @@ import type { StateOutcome } from './Engine';
  * - Interpolates prompt with variables from vars
  * Note: reset_outputs is handled by the Engine on state entry, before this is called.
  */
-export async function runAgentState(state: StateDef, registry: AgentRegistry, cwd: string, vars?: Record<string, string>): Promise<StateOutcome> {
+export async function runAgentState(state: StateDef, registry: AgentRegistry, cwd: string, vars?: Record<string, string>): Promise<StateResult> {
   // Step 1: load previous output path for this state (may be null)
   const previousOutputPath = loadAgentOutputPath(cwd, state.id);
 
@@ -34,7 +34,7 @@ export async function runAgentState(state: StateDef, registry: AgentRegistry, cw
   }
 
   if (state.config.on) {
-    return result.success ? 'PASSED' : 'FAILED';
+    return { outcome: result.success ? 'PASSED' : 'FAILED' };
   }
 
   if (state.config.transitions) {
@@ -44,8 +44,8 @@ export async function runAgentState(state: StateDef, registry: AgentRegistry, cw
         `State '${state.id}': agent produced no output — expected a transition key as last stdout line`
       );
     }
-    return lastLine;
+    return { outcome: lastLine };
   }
 
-  return result.success ? 'PASSED' : 'FAILED';
+  return { outcome: result.success ? 'PASSED' : 'FAILED' };
 }
