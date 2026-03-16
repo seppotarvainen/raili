@@ -12,7 +12,8 @@ import type { StateOutcome } from './Engine';
  */
 export async function runScriptState(state: StateDef, registry: ScriptRegistry, cwd: string): Promise<StateOutcome> {
   const scriptId = state.config.script!;
-  const result = await executeScript(registry, scriptId, cwd);
+  const args = state.config.args ?? [];
+  const result = await executeScript(registry, scriptId, cwd, args);
 
   // Store output if configured
   if (state.config.output) {

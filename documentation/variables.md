@@ -80,6 +80,20 @@ deploy:
   command: "deploy.sh $RAILI_VAR_TICKET_ID --branch $RAILI_VAR_BRANCH"
 ```
 
+Scripts invoked via `script` states may also accept positional `args:` declared in the workflow. These args are forwarded to the script as-is; use `$RAILI_VAR_<UPPERCASE>` inside the script invocation if you want to include declared variables.
+
+```yaml
+run_tests_with_ticket:
+  type: script
+  script: run_tests
+  args:
+    - "$RAILI_VAR_TICKET_ID"
+    - "--report"
+  on:
+    PASSED: success
+    FAILED: rework
+```
+
 ## Environment Variable Mapping
 
 | Declared input | Env var                  | YAML reference   |

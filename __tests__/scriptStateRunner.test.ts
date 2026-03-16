@@ -73,3 +73,12 @@ describe('on: routing', () => {
   });
 });
 
+describe('args forwarding', () => {
+  test('forwards args from state.config to executeScript', async () => {
+    const state = makeState({ args: ['one', 'two'] });
+    const registry = {};
+    await runScriptState(state, registry, '/cwd');
+    expect(executeScript).toHaveBeenCalledWith(registry, 'hello', '/cwd', ['one', 'two']);
+  });
+});
+

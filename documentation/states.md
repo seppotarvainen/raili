@@ -48,9 +48,24 @@ test:
     FAILED: rework
 ```
 
+You may also pass an ordered list of arguments to the script using `args:`. These are forwarded as-is to the spawned process and are the script's responsibility to interpret.
+
+```yaml
+my_script_state:
+  type: script
+  script: run_tests
+  args:
+    - 'This is the first argument'
+    - '--verbose'
+  on:
+    PASSED: success
+    FAILED: rework
+```
+
 **Fields:**
 
 - `script` (required) — Script ID from script-registry.json
+- `args` (optional) — Ordered list of strings forwarded to the script process
 
 **Routing:** Use `on:` (binary) or `transitions:` (named).
 
