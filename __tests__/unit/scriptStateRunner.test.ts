@@ -64,12 +64,12 @@ describe('output', () => {
 
 describe('on: routing', () => {
   test('returns PASSED on success', async () => {
-    expect(await runScriptState(makeState(), {}, '/cwd')).toBe('PASSED');
+    expect((await runScriptState(makeState(), {}, '/cwd')).outcome).toBe('PASSED');
   });
 
   test('returns FAILED on failure', async () => {
     executeScript.mockResolvedValue({ success: false, stdout: '', stderr: 'error' });
-    expect(await runScriptState(makeState(), {}, '/cwd')).toBe('FAILED');
+    expect((await runScriptState(makeState(), {}, '/cwd')).outcome).toBe('FAILED');
   });
 });
 
@@ -78,7 +78,7 @@ describe('args forwarding', () => {
     const state = makeState({ args: ['one', 'two'] });
     const registry = {};
     await runScriptState(state, registry, '/cwd');
-    expect(executeScript).toHaveBeenCalledWith(registry, 'hello', '/cwd', ['one', 'two']);
+    expect(executeScript).toHaveBeenCalledWith(registry, 'hello', '/cwd', ['one', 'two'], {});
   });
 });
 

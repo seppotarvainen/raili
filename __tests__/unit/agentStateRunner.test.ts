@@ -63,13 +63,13 @@ test('does not save output when agent produces no output', async () => {
 });
 
 test('returns PASSED on success with on: block', async () => {
-  const outcome = await runAgentState(makeState(), registry, cwd);
-  expect(outcome).toBe('PASSED');
+  const result = await runAgentState(makeState(), registry, cwd);
+  expect(result.outcome).toBe('PASSED');
 });
 
 test('returns FAILED on failure with on: block', async () => {
   mockExecuteAgent.mockResolvedValue({ success: false, stdout: '', stderr: 'error' });
-  const outcome = await runAgentState(makeState(), registry, cwd);
-  expect(outcome).toBe('FAILED');
+  const result = await runAgentState(makeState(), registry, cwd);
+  expect(result.outcome).toBe('FAILED');
 });
 

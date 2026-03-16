@@ -6,12 +6,26 @@ import { Engine } from '../../src/engine/Engine';
 jest.mock('../../src/handlers/commandHandler');
 jest.mock('../../src/handlers/scriptHandler');
 
+// Prevent the Engine (and any other caller of saveContext / addStateToHistory)
+// from writing real files to the project root or any disk location.
+jest.mock('../../src/context', () => ({
+  getCurrentState: jest.fn().mockReturnValue(null),
+  addStateToHistory: jest.fn((ctx: any) => ctx),
+  saveContext: jest.fn(),
+}));
+
 const { executeCommand } = require('../../src/handlers/commandHandler');
 const { executeScript } = require('../../src/handlers/scriptHandler');
 
 describe('expose variables feature', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    // jest.resetAllMocks() clears implementations set in jest.mock() factories too.
+    // Re-initialise the context mocks so addStateToHistory returns a valid context
+    // (otherwise this.context becomes undefined inside Engine.run and crashes).
+    const ctxMock = require('../../src/context');
+    (ctxMock.getCurrentState as jest.Mock).mockReturnValue(null);
+    (ctxMock.addStateToHistory as jest.Mock).mockImplementation((ctx: any) => ctx);
   });
 
   test('runCommandState extracts exposed variable from stdout', async () => {
@@ -26,7 +40,7 @@ describe('expose variables feature', () => {
       }
     } as any;
 
-    const res = await runCommandState(state, process.cwd(), {});
+    const res = await runCommandState(state, '/tmp', {});
     expect(res.exports).toBeDefined();
     expect(res.exports!['id']).toBe('123');
     expect(res.outcome).toBe('PASSED');
@@ -44,7 +58,7 @@ describe('expose variables feature', () => {
       }
     } as any;
 
-    const res = await runScriptState(state, {}, process.cwd(), {} as any);
+    const res = await runScriptState(state, {}, '/tmp', {} as any);
     expect(res.exports).toBeDefined();
     expect(res.exports!['token']).toBe('abc');
   });
@@ -72,7 +86,7 @@ describe('expose variables feature', () => {
       }
     } as any;
 
-    const engine = new Engine({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: process.cwd() });
+    const engine = new Engine({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: '/tmp' });
 
     await expect(engine.run()).rejects.toThrow(/exposed variable 'id'/);
 

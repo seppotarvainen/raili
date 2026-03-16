@@ -67,13 +67,13 @@ describe('runCommandState', () => {
     test('returns PASSED when success is true', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: '', stderr: '' });
       const state = makeState({ on: { PASSED: 'next', FAILED: 'retry' } });
-      expect(await runCommandState(state, '/cwd')).toBe('PASSED');
+      expect((await runCommandState(state, '/cwd')).outcome).toBe('PASSED');
     });
 
     test('returns FAILED when success is false', async () => {
       executeCommand.mockResolvedValue({ success: false, stdout: '', stderr: '' });
       const state = makeState({ on: { PASSED: 'next', FAILED: 'retry' } });
-      expect(await runCommandState(state, '/cwd')).toBe('FAILED');
+      expect((await runCommandState(state, '/cwd')).outcome).toBe('FAILED');
     });
   });
 
@@ -81,13 +81,13 @@ describe('runCommandState', () => {
     test('returns matching transition key from last stdout line', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'some output\ncommit_required\n', stderr: '' });
       const state = makeState({ transitions: { commit_required: 'commit', ready_for_archive: 'archive' } });
-      expect(await runCommandState(state, '/cwd')).toBe('commit_required');
+      expect((await runCommandState(state, '/cwd')).outcome).toBe('commit_required');
     });
 
     test('returns unknown transition key when last stdout line does not match any transition key (engine will apply default)', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'unknown_key\n', stderr: '' });
       const state = makeState({ transitions: { commit_required: 'commit', default: 'done' } });
-      expect(await runCommandState(state, '/cwd')).toBe('unknown_key');
+      expect((await runCommandState(state, '/cwd')).outcome).toBe('unknown_key');
     });
 
     test('throws if stdout is empty', async () => {
@@ -102,21 +102,21 @@ describe('runCommandState', () => {
       executeCommand.mockResolvedValue({ success: true, stdout: '', stderr: '' });
       const state = makeState({ on: { PASSED: 'next', FAILED: 'retry' } });
       await runCommandState(state, '/cwd');
-      expect(executeCommand).toHaveBeenCalledWith('echo hello', '/cwd');
+      expect(executeCommand).toHaveBeenCalledWith('echo hello', '/cwd', {});
     });
 
     test('uses directory override when specified', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: '', stderr: '' });
       const state = makeState({ directory: '/custom/dir', on: { PASSED: 'next', FAILED: 'retry' } });
       await runCommandState(state, '/cwd');
-      expect(executeCommand).toHaveBeenCalledWith('echo hello', '/custom/dir');
+      expect(executeCommand).toHaveBeenCalledWith('echo hello', '/custom/dir', {});
     });
 
     test('falls back to cwd when directory is not specified', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: '', stderr: '' });
       const state = makeState({ on: { PASSED: 'next', FAILED: 'retry' } });
       await runCommandState(state, '/fallback');
-      expect(executeCommand).toHaveBeenCalledWith('echo hello', '/fallback');
+      expect(executeCommand).toHaveBeenCalledWith('echo hello', '/fallback', {});
     });
   });
 });

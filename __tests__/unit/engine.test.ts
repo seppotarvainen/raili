@@ -37,9 +37,9 @@ function makeEngine(states: StateMachine['states'], initial = 'start'): Engine {
 beforeEach(() => {
   jest.resetAllMocks();
   (notifyHandler.runNotify as jest.Mock).mockResolvedValue(undefined);
-  mockRunAgent.mockResolvedValue('PASSED');
-  mockRunScript.mockResolvedValue('PASSED');
-  mockRunCommand.mockResolvedValue('PASSED');
+  mockRunAgent.mockResolvedValue({ outcome: 'PASSED' });
+  mockRunScript.mockResolvedValue({ outcome: 'PASSED' });
+  mockRunCommand.mockResolvedValue({ outcome: 'PASSED' });
 });
 
 test('clears reset_outputs on entry for agent state', async () => {
@@ -135,7 +135,7 @@ test('clears reset_outputs before notify and handler run', async () => {
   const callOrder: string[] = [];
   mockClear.mockImplementation(() => { callOrder.push('clear'); });
   (notifyHandler.runNotify as jest.Mock).mockImplementation(async () => { callOrder.push('notify'); });
-  mockRunAgent.mockImplementation(async () => { callOrder.push('agent'); return 'PASSED'; });
+  mockRunAgent.mockImplementation(async () => { callOrder.push('agent'); return { outcome: 'PASSED' }; });
 
   const engine = makeEngine({
     start: {
@@ -152,7 +152,7 @@ test('clears reset_outputs before notify and handler run', async () => {
 });
 
 test('throws when state exceeds max_visits', async () => {
-  mockRunCommand.mockResolvedValue('FAILED');
+  mockRunCommand.mockResolvedValue({ outcome: 'FAILED' });
   const engine = makeEngine({
     start: {
       id: 'start',
@@ -167,7 +167,7 @@ test('throws when state exceeds max_visits', async () => {
 });
 
 test('does not throw when visits are within max_visits', async () => {
-  mockRunCommand.mockResolvedValue('PASSED');
+  mockRunCommand.mockResolvedValue({ outcome: 'PASSED' });
   const engine = makeEngine({
     start: {
       id: 'start',
@@ -184,7 +184,7 @@ test('max_visits counter resets independently per state', async () => {
   let callCount = 0;
   mockRunCommand.mockImplementation(async () => {
     callCount++;
-    return callCount <= 2 ? 'RETRY' : 'PASSED';
+    return { outcome: callCount <= 2 ? 'RETRY' : 'PASSED' };
   });
 
   const engine = makeEngine({
@@ -201,7 +201,7 @@ test('max_visits counter resets independently per state', async () => {
 });
 
 test('uses default transition for agent state with unexpected outcome', async () => {
-  (mockRunAgent as jest.Mock).mockResolvedValue('UNKNOWN_OUTCOME');
+  (mockRunAgent as jest.Mock).mockResolvedValue({ outcome: 'UNKNOWN_OUTCOME' });
   const ctx = require('../../src/context');
   const engine = makeEngine({
     start: { id: 'start', config: { type: 'agent', agent: 'a', transitions: { OK: 'ok', default: 'fallback' } }, transitions: ['ok', 'fallback'] },
@@ -212,7 +212,7 @@ test('uses default transition for agent state with unexpected outcome', async ()
 });
 
 test('uses default transition for script/command state with unexpected outcome', async () => {
-  (mockRunScript as jest.Mock).mockResolvedValue('WEIRD');
+  (mockRunScript as jest.Mock).mockResolvedValue({ outcome: 'WEIRD' });
   const ctx = require('../../src/context');
   const engine = makeEngine({
     start: { id: 'start', config: { type: 'script', script: 's', transitions: { PASSED: 'ok', default: 'rework' } }, transitions: ['ok', 'rework'] },
@@ -223,7 +223,7 @@ test('uses default transition for script/command state with unexpected outcome',
 });
 
 test('throws when outcome not mapped and no default provided', async () => {
-  (mockRunCommand as jest.Mock).mockResolvedValue('STRANGE');
+  (mockRunCommand as jest.Mock).mockResolvedValue({ outcome: 'STRANGE' });
   const engine = makeEngine({
     start: { id: 'start', config: { type: 'command', command: 'echo hi', transitions: { PASSED: 'done' } }, transitions: ['done'] },
     done: { id: 'done', config: { type: 'engine' }, transitions: [] },

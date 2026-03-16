@@ -118,28 +118,25 @@ export class Engine {
           stateResult = { outcome: 'PASSED' };
         }
 
-        // Handle exported variables from script/command
-        if (stateResult.exports && Object.keys(stateResult.exports).length > 0) {
-          // Ensure context.vars exists
+        // Handle exported variables from script/command.
+        // When config.expose is declared, ALWAYS validate that every listed variable
+        // was produced — even if the exports map came back empty.
+        if (config.expose && config.expose.length > 0) {
           if (!this.context.vars) this.context.vars = {};
-
-          // Validate that all declared exposes are present and non-empty
-          if (config.expose && config.expose.length) {
-            for (const name of config.expose) {
-              const val = stateResult.exports![name];
-              if (val === undefined || val === null || String(val).trim() === '') {
-                throw new Error(`State '${stateId}': exposed variable '${name}' was not produced by the state`);
-              }
-              this.context.vars[name] = String(val);
+          for (const name of config.expose) {
+            const val = stateResult.exports?.[name];
+            if (val === undefined || val === null || String(val).trim() === '') {
+              throw new Error(`State '${stateId}': exposed variable '${name}' was not produced by the state`);
             }
-          } else {
-            // If no explicit expose list, still merge any exports (but feature requires explicit declare — keep conservative)
-            for (const [k,v] of Object.entries(stateResult.exports)) {
-              this.context.vars[k] = v;
-            }
+            this.context.vars[name] = String(val);
           }
-
-          // Persist context after exports are applied
+          saveContext(this.cwd, this.context);
+        } else if (stateResult.exports && Object.keys(stateResult.exports).length > 0) {
+          // No explicit expose list — merge any ad-hoc exports without strict validation
+          if (!this.context.vars) this.context.vars = {};
+          for (const [k, v] of Object.entries(stateResult.exports)) {
+            this.context.vars[k] = v;
+          }
           saveContext(this.cwd, this.context);
         }
 
