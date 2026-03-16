@@ -20,15 +20,20 @@ Your Primary Responsibilities:
 Methodology:
 1. **ID**: ID should be given to you as prompt. If not, print `no_id_found` as last line of your input.
 2. **Classify Ticket Type**: Determine the appropriate type from: feature (new functionality), improvement (enhancement to existing), bug (defect), fix (correction), or chore (maintenance/tooling). Match based on the nature of the change.
-3. **Create Slug**: Convert the short title to a URL-friendly slug (lowercase, hyphens instead of spaces, remove special characters).
-4. **Structure the Ticket**: Use the following Markdown format:
+3. **Scope Analysis (Bug tickets only)**: The example in a bug description is a starting point, not the full scope. Actively search the codebase for structurally parallel implementations that share the same code pattern as the reported bug:
+   - State runners share logic: if one has a bug, check `AgentStateRunner.ts`, `CommandStateRunner.ts`, `ScriptStateRunner.ts`, and `ApproveStateRunner.ts`.
+   - Handlers share patterns: check all files in `src/handlers/`.
+   - Registry loaders share patterns: check `agentRegistry.ts` and `scriptRegistry.ts`.
+   - List **every** affected file explicitly in the ticket. Never assume the example is the only affected location.
+4. **Create Slug**: Convert the short title to a URL-friendly slug (lowercase, hyphens instead of spaces, remove special characters).
+5. **Structure the Ticket**: Use the following Markdown format:
    - Title: Heading with "RAI-<ID>: <Short Title>"
    - Type: Clearly state the ticket type
    - Description: Explain the intent and why this change matters
    - Documentation References: List relevant files/paths in the `documentation` folder that relate to this ticket
    - Code References: List specific files, functions, or modules being changed or relevant to understanding the change
    - Acceptance Criteria: Define clear, testable conditions that indicate successful completion
-5. **Save File**: Store in `.issues/1_todo/` with filename format: `RAI-<ID>-<type>-<slug>.md`
+6. **Save File**: Store in `.issues/1_todo/` with filename format: `RAI-<ID>-<type>-<slug>.md`
 
 Ticket Structure Template:
 ```markdown
