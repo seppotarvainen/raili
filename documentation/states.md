@@ -69,6 +69,8 @@ my_script_state:
 
 **Routing:** Use `on:` (binary) or `transitions:` (named).
 
+You may declare `expose: [name]` on `script` and `command` states to extract `name=value` from stdout and export it as `$RAILI_VAR_NAME` for later states. The engine validates declared `expose` names are produced and will throw (fail-fast) if any are missing.
+
 ## Type: command
 
 Runs an inline shell command. Exit code determines routing.

@@ -11,8 +11,8 @@ import { clearAgentOutputs } from '../outputStore';
 import { resolveTransition } from '../transition';
 import colors from 'colors/safe';
 
-/** Outcome string returned by every state runner: 'PASSED', 'FAILED', or a named transitions key */
-export type StateOutcome = string;
+/** Result returned by every state runner: outcome and optional exports */
+export type StateResult = { outcome: string; exports?: Record<string,string> };
 
 export interface EngineConfig {
   stateMachine: StateMachine;
@@ -104,19 +104,46 @@ export class Engine {
         console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
 
 
-        let outcome: string;
+        // Execute the state handler and capture exports if any
+        let stateResult = { outcome: 'PASSED' } as StateResult;
 
-        // Execute the state handler
         if (config.type === 'agent') {
-          outcome = await runAgentState(stateDef, this.agentRegistry, this.cwd, this.context?.vars);
+          stateResult = await runAgentState(stateDef, this.agentRegistry, this.cwd, this.context?.vars);
         } else if (config.type === 'script') {
-          outcome = await runScriptState(stateDef, this.scriptRegistry, this.cwd);
+          stateResult = await runScriptState(stateDef, this.scriptRegistry, this.cwd, this.context?.vars);
         } else if (config.type === 'command') {
-          outcome = await runCommandState(stateDef, this.cwd);
+          stateResult = await runCommandState(stateDef, this.cwd, this.context?.vars);
         } else {
-          // type: engine — no side effects, falls through to approval or transitions
-          outcome = 'PASSED';
+          // type: engine — no side effects
+          stateResult = { outcome: 'PASSED' };
         }
+
+        // Handle exported variables from script/command
+        if (stateResult.exports && Object.keys(stateResult.exports).length > 0) {
+          // Ensure context.vars exists
+          if (!this.context.vars) this.context.vars = {};
+
+          // Validate that all declared exposes are present and non-empty
+          if (config.expose && config.expose.length) {
+            for (const name of config.expose) {
+              const val = stateResult.exports![name];
+              if (val === undefined || val === null || String(val).trim() === '') {
+                throw new Error(`State '${stateId}': exposed variable '${name}' was not produced by the state`);
+              }
+              this.context.vars[name] = String(val);
+            }
+          } else {
+            // If no explicit expose list, still merge any exports (but feature requires explicit declare — keep conservative)
+            for (const [k,v] of Object.entries(stateResult.exports)) {
+              this.context.vars[k] = v;
+            }
+          }
+
+          // Persist context after exports are applied
+          saveContext(this.cwd, this.context);
+        }
+
+        const outcome = stateResult.outcome;
 
         // If the state has an approval block, run it before routing
         if (config.approval) {

@@ -2,7 +2,6 @@ import { ApprovalConfig } from '../types';
 import { handleManualTransition } from '../handlers/manualHandler';
 import { runNotify } from '../handlers/notifyHandler';
 import { interpolateString } from '../variableInterpolation';
-import type { StateOutcome } from './Engine';
 import { WorkflowContext } from '../types';
 
 export interface ApprovalStepOptions {
@@ -19,7 +18,7 @@ export async function runApprovalStep(
   stateId: string,
   approval: ApprovalConfig,
   options: ApprovalStepOptions,
-): Promise<StateOutcome> {
+): Promise<string> {
 
   if (approval.notify) {
     await runNotify(approval.notify, options.cwd);

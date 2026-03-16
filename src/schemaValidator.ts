@@ -212,6 +212,17 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
     }
   }
 
+  // 'expose' must only be used with script or command states
+  if (config.expose !== undefined && config.expose !== null) {
+    if (!config.type || !['script', 'command'].includes(config.type)) {
+      throw new SchemaValidationError(`Field 'expose' is only valid for 'script' or 'command' state types`);
+    }
+    // ensure it's an array (basic check) and elements are strings
+    if (!Array.isArray(config.expose) || config.expose.some((v: any) => typeof v !== 'string')) {
+      throw new SchemaValidationError(`Field 'expose' must be an array of string variable names`);
+    }
+  }
+
   return config as StateConfig;
 }
 

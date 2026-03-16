@@ -34,6 +34,7 @@ export interface StateConfig {
   approval?: ApprovalConfig;
   transitions?: Record<string, string>;
   on?: Record<string, string>;
+  expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>
 }
 
 export interface WorkflowConfig {
