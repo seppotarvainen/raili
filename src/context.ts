@@ -6,6 +6,7 @@ import {clearAllOutputs} from "./outputStore";
 /**
  * Load workflow context from .raili/context.json
  * Returns a new context if file doesn't exist
+ * Backwards-compatible: accepts entries without `meta` fields.
  */
 export function loadContext(cwd: string): WorkflowContext {
   const contextPath = path.join(cwd, '.raili', 'context.json');
@@ -23,6 +24,13 @@ export function loadContext(cwd: string): WorkflowContext {
   if (!Array.isArray(parsed.stateHistory)) {
     throw new Error('Invalid context.json: stateHistory must be an array');
   }
+
+  // Ensure old entries without meta still work
+  parsed.stateHistory = parsed.stateHistory.map((e: any) => ({
+    state: e.state,
+    enteredAt: e.enteredAt,
+    meta: e.meta ?? undefined,
+  }));
 
   return parsed as WorkflowContext;
 }
@@ -67,12 +75,33 @@ export function getPreviousState(context: WorkflowContext): string | null {
 }
 
 /**
- * Add a new state to the history with current timestamp
+ * Add a new state to the history with current timestamp.
+ * If the last entry matches the provided state and a `meta` object is supplied,
+ * merge the meta into the last entry instead of appending a duplicate.
  */
-export function addStateToHistory(context: WorkflowContext, state: string): WorkflowContext {
+export function addStateToHistory(context: WorkflowContext, state: string, meta?: any): WorkflowContext {
+  const now = new Date().toISOString();
+  const last = context.stateHistory[context.stateHistory.length - 1];
+
+  if (last && last.state === state && meta) {
+    // Update last entry by merging meta
+    const merged: StateHistoryEntry = {
+      ...last,
+      meta: {
+        ...(last.meta ?? {}),
+        ...meta,
+      },
+    };
+    return {
+      ...context,
+      stateHistory: [...context.stateHistory.slice(0, -1), merged],
+    };
+  }
+
   const entry: StateHistoryEntry = {
     state,
-    enteredAt: new Date().toISOString(),
+    enteredAt: now,
+    meta: meta ?? undefined,
   };
 
   return {

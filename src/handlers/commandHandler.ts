@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 
-export type CommandExecutionResult = { success: boolean; stdout: string; stderr: string };
+export type CommandExecutionResult = { success: boolean; stdout: string; stderr: string; exitCode?: number };
 
 export function executeCommand(command: string, cwd: string, envOverrides: Record<string,string> = {}): Promise<CommandExecutionResult> {
   return new Promise((resolve) => {
@@ -22,7 +22,7 @@ export function executeCommand(command: string, cwd: string, envOverrides: Recor
     });
 
     child.on('close', (code) => {
-      resolve({ success: code === 0, stdout, stderr });
+      resolve({ success: code === 0, stdout, stderr, exitCode: code ?? undefined });
     });
   });
 }

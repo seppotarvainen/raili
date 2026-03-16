@@ -10,3 +10,20 @@ intent: |
   
   By default, worfklow.yaml should be used if no alternative file is specified. Alternative file should be specified as an argument to `raili run` command. For example, if user has `workflow-dev.yaml` file, they should be able to run it with command: `raili run --workflow workflow-dev.yaml`
 ```
+
+```yaml
+title: More context info from each state.
+intent: |
+    Currently system only stores state name and enteredAt. I'd like also to have more about the internals, like "approval" (it's question and user result/reason), "notify" (was it run successfully or not).
+
+    In the future I'm about to build GUI for this, so having more context info about each state would be really helpful for that.
+```
+
+```yaml
+title: GUI to follow the state machine execution
+intent: |
+    It would be great to have a simple GUI that shows the state machine execution in real time
+    This would allow users to see the current state, the transitions, and the outputs of each state in a more visual way. It would also allow users to interact with the state machine, for example by triggering manual transitions or by providing input for approval states.
+
+    Usage: `raili run --dashboard` would start the workflow execution and open the dashboard in the browser. The dashboard would show the current state, the history of transitions, and the outputs of each state.
+```

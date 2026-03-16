@@ -140,6 +140,29 @@ describe('context', () => {
       expect(ctx.stateHistory).toHaveLength(1); // Original unchanged
       expect(updated.stateHistory).toHaveLength(2);
     });
+
+    test('merges meta into existing last entry when updating same state', () => {
+      const ctx = {
+        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }],
+      };
+
+      const added = addStateToHistory(ctx, 'init', { notify: { command: 'echo hi', success: true } });
+      expect(added.stateHistory).toHaveLength(1);
+      expect(added.stateHistory[0].meta).toBeDefined();
+      expect(added.stateHistory[0].meta?.notify.command).toBe('echo hi');
+      expect(added.stateHistory[0].meta?.notify.success).toBe(true);
+    });
+
+    test('adds meta when appending a new state', () => {
+      const ctx = {
+        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }],
+      };
+
+      const updated = addStateToHistory(ctx, 'analyze', { approval: { question: 'Q', chosen: 'PASSED' } });
+      expect(updated.stateHistory).toHaveLength(2);
+      expect(updated.stateHistory[1].meta?.approval.question).toBe('Q');
+      expect(updated.stateHistory[1].meta?.approval.chosen).toBe('PASSED');
+    });
   });
 
   describe('initializeContext', () => {
