@@ -182,6 +182,17 @@ export class Engine {
             },
           });
           if (newCtxApproval) this.context = newCtxApproval;
+
+          // Persist approval reason into dedicated approvals map and mirror into vars for env exposure
+          if (!this.context.approvals) this.context.approvals = {};
+          if (!this.context.vars) this.context.vars = {};
+          // Only persist non-empty reasons (avoid creating empty entries for PASSED)
+          if (approvalOutcome.chosen === 'FAILED' && approvalOutcome.reason && approvalOutcome.reason.trim() !== '') {
+            const key = `${stateId}_${approvalOutcome.chosen}`.toUpperCase();
+            this.context.approvals[key] = approvalOutcome.reason;
+            this.context.vars[key] = approvalOutcome.reason;
+          }
+
           saveContext(this.cwd, this.context);
           stateId = nextStateId;
           continue;

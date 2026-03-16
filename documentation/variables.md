@@ -181,3 +181,7 @@ run_tests_with_ticket:
 - Variables persist in `context.json` across runs
 - On `raili run --continue`, inputs are NOT re-prompted (use existing context)
 
+## Approval reason env mapping
+
+Approval reasons supplied by users when declining an approval are persisted into a dedicated `approvals` map in the workflow context and mirrored into `context.vars` using the key `<STATE>_<OUTCOME>` (uppercased). This allows notify commands and scripts to access the reason via the existing environment mapping as `RAILI_VAR_<KEY>` (e.g. `$RAILI_VAR_REVIEW_FAILED`). Only non-empty typed reasons are mirrored (PASSED approvals do not produce empty entries).
+

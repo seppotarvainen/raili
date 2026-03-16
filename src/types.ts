@@ -80,5 +80,6 @@ export interface StateHistoryEntry {
 
 export interface WorkflowContext {
   vars?: Record<string, string>;   // User-supplied variables (e.g. ticket_id, description)
+  approvals?: Record<string, string>; // Approval reasons keyed by <STATE>_<OUTCOME> uppercase
   stateHistory: StateHistoryEntry[];
 }

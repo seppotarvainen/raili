@@ -29,8 +29,22 @@ intent: |
 ```
 
 ```yaml
-title: Approval reason should be stored in the context
+title: Store approval reason into the context
 intent: |
     Currently user can provide a reason for their approval decline, but this reason is not stored anywhere. This should be stored as a variable
-    that may be used in the future states. For 
+    that may be used in the future states. They should be different from variables, so maybe they could be as follows: 
+
+    ```yaml
+    states:
+      start:
+        type: engine
+        approval:
+          question: "Do you want to proceed?"
+          PASSED: next
+          FAILED: end
+
+      end:
+        type: command
+        command: echo "Process ended because of: $RAILI_START_FAILED" # START is the state name where approval was requested
+    ```
 ```
