@@ -23,7 +23,7 @@ export function parseExports(stdout: string, names: string[]): Record<string,str
         if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
           v = v.slice(1, -1);
         }
-        exports[name] = v;
+        exports[name] = v.trim();
         break;
       }
     }

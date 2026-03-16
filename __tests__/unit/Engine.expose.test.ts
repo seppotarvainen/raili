@@ -33,7 +33,7 @@ test('Engine routes to error state when expose missing', async () => {
 
   // Mock context helpers: getCurrentState returns null initially
   mockGetCurrent.mockReturnValue(null);
-  mockAddState.mockImplementation((ctx, stateId) => ({ ...ctx, stateHistory: [...(ctx.stateHistory||[]), { state: stateId, enteredAt: new Date().toISOString() }] }));
+  mockAddState.mockImplementation((ctx: { stateHistory: any; }, stateId: any) => ({ ...ctx, stateHistory: [...(ctx.stateHistory||[]), { state: stateId, enteredAt: new Date().toISOString() }] }));
   mockSave.mockImplementation(() => {});
 
   const engine = new Engine({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: process.cwd() });
