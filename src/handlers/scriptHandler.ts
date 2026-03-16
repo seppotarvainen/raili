@@ -37,3 +37,6 @@ export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: s
     });
   });
 }
+
+// New handler alias to conform to a "handler" naming convention used by abstractions
+export const executeScriptHandler = executeScript;

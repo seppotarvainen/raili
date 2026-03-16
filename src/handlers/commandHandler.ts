@@ -27,3 +27,6 @@ export function executeCommand(command: string, cwd: string, envOverrides: Recor
   });
 }
 
+// New handler alias to conform to a "handler" naming convention used by abstractions
+export const executeCommandHandler = executeCommand;
+
