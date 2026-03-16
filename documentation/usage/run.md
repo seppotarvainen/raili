@@ -25,6 +25,12 @@ raili run
 raili run --clean --var ticket_id=PROJ-123 --var branch=main
 ```
 
+### Using an alternate workflow file
+```bash
+# Prefer .raili/workflow-dev.yaml if present, otherwise uses ./workflow-dev.yaml
+raili run --workflow workflow-dev.yaml --clean --var ticket_id=PROJ-123
+```
+
 ### Resume from last state
 ```bash
 raili run --continue
