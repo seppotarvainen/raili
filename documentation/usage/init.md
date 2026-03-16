@@ -18,7 +18,6 @@ The main workflow configuration file. Defines:
 - All states and their types
 - State transitions and routing
 - Variables (inputs)
-- Optional sub-workflow includes
 
 Edit this file to describe your workflow.
 

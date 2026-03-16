@@ -176,10 +176,5 @@ export const WorkflowConfigSchema: ObjectSchema = {
     required: false,
     type: 'array',
     description: 'Declared input names — raili prompts for these on a clean run'
-  },
-  include: {
-    required: false,
-    type: 'array',
-    description: 'Paths to sub-workflow files, relative to .raili/'
   }
 };

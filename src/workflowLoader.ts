@@ -45,41 +45,19 @@ export function loadWorkflowConfig(cwd: string): WorkflowConfig {
     throw new Error('workflow.yaml must define "initial" state');
   }
 
-  const mergedStates: Record<string, any> = { ...main.states };
+  // Validate the raw parsed workflow object against schema so unknown top-level
+  // fields cause a fail-fast validation error.
+  validateWorkflowConfig(main);
 
-  // Load and merge sub-workflow files
-  if (main.include) {
-    if (!Array.isArray(main.include)) {
-      throw new Error('workflow.yaml "include" must be an array of file paths');
-    }
-
-    for (const includePath of main.include) {
-      if (typeof includePath !== 'string') {
-        throw new Error(`Invalid entry in "include": expected a string, got ${typeof includePath}`);
-      }
-
-      const fullPath = path.resolve(railiDir, includePath);
-      const sub = loadYamlFile(fullPath, true);
-
-      // Fail fast on duplicate state names
-      for (const stateId of Object.keys(sub.states)) {
-        if (stateId in mergedStates) {
-          throw new Error(`Duplicate state '${stateId}' found in sub-workflow: ${fullPath}`);
-        }
-        mergedStates[stateId] = sub.states[stateId];
-      }
-    }
-  }
-
-  const config = {
+  const config: WorkflowConfig = {
     initial: main.initial,
-    states: mergedStates,
+    states: main.states,
     inputs: main.inputs,
-    include: main.include,
-  } as WorkflowConfig;
+  };
 
-  // Validate the complete workflow config against schema
-  validateWorkflowConfig(config);
+  if (main.error) {
+    config.error = main.error;
+  }
 
   return config;
 }

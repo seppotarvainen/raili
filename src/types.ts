@@ -42,7 +42,6 @@ export interface WorkflowConfig {
   error?: string; // Optional named error state to route to on unhandled exceptions
   states: Record<string, StateConfig>;
   inputs?: string[];       // Declared input names — raili prompts for these on a clean run
-  include?: string[];      // Paths to sub-workflow files, relative to .raili/
 }
 
 // Runtime state machine (derived from workflow config)

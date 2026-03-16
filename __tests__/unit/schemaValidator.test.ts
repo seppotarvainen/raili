@@ -427,19 +427,6 @@ describe('SchemaValidator', () => {
       expect(() => validateWorkflowConfig(config)).not.toThrow();
     });
 
-    it('should accept workflow with optional include', () => {
-      const config = {
-        initial: 'start',
-        include: ['sub-workflows/cleanup.yaml'],
-        states: {
-          start: {
-            type: 'agent',
-            agent: 'copilot'
-          }
-        }
-      };
-      expect(() => validateWorkflowConfig(config)).not.toThrow();
-    });
 
     it('should throw if required field "initial" is missing', () => {
       const config = {
@@ -518,22 +505,6 @@ describe('SchemaValidator', () => {
       };
       expect(() => validateWorkflowConfig(config)).toThrow(
         /field.*inputs.*expected array/i
-      );
-    });
-
-    it('should throw if include is not an array', () => {
-      const config = {
-        initial: 'start',
-        include: 'sub-workflows/cleanup.yaml',
-        states: {
-          start: {
-            type: 'agent',
-            agent: 'copilot'
-          }
-        }
-      };
-      expect(() => validateWorkflowConfig(config)).toThrow(
-        /field.*include.*expected array/i
       );
     });
 
