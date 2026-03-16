@@ -58,9 +58,24 @@ export interface StateMachine {
 }
 
 // Execution context
+export interface NotifyMeta {
+  command: string;
+  success: boolean;
+  exitCode?: number;
+  stderr?: string;
+}
+
+export interface ApprovalMeta {
+  question: string;
+  chosen: 'PASSED' | 'FAILED';
+  reason?: string;
+}
+
 export interface StateHistoryEntry {
   state: string;
   enteredAt: string;  // ISO timestamp
+  // Optional structured metadata about this entry (notify results, approval decisions, etc.)
+  meta?: any;
 }
 
 export interface WorkflowContext {

@@ -5,8 +5,8 @@ import { addStateToHistory, saveContext, getCurrentState } from '../context';
 import { runAgentState } from './AgentStateRunner';
 import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
-import { runApprovalStep } from './ApproveStateRunner';
-import { runNotify } from '../handlers/notifyHandler';
+import { runApprovalStep, ApprovalOutcome } from './ApproveStateRunner';
+import { runNotify, NotifyResult } from '../handlers/notifyHandler';
 import { clearAgentOutputs } from '../outputStore';
 import { resolveTransition } from '../transition';
 import colors from 'colors/safe';
@@ -48,7 +48,11 @@ export class Engine {
     this.stateMachine = config.stateMachine;
     this.agentRegistry = config.agentRegistry;
     this.scriptRegistry = config.scriptRegistry;
-    this.context = config.context;
+    // Ensure context always has a valid shape to avoid undefined stateHistory
+    this.context = config.context ?? { stateHistory: [] };
+    if (!this.context.stateHistory) {
+      this.context.stateHistory = [];
+    }
     this.cwd = config.cwd;
   }
 
@@ -60,7 +64,8 @@ export class Engine {
 
     // Record initial state if history is empty
     if (this.context.stateHistory.length === 0) {
-      this.context = addStateToHistory(this.context, currentStateId);
+      const newCtx = addStateToHistory(this.context, currentStateId);
+      if (newCtx) this.context = newCtx;
       saveContext(this.cwd, this.context);
     }
 
@@ -91,8 +96,21 @@ export class Engine {
           clearAgentOutputs(this.cwd, config.reset_outputs);
         }
 
+        // Ensure the current state is present in history (append if not)
+        const lastState = this.context.stateHistory[this.context.stateHistory.length - 1];
+        if (!lastState || lastState.state !== stateId) {
+          const newCtx = addStateToHistory(this.context, stateId);
+          if (newCtx) this.context = newCtx;
+          saveContext(this.cwd, this.context);
+        }
+
+        let notifyMeta: NotifyResult | undefined;
         if (config.notify) {
-          await runNotify(config.notify, this.cwd, this.context?.vars ?? {});
+          notifyMeta = await runNotify(config.notify, this.cwd, this.context?.vars ?? {});
+          // Persist notify result into the last history entry's meta
+          const newCtxNotify = addStateToHistory(this.context, stateId, { notify: notifyMeta });
+          if (newCtxNotify) this.context = newCtxNotify;
+          saveContext(this.cwd, this.context);
         }
 
         // Terminal state: no routing defined, stop execution
@@ -144,17 +162,25 @@ export class Engine {
 
         // If the state has an approval block, run it before routing
         if (config.approval) {
-          const approvalOutcome = await runApprovalStep(stateId, config.approval, {
+          const approvalOutcome: ApprovalOutcome = await runApprovalStep(stateId, config.approval, {
             cwd: this.cwd,
             context: this.context,
           });
           const nextStateId = resolveNextState(stateId, {
             PASSED: config.approval.PASSED,
             FAILED: config.approval.FAILED,
-          }, approvalOutcome);
+          }, approvalOutcome.chosen);
 
-          console.log(`  approval: ${approvalOutcome} → ${nextStateId}`);
-          this.context = addStateToHistory(this.context, nextStateId);
+          console.log(`  approval: ${approvalOutcome.chosen} → ${nextStateId}`);
+          // Persist approval decision on the next state's history entry
+          const newCtxApproval = addStateToHistory(this.context, nextStateId, {
+            approval: {
+              question: approvalOutcome.question,
+              chosen: approvalOutcome.chosen,
+              reason: approvalOutcome.reason,
+            },
+          });
+          if (newCtxApproval) this.context = newCtxApproval;
           saveContext(this.cwd, this.context);
           stateId = nextStateId;
           continue;
@@ -165,7 +191,8 @@ export class Engine {
         const nextStateId = resolveNextState(stateId, routing, outcome);
 
         console.log(`  → ${nextStateId}`);
-        this.context = addStateToHistory(this.context, nextStateId);
+        const newCtxRoute = addStateToHistory(this.context, nextStateId);
+        if (newCtxRoute) this.context = newCtxRoute;
         saveContext(this.cwd, this.context);
         stateId = nextStateId;
       } catch (err) {
@@ -183,11 +210,17 @@ export class Engine {
           }
           if (errConfig.notify) {
             // best-effort notify before exiting
-            try { await runNotify(errConfig.notify, this.cwd, this.context.vars ?? {}); } catch {}
+            try {
+              const n = await runNotify(errConfig.notify, this.cwd, this.context.vars ?? {});
+              const newCtxErrNotify = addStateToHistory(this.context, errStateId, { notify: n });
+              if (newCtxErrNotify) this.context = newCtxErrNotify;
+              saveContext(this.cwd, this.context);
+            } catch {}
           }
 
           // Record error state and persist context, then stop (error state must be terminal)
-          this.context = addStateToHistory(this.context, errStateId);
+          const newCtxErr = addStateToHistory(this.context, errStateId);
+          if (newCtxErr) this.context = newCtxErr;
           saveContext(this.cwd, this.context);
           console.log(`! Engine: unhandled error occurred — routed to error state: ${errStateId}`);
           return;

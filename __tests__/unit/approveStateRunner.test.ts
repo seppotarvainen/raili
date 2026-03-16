@@ -24,11 +24,12 @@ test('runs approval prompt with no approval-level notify', async () => {
 
   expect(mockRunNotify).not.toHaveBeenCalled();
   expect(mockHandleManual).toHaveBeenCalledTimes(1);
-  expect(outcome).toBe('PASSED');
+  expect(outcome.chosen).toBe('PASSED');
+  expect(outcome.question).toContain('Is the analysis correct');
 });
 
 test('runs approval-level notify before the prompt', async () => {
-  mockRunNotify.mockResolvedValue(undefined);
+  mockRunNotify.mockResolvedValue({ command: 'slack-notify "done"', success: true });
 
   const approvalWithNotify = { ...approval, notify: 'slack-notify "done"' };
   await runApprovalStep('analyze', approvalWithNotify, { cwd: '/tmp' });
@@ -43,15 +44,16 @@ test('returns FAILED outcome from manual handler', async () => {
 
   const outcome = await runApprovalStep('analyze', approval, { cwd: '/tmp' });
 
-  expect(outcome).toBe('FAILED');
+  expect(outcome.chosen).toBe('FAILED');
+  expect(outcome.reason).toBe('wrong');
 });
 
 test('notify failure does not prevent approval prompt (best-effort)', async () => {
-  mockRunNotify.mockResolvedValue(undefined);
+  mockRunNotify.mockResolvedValue({ command: 'bad-command', success: false, stderr: 'nope' });
 
   const approvalWithNotify = { ...approval, notify: 'bad-command' };
   const outcome = await runApprovalStep('analyze', approvalWithNotify, { cwd: '/tmp' });
 
   expect(mockHandleManual).toHaveBeenCalledTimes(1);
-  expect(outcome).toBe('PASSED');
+  expect(outcome.chosen).toBe('PASSED');
 });

@@ -1,12 +1,20 @@
 import { ApprovalConfig } from '../types';
-import { handleManualTransition } from '../handlers/manualHandler';
-import { runNotify } from '../handlers/notifyHandler';
+import { handleManualTransition, ManualResult } from '../handlers/manualHandler';
+import { runNotify, NotifyResult } from '../handlers/notifyHandler';
 import { interpolateString } from '../variableInterpolation';
 import { WorkflowContext } from '../types';
 
 export interface ApprovalStepOptions {
   cwd: string;
   context?: WorkflowContext;
+}
+
+export interface ApprovalOutcome {
+  chosen: string;
+  target: string;
+  reason: string;
+  question: string;
+  notify?: NotifyResult;
 }
 
 /**
@@ -18,17 +26,18 @@ export async function runApprovalStep(
   stateId: string,
   approval: ApprovalConfig,
   options: ApprovalStepOptions,
-): Promise<string> {
+): Promise<ApprovalOutcome> {
 
+  let notifyRes: NotifyResult | undefined = undefined;
   if (approval.notify) {
-    await runNotify(approval.notify, options.cwd, options.context?.vars ?? {});
+    notifyRes = await runNotify(approval.notify, options.cwd, options.context?.vars ?? {});
   }
 
   // Interpolate the question with variables from context
   const vars = options.context?.vars ?? {};
   const interpolatedQuestion = interpolateString(approval.question, vars);
 
-  const result = await handleManualTransition({
+  const result: ManualResult = await handleManualTransition({
     question: interpolatedQuestion,
     options: {
       PASSED: approval.PASSED,
@@ -36,5 +45,11 @@ export async function runApprovalStep(
     },
   });
 
-  return result.chosen;
+  return {
+    chosen: result.chosen,
+    target: result.target,
+    reason: result.reason,
+    question: interpolatedQuestion,
+    notify: notifyRes,
+  };
 }

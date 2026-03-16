@@ -128,6 +128,21 @@ All states support:
 - `reset_outputs` — Clear outputs from other states on entry
 - `max_visits` — Prevent infinite loops (throw on Nth entry)
 
+## Persisted State History (context.json)
+
+Each state entry recorded to `.raili/context.json` includes a minimal history record and optional structured metadata to aid debugging and UI building. Example entry shape:
+
+{
+  state: "analyze",
+  enteredAt: "2026-03-16T12:00:00Z",
+  meta: {
+    notify: { command: "slack-notify \"done\"", success: true, exitCode: 0 },
+    approval: { question: "Looks good?", chosen: "PASSED", reason: "" }
+  }
+}
+
+Metadata is optional and extensible; older context files lacking `meta` continue to be supported.
+
 ## State Transitions Summary
 
 | Type    | Routing Options                        | Exit Code               |
