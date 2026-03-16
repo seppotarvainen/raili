@@ -96,16 +96,18 @@ When implementing a feature, read the relevant doc to understand current behavio
 
 ### Testing
 
-- Write unit tests for all new code in `__tests__/` directory (pattern: `<module>.test.ts`)
-- Mock all external dependencies: handlers, shell processes, file I/O
-- Test coverage: happy path, error paths, edge cases, transitions
-- Never execute real shell commands or call real APIs in tests
+- Write unit tests for all new code in `__tests__/unit` directory (pattern: `<module>.test.ts`)
+- Mock all external dependencies in unit tests: handlers, shell processes, file I/O
+- Never execute real shell commands or call real APIs in unit tests
 - Use `jest.mock()` to mock handlers and external calls
+- Write optional integration tests for new features in `__tests__/integration` directory
+- Mock agent behavior in integration tests.
+- Test coverage: happy path, error paths, edge cases, transitions
 - Test illegal transitions and max_visits enforcement
 
 ## Your Workflow
 
-1. Read tickets from `.issues/2_doing/` and results from `.raili/outputs/test.md` and `.raili/outputs/build.md`.
+1. Read ticket info & acceptance criteria status from `.issues/2_doing/` and results from `.raili/outputs/test.md` and `.raili/outputs/build.md`.
 2. Implement end-to-end (code + tests)
 3. Update Acceptance Criteria status in ticket file (e.g., `- [x] First condition`)
 4. Print `complete` when ready
