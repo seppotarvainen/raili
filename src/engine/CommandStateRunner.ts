@@ -34,11 +34,6 @@ export async function runCommandState(state: StateDef, cwd: string): Promise<Sta
         `State '${state.id}': command produced no output — expected a transition key as last stdout line`
       );
     }
-    if (!(lastLine in state.config.transitions)) {
-      throw new Error(
-        `State '${state.id}': command output '${lastLine}' does not match any key in transitions (${Object.keys(state.config.transitions).join(', ')})`
-      );
-    }
     return lastLine;
   }
 

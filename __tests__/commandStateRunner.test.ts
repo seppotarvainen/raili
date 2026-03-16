@@ -84,10 +84,10 @@ describe('runCommandState', () => {
       expect(await runCommandState(state, '/cwd')).toBe('commit_required');
     });
 
-    test('throws if last stdout line does not match any transition key', async () => {
+    test('returns unknown transition key when last stdout line does not match any transition key (engine will apply default)', async () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'unknown_key\n', stderr: '' });
-      const state = makeState({ transitions: { commit_required: 'commit' } });
-      await expect(runCommandState(state, '/cwd')).rejects.toThrow("command output 'unknown_key' does not match any key");
+      const state = makeState({ transitions: { commit_required: 'commit', default: 'done' } });
+      expect(await runCommandState(state, '/cwd')).toBe('unknown_key');
     });
 
     test('throws if stdout is empty', async () => {

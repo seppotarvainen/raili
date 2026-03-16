@@ -44,11 +44,6 @@ export async function runAgentState(state: StateDef, registry: AgentRegistry, cw
         `State '${state.id}': agent produced no output — expected a transition key as last stdout line`
       );
     }
-    if (!(lastLine in state.config.transitions)) {
-      throw new Error(
-        `State '${state.id}': agent output '${lastLine}' does not match any key in transitions (${Object.keys(state.config.transitions).join(', ')})`
-      );
-    }
     return lastLine;
   }
 

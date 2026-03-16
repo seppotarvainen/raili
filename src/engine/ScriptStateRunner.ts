@@ -31,11 +31,6 @@ export async function runScriptState(state: StateDef, registry: ScriptRegistry, 
         `State '${state.id}': script produced no output — expected a transition key as last stdout line`
       );
     }
-    if (!(lastLine in state.config.transitions)) {
-      throw new Error(
-        `State '${state.id}': script output '${lastLine}' does not match any key in transitions (${Object.keys(state.config.transitions).join(', ')})`
-      );
-    }
     return lastLine;
   }
 
