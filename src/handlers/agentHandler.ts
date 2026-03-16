@@ -75,3 +75,6 @@ export function executeAgent(
     });
   });
 }
+
+// New handler alias to conform to a "handler" naming convention used by abstractions
+export const executeAgentHandler = executeAgent;
