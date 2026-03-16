@@ -98,7 +98,27 @@ run_tests_with_ticket:
 
 Script and command states can explicitly expose values produced during execution back into the workflow as variables. Declare `expose: [name1, name2]` on a `script` or `command` state; after the state completes the engine will extract `name=value` lines from stdout and set `RAILI_VAR_<UPPERCASE>` for subsequent states.
 
+Accepted formats (case-insensitive key; whitespace and optional `export` prefix allowed):
+
+- `name=value`
+- `export name=value`
+- `name = "value"`
+- `name='value'`
+
+The parser trims whitespace and surrounding quotes. If a state declares `expose`, the engine will fail-fast and throw a clear error when any listed variable is not produced (missing or empty). Important: using `export VAR=...` inside a child process does not propagate the value to the parent — the script must print the value to stdout in one of the accepted formats.
+
 Example:
+
+```bash
+# Correct: prints id on stdout in expected format
+echo "id=123"
+
+# Also accepted:
+echo "export id=123"
+echo "ID = '123'"
+```
+
+Workflow example:
 
 ```yaml
 produce_id:
