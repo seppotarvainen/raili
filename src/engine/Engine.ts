@@ -172,12 +172,13 @@ export class Engine {
           }, approvalOutcome.chosen);
 
           console.log(`  approval: ${approvalOutcome.chosen} → ${nextStateId}`);
-          // Persist approval decision on the next state's history entry
-          const newCtxApproval = addStateToHistory(this.context, nextStateId, {
+          // Persist approval decision on the current state's history entry (approval asked/executed here)
+          const newCtxApproval = addStateToHistory(this.context, stateId, {
             approval: {
               question: approvalOutcome.question,
               chosen: approvalOutcome.chosen,
               reason: approvalOutcome.reason,
+              notify: approvalOutcome.notify ?? undefined,
             },
           });
           if (newCtxApproval) this.context = newCtxApproval;

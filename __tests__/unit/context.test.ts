@@ -163,6 +163,23 @@ describe('context', () => {
       expect(updated.stateHistory[1].meta?.approval.question).toBe('Q');
       expect(updated.stateHistory[1].meta?.approval.chosen).toBe('PASSED');
     });
+
+    test('merges meta into most recent matching state even if not last entry', () => {
+      const ctx = {
+        stateHistory: [
+          { state: 'act', enteredAt: '2026-02-24T10:00:00Z' },
+          { state: 'done', enteredAt: '2026-02-24T10:05:00Z' },
+        ],
+      };
+
+      const updated = addStateToHistory(ctx, 'act', { approval: { question: 'Q', chosen: 'PASSED' } });
+      expect(updated.stateHistory).toHaveLength(2);
+      // The first entry (act) should have received the meta
+      expect(updated.stateHistory[0].meta?.approval.question).toBe('Q');
+      expect(updated.stateHistory[0].meta?.approval.chosen).toBe('PASSED');
+      // The later 'done' entry must remain untouched
+      expect(updated.stateHistory[1].meta).toBeUndefined();
+    });
   });
 
   describe('initializeContext', () => {

@@ -27,3 +27,10 @@ intent: |
 
     Usage: `raili run --dashboard` would start the workflow execution and open the dashboard in the browser. The dashboard would show the current state, the history of transitions, and the outputs of each state.
 ```
+
+```yaml
+title: Approval reason should be stored in the context
+intent: |
+    Currently user can provide a reason for their approval decline, but this reason is not stored anywhere. This should be stored as a variable
+    that may be used in the future states. For 
+```

@@ -68,14 +68,22 @@ Missing variables → immediate error (fail-fast).
 
 ## Approval Response Tracking
 
-User responses are recorded in `context.json`:
+Approval questions, answers, and any notify metadata are recorded in `context.json` as part of the originating state's history entry under a `meta` object. This ensures the metadata is discoverable on the state where the prompt or notify actually occurred.
+
+Example:
 
 ```json
 {
   "stateHistory": [
     {"state": "code", "enteredAt": "2026-03-13T08:15:00Z"},
-    {"state": "review", "enteredAt": "2026-03-13T08:16:30Z"},
-    {"approval": "PASSED", "enteredAt": "2026-03-13T08:17:00Z"}
+    {
+      "state": "review",
+      "enteredAt": "2026-03-13T08:16:30Z",
+      "meta": {
+        "approval": { "question": "Does this look good?", "chosen": "PASSED", "reason": "" },
+        "notify": { "command": "msg.sh 'Review needed'", "success": true }
+      }
+    }
   ]
 }
 ```

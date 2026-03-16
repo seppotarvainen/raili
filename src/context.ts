@@ -76,26 +76,34 @@ export function getPreviousState(context: WorkflowContext): string | null {
 
 /**
  * Add a new state to the history with current timestamp.
- * If the last entry matches the provided state and a `meta` object is supplied,
- * merge the meta into the last entry instead of appending a duplicate.
+ * If a `meta` object is supplied, merge it into the most recent existing
+ * history entry for the same state (searching from the end). This ensures
+ * metadata is attached to the state where it occurred even if a later state
+ * was already appended (routing from previous states).
  */
 export function addStateToHistory(context: WorkflowContext, state: string, meta?: any): WorkflowContext {
   const now = new Date().toISOString();
-  const last = context.stateHistory[context.stateHistory.length - 1];
 
-  if (last && last.state === state && meta) {
-    // Update last entry by merging meta
-    const merged: StateHistoryEntry = {
-      ...last,
-      meta: {
-        ...(last.meta ?? {}),
-        ...meta,
-      },
-    };
-    return {
-      ...context,
-      stateHistory: [...context.stateHistory.slice(0, -1), merged],
-    };
+  if (meta) {
+    for (let i = context.stateHistory.length - 1; i >= 0; i--) {
+      const entry = context.stateHistory[i];
+      if (entry.state === state) {
+        const merged: StateHistoryEntry = {
+          ...entry,
+          meta: {
+            ...(entry.meta ?? {}),
+            ...meta,
+          },
+        };
+        const newHistory = [...context.stateHistory.slice(0, i), merged, ...context.stateHistory.slice(i + 1)];
+        return { ...context, stateHistory: newHistory };
+      }
+    }
+  } else {
+    const last = context.stateHistory[context.stateHistory.length - 1];
+    if (last && last.state === state) {
+      return context;
+    }
   }
 
   const entry: StateHistoryEntry = {
