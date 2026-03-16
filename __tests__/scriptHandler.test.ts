@@ -58,3 +58,10 @@ test('executeScript throws when script not in registry', () => {
   expect(() => executeScript(loaded, 'missing-script', TMP)).toThrow("Script 'missing-script' not found in registry");
 });
 
+test('passes args to spawn when provided', async () => {
+  const loaded = setupRegistry();
+  await executeScript(loaded, 'archive-part', TMP, ['one', '--flag']);
+  const fullPath = path.resolve(TMP, './scripts/archive.sh');
+  expect(spawn).toHaveBeenCalledWith(fullPath, ['one', '--flag'], expect.any(Object));
+});
+

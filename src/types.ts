@@ -30,6 +30,7 @@ export interface StateConfig {
   command?: string;      // For type: command — inline shell command
   directory?: string;    // For type: command — working directory (defaults to cwd)
   prompt?: string;       // Optional prompt for agent
+  args?: string[];       // For type: script — ordered list of arguments forwarded to the script process
   approval?: ApprovalConfig;
   transitions?: Record<string, string>;
   on?: Record<string, string>;

@@ -105,6 +105,12 @@ export const StateConfigSchema: ObjectSchema = {
     description: 'Script path (for type: script)',
     validForTypes: ['script']
   },
+  args: {
+    required: false,
+    type: 'array',
+    description: 'Arguments for script (for type: script)',
+    validForTypes: ['script']
+  },
   command: {
     required: false,
     type: 'string',
