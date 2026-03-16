@@ -1,4 +1,4 @@
-import { resolveTransition } from '../src/transition';
+import { resolveTransition } from '../../src/transition';
 
 test('resolves direct mapping', () => {
   const transitions = { PASSED: 'verify', FAILED: 'failed' };

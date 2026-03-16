@@ -1,8 +1,8 @@
-import { runAgentState } from '../src/engine/AgentStateRunner';
-import * as agentHandler from '../src/handlers/agentHandler';
-import { WorkflowContext, StateDef } from '../src/types';
+import { runAgentState } from '../../src/engine/AgentStateRunner';
+import * as agentHandler from '../../src/handlers/agentHandler';
+import { WorkflowContext, StateDef } from '../../src/types';
 
-jest.mock('../src/handlers/agentHandler');
+jest.mock('../../src/handlers/agentHandler');
 
 const mockExecuteAgent = agentHandler.executeAgent as jest.MockedFunction<typeof agentHandler.executeAgent>;
 

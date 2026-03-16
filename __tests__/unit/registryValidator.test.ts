@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from '../src/registryValidator';
-import { WorkflowConfig } from '../src/types';
+import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from '../../src/registryValidator';
+import { WorkflowConfig } from '../../src/types';
 
 const TMP = path.resolve(__dirname, 'tmp_registry');
 beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });

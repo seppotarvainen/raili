@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
-import { loadAgentRegistry } from '../src/agentRegistry';
-import { executeAgent } from '../src/handlers/agentHandler';
+import { loadAgentRegistry } from '../../src/agentRegistry';
+import { executeAgent } from '../../src/handlers/agentHandler';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');

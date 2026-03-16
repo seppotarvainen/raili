@@ -1,12 +1,12 @@
-import { runScriptState } from '../src/engine/ScriptStateRunner';
-import * as outputStore from '../src/outputStore';
-import { StateDef } from '../src/types';
+import { runScriptState } from '../../src/engine/ScriptStateRunner';
+import * as outputStore from '../../src/outputStore';
+import { StateDef } from '../../src/types';
 
-jest.mock('../src/outputStore');
-jest.mock('../src/handlers/scriptHandler');
+jest.mock('../../src/outputStore');
+jest.mock('../../src/handlers/scriptHandler');
 
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
-const { executeScript } = require('../src/handlers/scriptHandler');
+const { executeScript } = require('../../src/handlers/scriptHandler');
 
 function makeState(overrides: Partial<StateDef['config']> = {}): StateDef {
   return {

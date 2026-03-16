@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
-import { loadScriptRegistry } from '../src/scriptRegistry';
-import { executeScript } from '../src/handlers/scriptHandler';
+import { loadScriptRegistry } from '../../src/scriptRegistry';
+import { executeScript } from '../../src/handlers/scriptHandler';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');

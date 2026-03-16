@@ -1,17 +1,17 @@
-import { Engine, EngineConfig } from '../src/engine/Engine';
-import * as outputStore from '../src/outputStore';
-import * as notifyHandler from '../src/handlers/notifyHandler';
-import * as agentStateRunner from '../src/engine/AgentStateRunner';
-import * as scriptStateRunner from '../src/engine/ScriptStateRunner';
-import * as commandStateRunner from '../src/engine/CommandStateRunner';
-import { StateMachine, WorkflowContext } from '../src/types';
+import { Engine, EngineConfig } from '../../src/engine/Engine';
+import * as outputStore from '../../src/outputStore';
+import * as notifyHandler from '../../src/handlers/notifyHandler';
+import * as agentStateRunner from '../../src/engine/AgentStateRunner';
+import * as scriptStateRunner from '../../src/engine/ScriptStateRunner';
+import * as commandStateRunner from '../../src/engine/CommandStateRunner';
+import { StateMachine, WorkflowContext } from '../../src/types';
 
-jest.mock('../src/outputStore');
-jest.mock('../src/handlers/notifyHandler');
-jest.mock('../src/engine/AgentStateRunner');
-jest.mock('../src/engine/ScriptStateRunner');
-jest.mock('../src/engine/CommandStateRunner');
-jest.mock('../src/context', () => ({
+jest.mock('../../src/outputStore');
+jest.mock('../../src/handlers/notifyHandler');
+jest.mock('../../src/engine/AgentStateRunner');
+jest.mock('../../src/engine/ScriptStateRunner');
+jest.mock('../../src/engine/CommandStateRunner');
+jest.mock('../../src/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx) => ctx),
   saveContext: jest.fn(),
@@ -202,7 +202,7 @@ test('max_visits counter resets independently per state', async () => {
 
 test('uses default transition for agent state with unexpected outcome', async () => {
   (mockRunAgent as jest.Mock).mockResolvedValue('UNKNOWN_OUTCOME');
-  const ctx = require('../src/context');
+  const ctx = require('../../src/context');
   const engine = makeEngine({
     start: { id: 'start', config: { type: 'agent', agent: 'a', transitions: { OK: 'ok', default: 'fallback' } }, transitions: ['ok', 'fallback'] },
     fallback: { id: 'fallback', config: { type: 'engine' }, transitions: [] },
@@ -213,7 +213,7 @@ test('uses default transition for agent state with unexpected outcome', async ()
 
 test('uses default transition for script/command state with unexpected outcome', async () => {
   (mockRunScript as jest.Mock).mockResolvedValue('WEIRD');
-  const ctx = require('../src/context');
+  const ctx = require('../../src/context');
   const engine = makeEngine({
     start: { id: 'start', config: { type: 'script', script: 's', transitions: { PASSED: 'ok', default: 'rework' } }, transitions: ['ok', 'rework'] },
     rework: { id: 'rework', config: { type: 'engine' }, transitions: [] },

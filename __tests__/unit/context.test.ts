@@ -8,10 +8,10 @@ import {
   getPreviousState,
   addStateToHistory,
   initializeContext, clearContext,
-} from '../src/context';
-import * as outputStore from '../src/outputStore';
+} from '../../src/context';
+import * as outputStore from '../../src/outputStore';
 
-jest.mock('../src/outputStore');
+jest.mock('../../src/outputStore');
 
 describe('context', () => {
   let tmpdir: string;

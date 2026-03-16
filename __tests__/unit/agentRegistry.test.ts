@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { loadAgentRegistry } from '../src/agentRegistry';
+import { loadAgentRegistry } from '../../src/agentRegistry';
 
 const TMP = path.resolve(__dirname, 'tmp');
 beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });

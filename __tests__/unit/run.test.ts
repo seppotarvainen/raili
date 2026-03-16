@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { runCommand } from '../src/run';
+import { runCommand } from '../../src/run';
 
-jest.mock('../src/registryValidator');
-jest.mock('../src/engine/Engine');
+jest.mock('../../src/registryValidator');
+jest.mock('../../src/engine/Engine');
 
-const registryValidator = require('../src/registryValidator');
-const { Engine } = require('../src/engine/Engine');
+const registryValidator = require('../../src/registryValidator');
+const { Engine } = require('../../src/engine/Engine');
 
 describe('runCommand', () => {
   let tmpdir: string;

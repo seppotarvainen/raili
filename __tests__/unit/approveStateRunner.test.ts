@@ -1,9 +1,9 @@
-import { runApprovalStep } from '../src/engine/ApproveStateRunner';
-import * as notifyHandler from '../src/handlers/notifyHandler';
-import * as manualHandler from '../src/handlers/manualHandler';
+import { runApprovalStep } from '../../src/engine/ApproveStateRunner';
+import * as notifyHandler from '../../src/handlers/notifyHandler';
+import * as manualHandler from '../../src/handlers/manualHandler';
 
-jest.mock('../src/handlers/notifyHandler');
-jest.mock('../src/handlers/manualHandler');
+jest.mock('../../src/handlers/notifyHandler');
+jest.mock('../../src/handlers/manualHandler');
 
 const mockRunNotify = notifyHandler.runNotify as jest.MockedFunction<typeof notifyHandler.runNotify>;
 const mockHandleManual = manualHandler.handleManualTransition as jest.MockedFunction<typeof manualHandler.handleManualTransition>;

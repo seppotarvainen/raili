@@ -4,7 +4,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { initCommand } from '../src/init';
+import { initCommand } from '../../src/init';
 
 describe('initCommand', () => {
   let tmpdir: string;

@@ -3,7 +3,7 @@ import {
   validateStateConfig,
   validateApprovalConfig,
   SchemaValidationError
-} from '../src/schemaValidator';
+} from '../../src/schemaValidator';
 
 describe('SchemaValidator', () => {
   describe('validateApprovalConfig', () => {

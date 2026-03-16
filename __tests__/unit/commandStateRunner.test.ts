@@ -1,12 +1,12 @@
-import { runCommandState } from '../src/engine/CommandStateRunner';
-import { StateDef } from '../src/types';
-import * as outputStore from '../src/outputStore';
+import { runCommandState } from '../../src/engine/CommandStateRunner';
+import { StateDef } from '../../src/types';
+import * as outputStore from '../../src/outputStore';
 
-jest.mock('../src/outputStore');
-jest.mock('../src/handlers/commandHandler');
+jest.mock('../../src/outputStore');
+jest.mock('../../src/handlers/commandHandler');
 
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
-const { executeCommand } = require('../src/handlers/commandHandler');
+const { executeCommand } = require('../../src/handlers/commandHandler');
 
 describe('runCommandState', () => {
   beforeEach(() => jest.resetAllMocks());

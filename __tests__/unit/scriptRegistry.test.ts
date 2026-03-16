@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { loadScriptRegistry } from '../src/scriptRegistry';
+import { loadScriptRegistry } from '../../src/scriptRegistry';
 
 const TMP = path.resolve(__dirname, 'tmp_script');
 beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });

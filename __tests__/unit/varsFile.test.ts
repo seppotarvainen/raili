@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { loadVarsFile } from '../src/cli';
+import { loadVarsFile } from '../../src/cli';
 
 describe('loadVarsFile', () => {
   let tmpdir: string;

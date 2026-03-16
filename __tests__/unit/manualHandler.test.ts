@@ -1,4 +1,4 @@
-import { handleManualTransition } from '../src/handlers/manualHandler';
+import { handleManualTransition } from '../../src/handlers/manualHandler';
 
 afterEach(() => { delete process.env.RAILI_MANUAL_CHOICE; });
 
