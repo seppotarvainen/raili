@@ -33,7 +33,7 @@ test('runs approval-level notify before the prompt', async () => {
   const approvalWithNotify = { ...approval, notify: 'slack-notify "done"' };
   await runApprovalStep('analyze', approvalWithNotify, { cwd: '/tmp' });
 
-  expect(mockRunNotify).toHaveBeenCalledWith('slack-notify "done"', '/tmp');
+  expect(mockRunNotify).toHaveBeenCalledWith('slack-notify "done"', '/tmp', {});
   expect(mockRunNotify).toHaveBeenCalledTimes(1);
   expect(mockHandleManual).toHaveBeenCalledTimes(1);
 });

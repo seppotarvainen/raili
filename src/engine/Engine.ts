@@ -92,7 +92,7 @@ export class Engine {
         }
 
         if (config.notify) {
-          await runNotify(config.notify, this.cwd);
+          await runNotify(config.notify, this.cwd, this.context?.vars ?? {});
         }
 
         // Terminal state: no routing defined, stop execution
@@ -183,7 +183,7 @@ export class Engine {
           }
           if (errConfig.notify) {
             // best-effort notify before exiting
-            try { await runNotify(errConfig.notify, this.cwd); } catch {}
+            try { await runNotify(errConfig.notify, this.cwd, this.context.vars ?? {}); } catch {}
           }
 
           // Record error state and persist context, then stop (error state must be terminal)

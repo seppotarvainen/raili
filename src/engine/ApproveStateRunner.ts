@@ -21,7 +21,7 @@ export async function runApprovalStep(
 ): Promise<string> {
 
   if (approval.notify) {
-    await runNotify(approval.notify, options.cwd);
+    await runNotify(approval.notify, options.cwd, options.context?.vars ?? {});
   }
 
   // Interpolate the question with variables from context

@@ -28,11 +28,8 @@ fi
 next=$((max+1))
 new_id="RAI-${next}"
 
-export "RAILI_VAR_ID=${new_id}"
-
 # Print the exported variable in Raili's expected format (name=value on stdout)
+echo "Exporting the variable:"
 echo "id=${new_id}"
-# Also print a human-friendly message to stderr for logs
-echo "Next id: ${new_id}" >&2
 
 exit 0
