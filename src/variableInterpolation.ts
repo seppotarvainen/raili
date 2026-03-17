@@ -9,6 +9,7 @@
 
 export interface InterpolationOptions {
   throwOnMissing?: boolean; // default: true (fail-fast)
+  missingValue?: string; // when provided and throwOnMissing is false, use this for missing vars
 }
 
 /**
@@ -25,7 +26,7 @@ export function interpolateString(
   vars: Record<string, string>,
   options: InterpolationOptions = {}
 ): string {
-  const { throwOnMissing = true } = options;
+  const { throwOnMissing = true, missingValue } = options;
 
   // First pass: replace $$ with a placeholder to protect it
   const ESCAPE_PLACEHOLDER = '\x00RAILI_ESCAPED_DOLLAR\x00';
@@ -38,7 +39,8 @@ export function interpolateString(
       if (throwOnMissing) {
         throw new Error(`Variable '${varName}' is not defined. Referenced in: "${text}"`);
       }
-      return match; // leave as-is if not throwing
+      if (typeof missingValue !== 'undefined') return missingValue;
+      return match; // leave as-is if not throwing and no missingValue provided
     }
     return vars[varName];
   });

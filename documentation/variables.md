@@ -48,7 +48,9 @@ description: Fix login bug
 
 ## Using Variables in YAML
 
-Use `${variable_name}` (lowercase, no prefix) in agent prompts and approval questions:
+Use `${variable_name}` (lowercase, no prefix) in agent prompts and approval questions.
+
+Note: YAML interpolation is an exact, case-sensitive lookup against the workflow's `context.vars`. For prompts and approval questions the engine performs YAML-style interpolation where missing variables are replaced with an empty string (so `${missing}` → ``). This behavior is deliberate and does not change the default fail-fast behavior of interpolateString (which still throws unless called with `throwOnMissing: false` or an explicit `missingValue`).
 
 ```yaml
 analyze:

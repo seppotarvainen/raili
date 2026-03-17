@@ -41,7 +41,7 @@ describe('variable interpolation in agent prompts', () => {
     );
   });
 
-  test('throws if variable in agent prompt is not defined', async () => {
+  test('missing variable in agent prompt becomes empty string', async () => {
     const context: WorkflowContext = {
       stateHistory: [],
       vars: { TICKET_ID: 'PROJ-456' },
@@ -59,8 +59,14 @@ describe('variable interpolation in agent prompts', () => {
       transitions: ['done'],
     };
 
-    await expect(runAgentState(state, registry, '/tmp', context.vars)).rejects.toThrow(
-      "Variable 'MISSING_CONTEXT' is not defined"
+    await runAgentState(state, registry, '/tmp', context.vars);
+
+    expect(mockExecuteAgent).toHaveBeenCalledWith(
+      registry,
+      'analyzer.agent',
+      '/tmp',
+      null,
+      'Analyze PROJ-456 in '
     );
   });
 

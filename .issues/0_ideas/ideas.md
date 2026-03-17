@@ -1,25 +1,6 @@
 # Ideas
 
 ```yaml
-title: workflow as an input to run command
-intent: | 
-  Currently user can use only singe "workflow.yaml" file as an input for `raili run`. It would be great
-  to allow users to specify alternative file as input. This would allow users to have multiple workflow
-  configurations in the same project and choose which one to run. For example, they could have
-  `workflow-dev.yaml` for simple sanity testing and `workflow.yaml` for full runs.
-  
-  By default, worfklow.yaml should be used if no alternative file is specified. Alternative file should be specified as an argument to `raili run` command. For example, if user has `workflow-dev.yaml` file, they should be able to run it with command: `raili run --workflow workflow-dev.yaml`
-```
-
-```yaml
-title: More context info from each state.
-intent: |
-    Currently system only stores state name and enteredAt. I'd like also to have more about the internals, like "approval" (it's question and user result/reason), "notify" (was it run successfully or not).
-
-    In the future I'm about to build GUI for this, so having more context info about each state would be really helpful for that.
-```
-
-```yaml
 title: GUI to follow the state machine execution
 intent: |
     It would be great to have a simple GUI that shows the state machine execution in real time
@@ -29,32 +10,50 @@ intent: |
 ```
 
 ```yaml
-title: Store approval reason into the context
+title: If variable is not present, interpolation should produce empty string
 intent: |
-    Currently user can provide a reason for their approval decline, but this reason is not stored anywhere. This should be stored as a variable
-    that may be used in the future states. They should be different from variables, so maybe they could be as follows: 
+    Fix interpolation so that it doesn't provide ${MY_STATE_FAILED} into prompt or other places. 
+    Also the interpolated variable should be exactly the name of the state + FAILED, no uppercasing.
+  
+    For cli vars the uppercase is fine, but not for the interpolation in the YAML.
 
+    So this is the intended usage:
     ```yaml
-    states:
-      start:
-        type: engine
-        approval:
-          question: "Do you want to proceed?"
-          PASSED: next
-          FAILED: end
-
-      end:
-        type: command
-        command: echo "Process ended because of: $RAILI_START_FAILED" # START is the state name where approval was requested
+    state: mystate
+    type: engine
+    approval:
+      question: "Last reason you provided '${mystate_FAILED}''"
+      PASSED: nextstate
+      FAILED: mystate # just ask again, now the reson should be visible. In the first run it's just empty.
     ```
 ```
 
-```
-title: Improve approval state with multiline reason input
+
+```yaml
+title: Show description of the input
 intent: |
-   Sometimes approval declines require more detailed explanations why it cannot be approved. Being able to give multiline
-   input would be helpful for example the next coding agent to edit the solution further.
-   
-   This should however be optional. Workflow approval should contain option "multiline: boolean". The input ends when
-   user inputs a line containing only '/q'. 
+    On start, the system prompts the user to give the specific input. If user has defined the following in the workflow.yaml:
+    ```yaml
+    inputs:
+      - type
+    ```
+    The system prompts `type` and let the user fill the value.
+
+    It would be better if additionally there would be a short description of the input, for example:
+    ```yaml
+    inputs:
+    - name: type
+      description: "Type of the task to perform. For example, 'data analysis' or 'content generation'."
+    ```
+    The system would then prompt: 
+    ```
+    Type of the task to perform. For example, 'data analysis' or 'content generation'.
+    > type: 
+    ```
+
+    It would make the system more user-friendly and easier to understand what kind of input is expected from the user.
+    Description is optional, name is mandatory.
+
+    The feature doesn't have to be backwards compatible. If inputs are in wrong format, then the system handles it in 
+    its usualway.
 ```
