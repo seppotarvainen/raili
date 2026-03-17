@@ -42,12 +42,13 @@ export async function handleManualTransition(config: ManualTransitionConfig, opt
   if (opts.multiline) {
     // Inform the user about the terminator and start collecting lines
     console.log(`\n${config.question}\n[Enter multiple lines, finish with a single line containing '/q']`);
+    rl.setPrompt('> ');
+    rl.prompt();
 
     return await new Promise<ManualResult>(resolve => {
       const lines: string[] = [];
 
-      rl.on('line', (line: string) => {
-
+      const onLine = (line: string) => {
         if (line === '/q') {
           rl.close();
           const reason = lines.join('\n');
@@ -55,8 +56,10 @@ export async function handleManualTransition(config: ManualTransitionConfig, opt
           resolve({ chosen, target: config.options[chosen], reason });
         } else {
           lines.push(line);
+          rl.prompt();
         }
-      });
+      }
+      rl.on('line', onLine)
     });
   }
 
