@@ -210,7 +210,6 @@ output:
   - Never call real copilot CLI
   - Never spawn real shell processes
   - Never write real files (use in-memory mocks)
-- **No integration tests** (e.g., real agent calls) in MVP
 - Test registry validation, error states, loopbacks
 
 Run tests: `npm test` (uses `--runInBand` to avoid race conditions)

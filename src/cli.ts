@@ -40,33 +40,71 @@ function promptLine(rl: readline.Interface, question: string): Promise<string> {
 }
 
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
-export function loadVarsFile(cwd: string, declared: string[]): Record<string, string> {
-  const varsPath = path.join(cwd, '.raili', 'vars.yaml');
-  if (!fs.existsSync(varsPath)) return {};
+export function loadVarsFile(cwd: string, declared: string[], workflowPath?: string): Record<string, string> {
+  // Support paired vars file naming when workflowPath is provided.
+  // Precedence:
+  // 1. .raili/vars.<suffix>.yaml
+  // 2. .raili/vars-<suffix>.yaml
+  // 3. .raili/vars.yaml
+  const railiDir = path.join(cwd, '.raili');
 
-  const parsed = yaml.load(fs.readFileSync(varsPath, 'utf8')) as any;
-  if (!parsed || typeof parsed !== 'object') return {};
-
-  const result: Record<string, string> = {};
-  const declaredSet = new Set(declared);
-
-  for (const [key, value] of Object.entries(parsed)) {
-    if (declaredSet.has(key)) {
-      if (value != null) {
-        result[key] = String(value);
+  // Helper to read and filter a vars file
+  function readAndFilter(filePath: string): Record<string, string> {
+    if (!fs.existsSync(filePath)) return {};
+    const parsed = yaml.load(fs.readFileSync(filePath, 'utf8')) as any;
+    if (!parsed || typeof parsed !== 'object') return {};
+    const result: Record<string, string> = {};
+    const declaredSet = new Set(declared);
+    for (const [key, value] of Object.entries(parsed)) {
+      if (declaredSet.has(key)) {
+        if (value != null) result[key] = String(value);
+      } else {
+        console.warn(colors.yellow(`[Warning] Variable '${key}' in ${path.basename(filePath)} is not declared in workflow inputs. It will be ignored.`));
       }
-    } else {
-      console.warn(colors.yellow(`[Warning] Variable '${key}' in vars.yaml is not declared in workflow inputs. It will be ignored.`));
     }
+    return result;
   }
-  return result;
+
+  // If no workflowPath, default behavior
+  if (!workflowPath) {
+    const varsPath = path.join(railiDir, 'vars.yaml');
+    return readAndFilter(varsPath);
+  }
+
+  // Derive suffix from workflowPath
+  let basename = path.basename(workflowPath);
+  // strip extension
+  basename = basename.replace(/\.(yaml|yml)$/i, '');
+  // If name starts with 'workflow-' or 'workflow_', prefer the suffix after that
+  let suffix = basename;
+  if (basename.startsWith('workflow-') || basename.startsWith('workflow_')) {
+    suffix = basename.split(/[-_]/).slice(1).join('-');
+  } else if (basename === 'workflow') {
+    // exact 'workflow' -> no suffix
+    suffix = '';
+  }
+
+  const candidates: string[] = [];
+  if (suffix) {
+    candidates.push(path.join(railiDir, `vars.${suffix}.yaml`));
+    candidates.push(path.join(railiDir, `vars-${suffix}.yaml`));
+    candidates.push(path.join(railiDir, `vars.${suffix}.yml`));
+  }
+  candidates.push(path.join(railiDir, 'vars.yaml'));
+
+  for (const cand of candidates) {
+    const data = readAndFilter(cand);
+    if (Object.keys(data).length > 0) return data;
+  }
+
+  return {};
 }
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */
-export async function collectVars(cwd: string, flagVars: Record<string, string>): Promise<Record<string, string>> {
+export async function collectVars(cwd: string, flagVars: Record<string, string>, workflowPath?: string): Promise<Record<string, string>> {
   let declaredInputs: {name: string; description: string;}[] = [];
   try {
-    const config = loadWorkflowConfig(cwd);
+    const config = loadWorkflowConfig(cwd, workflowPath);
     const raw = config.inputs ?? [];
     declaredInputs = raw.map((it: any) => {
       if (typeof it !== 'object' || it === null || typeof it.name !== 'string' || typeof it.description !== 'string') {
@@ -80,8 +118,8 @@ export async function collectVars(cwd: string, flagVars: Record<string, string>)
 
   const declaredNames = declaredInputs.map(d => d.name);
 
-  // Precedence: flags > vars.yaml > interactive prompt
-  const fileVars = loadVarsFile(cwd, declaredNames);
+  // Precedence: flags > vars file > interactive prompt
+  const fileVars = loadVarsFile(cwd, declaredNames, workflowPath);
   const merged = { ...fileVars, ...flagVars };
 
   const missingNames = declaredNames.filter((key) => !(key in merged));
@@ -157,7 +195,7 @@ async function main() {
 
       // Only prompt for missing vars on a clean run — continue reuses context.json
       const vars = mode === 'clean'
-        ? await collectVars(process.cwd(), flagVars)
+        ? await collectVars(process.cwd(), flagVars, workflowPath)
         : flagVars;
 
       await runCommand(process.cwd(), mode, vars, workflowPath);
