@@ -45,6 +45,8 @@ description: "Fix login bug"
 
 Only keys declared in `inputs:` are read from this file.
 
+Paired vars files: Raili also supports per-workflow vars files. When running an alternate workflow (via `--workflow`), Raili will prefer a paired vars file derived from the workflow name. For example, running `--workflow workflow-dev.yaml` will cause Raili to prefer `.raili/vars.dev.yaml` then `.raili/vars-dev.yaml` before falling back to `.raili/vars.yaml`. This enables environment/workflow-specific defaults without breaking existing behavior.
+
 ### Interactive Prompt
 
 On a clean run with missing inputs:

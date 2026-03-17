@@ -30,6 +30,11 @@ export function writeWorkflow(dir: string, yamlContent: string): void {
   fs.writeFileSync(path.join(dir, '.raili', 'workflow.yaml'), yamlContent, 'utf8');
 }
 
+/** Write arbitrary .raili/<filename> workflow file (e.g., workflow-dev.yaml) */
+export function writeWorkflowFile(dir: string, filename: string, yamlContent: string): void {
+  fs.writeFileSync(path.join(dir, '.raili', filename), yamlContent, 'utf8');
+}
+
 /** Write .raili/agent-registry.json */
 export function writeAgentRegistry(dir: string, registry: object): void {
   fs.writeFileSync(
