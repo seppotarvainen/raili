@@ -180,6 +180,6 @@ export const WorkflowConfigSchema: ObjectSchema = {
   inputs: {
     required: false,
     type: 'array',
-    description: 'Declared input names — raili prompts for these on a clean run'
+    description: 'Declared input names — raili prompts for these on a clean run. Items may be strings or objects {name, description}.'
   }
 };

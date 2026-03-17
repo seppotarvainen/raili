@@ -271,5 +271,31 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     }
   }
 
+  // Validate inputs: require array of objects {name, description}
+  if (config.inputs !== undefined) {
+    if (!Array.isArray(config.inputs)) {
+      throw new SchemaValidationError(`Field 'inputs' must be an array`);
+    }
+    for (let i = 0; i < config.inputs.length; i++) {
+      const item = config.inputs[i];
+      if (typeof item === 'object' && item !== null) {
+        if (!('name' in item) || typeof item.name !== 'string') {
+          throw new SchemaValidationError(`Field 'inputs[${i}]' must have a string 'name' property`);
+        }
+        if (!('description' in item) || typeof item.description !== 'string') {
+          throw new SchemaValidationError(`Field 'inputs[${i}].description' must be a string and is required`);
+        }
+        // no unknown keys allowed
+        for (const k of Object.keys(item)) {
+          if (!['name', 'description'].includes(k)) {
+            throw new SchemaValidationError(`Field 'inputs[${i}]' contains unknown key '${k}'`);
+          }
+        }
+        continue;
+      }
+      throw new SchemaValidationError(`Field 'inputs[${i}]' must be an object with 'name' and 'description'`);
+    }
+  }
+
   return config as WorkflowConfig;
 }

@@ -54,11 +54,11 @@ test('typed text resolves to FAILED with reason', async () => {
 // Multiline mode tests
 
 test('multiline input collects lines until /q and returns FAILED with assembled reason', async () => {
-  const cfg = { question: 'Explain?', options: { PASSED: 'ok', FAILED: 'needs' } };
+  const cfg = { question: 'Explain?', options: { PASSED: 'ok', FAILED: 'needs' }, multiline: true };
   const { PassThrough } = require('stream');
   const mockStdin = new PassThrough();
   jest.spyOn(process, 'stdin', 'get').mockReturnValue(mockStdin as any);
-  const promise = handleManualTransition(cfg, { multiline: true });
+  const promise = handleManualTransition(cfg);
   mockStdin.emit('data', 'first line\n');
   mockStdin.emit('data', 'second line\n');
   mockStdin.emit('data', '/q\n');
@@ -70,11 +70,11 @@ test('multiline input collects lines until /q and returns FAILED with assembled 
 });
 
 test('multiline immediate terminator /q results in PASSED with empty reason', async () => {
-  const cfg = { question: 'Explain?', options: { PASSED: 'ok', FAILED: 'needs' } };
+  const cfg = { question: 'Explain?', options: { PASSED: 'ok', FAILED: 'needs' }, multiline: true };
   const { PassThrough } = require('stream');
   const mockStdin = new PassThrough();
   jest.spyOn(process, 'stdin', 'get').mockReturnValue(mockStdin as any);
-  const promise = handleManualTransition(cfg, { multiline: true });
+  const promise = handleManualTransition(cfg);
   mockStdin.emit('data', '/q\n');
   const res = await promise;
   expect(res.chosen).toBe('PASSED');

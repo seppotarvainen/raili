@@ -1,5 +1,5 @@
 import { ApprovalConfig } from '../types';
-import { handleManualTransition, ManualResult } from '../handlers/manualHandler';
+import { handleManualTransition, ManualResult, ManualTransitionConfig } from '../handlers/manualHandler';
 import { runNotify, NotifyResult } from '../handlers/notifyHandler';
 import { interpolateString } from '../variableInterpolation';
 import { WorkflowContext } from '../types';
@@ -37,17 +37,16 @@ export async function runApprovalStep(
   const vars = options.context?.vars ?? {};
   const interpolatedQuestion = interpolateString(approval.question, vars, { throwOnMissing: false, missingValue: '' });
 
-  const result: ManualResult = await handleManualTransition(
-    {
-      question: interpolatedQuestion,
-        options: {
-          PASSED: approval.PASSED,
-          FAILED: approval.FAILED,
-      },
+  const manualCallArg: ManualTransitionConfig = {
+    question: interpolatedQuestion,
+    options: {
+      PASSED: approval.PASSED,
+      FAILED: approval.FAILED,
     },
-    {multiline: approval.multiline}
-  );
+    multiline: approval.multiline
+  };
 
+  const result: ManualResult = await handleManualTransition(manualCallArg);
 
   return {
     chosen: result.chosen,

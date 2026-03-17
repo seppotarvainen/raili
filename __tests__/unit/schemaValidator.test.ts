@@ -416,7 +416,10 @@ describe('SchemaValidator', () => {
     it('should accept workflow with optional inputs', () => {
       const config = {
         initial: 'start',
-        inputs: ['ticket_id', 'description'],
+        inputs: [
+          { name: 'ticket_id', description: 'Ticket identifier' },
+          { name: 'description', description: 'Detailed description' }
+        ],
         states: {
           start: {
             type: 'agent',
