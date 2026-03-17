@@ -9,7 +9,7 @@ Declare the variables your workflow needs. Two forms are accepted:
 
 Declaring Inputs
 
-Inputs must be declared as objects with `name` and `description` fields. Example:
+Inputs may be declared either as shorthand strings or as objects. The `description` field is optional. Examples:
 
 ```yaml
 inputs:
