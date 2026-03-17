@@ -1,31 +1,59 @@
-import { runCommand } from '../../src/run';
-import { loadWorkflowConfig } from '../../src/workflowLoader';
-import * as fs from 'fs';
-import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from '../../src/registryValidator';
-import { loadContext } from '../../src/context';
-import { Engine } from '../../src/engine/Engine';
+import {runCommand} from '../../src/run';
+import {loadContext} from '../../src/context';
+import {
+    cleanupRailiEnvVars,
+    cleanupTmpWorkspace,
+    createTmpWorkspace,
+    fakeChild,
+    writeAgentRegistry,
+    writeScriptRegistry,
+    writeWorkflow,
+    writeWorkflowFile,
+    //@ts-ignore
+} from './testUtils';
 
-jest.mock('../../src/workflowLoader');
-jest.mock('fs');
-jest.mock('../../src/registryValidator');
-jest.mock('../../src/context');
-jest.mock('../../src/engine/Engine');
+// Mock child_process globally — alternate workflow uses engine states so spawn is still used for notify
+jest.mock('child_process', () => ({ spawn: jest.fn() }));
+const { spawn } = require('child_process');
+
+let tmpDir: string;
+
+beforeEach(() => {
+  tmpDir = createTmpWorkspace();
+  spawn.mockImplementation(() => fakeChild('', '', 0));
+});
+
+afterEach(() => {
+  cleanupTmpWorkspace(tmpDir);
+  cleanupRailiEnvVars();
+  spawn.mockReset();
+});
 
 describe('run (integration - alternate workflow)', () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-    (fs.existsSync as jest.Mock).mockImplementation((p: string) => true);
-    (fs.statSync as jest.Mock).mockImplementation(() => ({ isDirectory: () => true }));
-    (loadWorkflowConfig as jest.Mock).mockReturnValue({ initial: 'start', states: {} });
-    (validateAgentRegistry as jest.Mock).mockReturnValue({});
-    (validateScriptRegistry as jest.Mock).mockReturnValue({});
-    (validateWorkflowReferences as jest.Mock).mockReturnValue(undefined);
-    (loadContext as jest.Mock).mockReturnValue({ stateHistory: [] });
-    (Engine as unknown as jest.Mock).mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
-  });
+  it('runs with alternate workflow and respects workflowPath', async () => {
+    // Default workflow.yaml should point to 'main'
+    writeWorkflow(tmpDir, `
+initial: main
+states:
+  main:
+    type: engine
+`);
 
-  test('runs with alternate workflow and respects workflowPath', async () => {
-    await runCommand('/cwd', 'clean', {}, 'workflow-dev.yaml');
-    expect(loadWorkflowConfig).toHaveBeenCalledWith('/cwd', 'workflow-dev.yaml');
+    // Alternate workflow in .raili/ with a different initial state
+    writeWorkflowFile(tmpDir, 'workflow-dev.yaml', `
+initial: devstart
+states:
+  devstart:
+    type: engine
+`);
+
+    writeAgentRegistry(tmpDir, {});
+    writeScriptRegistry(tmpDir, {});
+
+    await runCommand(tmpDir, 'clean', {}, 'workflow-dev.yaml');
+
+    const ctx = loadContext(tmpDir);
+    const states = ctx.stateHistory.map((e: any) => e.state);
+    expect(states).toEqual(['devstart']);
   });
 });
