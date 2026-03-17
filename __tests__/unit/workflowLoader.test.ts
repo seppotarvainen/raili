@@ -52,6 +52,32 @@ describe('workflowLoader', () => {
       expect(config.initial).toBe('init');
       expect(config.states.init.type).toBe('engine');
     });
+
+    test('parses inputs declared as objects', () => {
+      const railiDir = path.join(tmpdir, '.raili');
+      fs.mkdirSync(railiDir);
+      const workflow = [
+        'initial: init',
+        'inputs:',
+        '  - name: ticket_id',
+        "    description: 'The ticket id'",
+        '  - name: branch',
+        "    description: 'Git branch name'",
+        'states:',
+        '  init:',
+        '    type: engine',
+      ].join('\n');
+      fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), workflow);
+
+      const config = loadWorkflowConfig(tmpdir);
+      expect(config.inputs).toBeDefined();
+      // normalized to objects
+      expect(Array.isArray(config.inputs)).toBe(true);
+      expect((config.inputs as any[])[0].name).toBe('ticket_id');
+      expect((config.inputs as any[])[0].description).toBe('The ticket id');
+      expect((config.inputs as any[])[1].name).toBe('branch');
+      expect((config.inputs as any[])[1].description).toBe('Git branch name');
+    });
   });
 
   describe('buildStateMachine', () => {

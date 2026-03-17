@@ -120,7 +120,8 @@ describe('agent prompt with variable interpolation', () => {
     writeWorkflow(tmpDir, `
 initial: analyze
 inputs:
-  - ticket_id
+  - name: ticket_id
+    description: 'Ticket identifier'
 states:
   analyze:
     type: agent

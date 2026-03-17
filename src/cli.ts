@@ -63,27 +63,40 @@ export function loadVarsFile(cwd: string, declared: string[]): Record<string, st
 }
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */
-async function collectVars(cwd: string, flagVars: Record<string, string>): Promise<Record<string, string>> {
-  let declared: string[] = [];
+export async function collectVars(cwd: string, flagVars: Record<string, string>): Promise<Record<string, string>> {
+  let declaredInputs: {name: string; description: string;}[] = [];
   try {
     const config = loadWorkflowConfig(cwd);
-    declared = config.inputs ?? [];
+    const raw = config.inputs ?? [];
+    declaredInputs = raw.map((it: any) => {
+      if (typeof it !== 'object' || it === null || typeof it.name !== 'string' || typeof it.description !== 'string') {
+        throw new Error('Workflow inputs must be objects with "name" and "description"');
+      }
+      return { name: it.name, description: it.description };
+    });
   } catch {
     // If workflow can't be loaded here, run() will fail with a proper error
   }
 
+  const declaredNames = declaredInputs.map(d => d.name);
+
   // Precedence: flags > vars.yaml > interactive prompt
-  const fileVars = loadVarsFile(cwd, declared);
+  const fileVars = loadVarsFile(cwd, declaredNames);
   const merged = { ...fileVars, ...flagVars };
 
-  const missing = declared.filter((key) => !(key in merged));
-  if (missing.length === 0) return merged;
+  const missingNames = declaredNames.filter((key) => !(key in merged));
+  if (missingNames.length === 0) return merged;
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const collected: Record<string, string> = { ...merged };
-  for (const key of missing) {
-    const value = await promptLine(rl, `${key}: `);
-    collected[key] = value.trim();
+  for (const name of missingNames) {
+    const def = declaredInputs.find(d => d.name === name);
+    if (def && def.description) {
+      // Print description before prompting (allow multiline)
+      console.log(def.description);
+    }
+    const value = await promptLine(rl, `> ${name}: `);
+    collected[name] = value.trim();
   }
   rl.close();
   return collected;

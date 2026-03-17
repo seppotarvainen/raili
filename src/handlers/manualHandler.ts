@@ -3,6 +3,7 @@ import * as readline from 'readline';
 export type ManualTransitionConfig = {
   question: string;
   options: Record<string, string>; // e.g., { PASSED: 'execute', FAILED: 'analyze' }
+  multiline?: boolean;
 };
 
 export type ManualResult = { chosen: string; target: string; reason: string };
@@ -27,7 +28,7 @@ export type ManualOpts = { multiline: boolean | undefined };
  *  - handleManualTransition(config, {multiline: true})
  *  - handleManualTransition({multiline: true}) // deprecated but tolerated in tests
  */
-export async function handleManualTransition(config: ManualTransitionConfig, opts: ManualOpts = { multiline: undefined }): Promise<ManualResult> {
+export async function handleManualTransition(config: ManualTransitionConfig): Promise<ManualResult> {
   const keys = Object.keys(config.options || {});
   if (keys.length === 0) throw new Error('No manual options provided');
 
@@ -39,7 +40,7 @@ export async function handleManualTransition(config: ManualTransitionConfig, opt
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-  if (opts.multiline) {
+  if (config.multiline) {
     // Inform the user about the terminator and start collecting lines
     console.log(`\n${config.question}\n[Enter multiple lines, finish with a single line containing '/q']`);
     rl.setPrompt('> ');

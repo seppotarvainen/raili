@@ -38,11 +38,16 @@ export interface StateConfig {
   expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>
 }
 
+export interface InputDef {
+  name: string;
+  description: string;
+}
+
 export interface WorkflowConfig {
   initial: string;
   error?: string; // Optional named error state to route to on unhandled exceptions
   states: Record<string, StateConfig>;
-  inputs?: string[];       // Declared input names — raili prompts for these on a clean run
+  inputs?: InputDef[]; // Declared inputs — each must include name and description
 }
 
 // Runtime state machine (derived from workflow config)

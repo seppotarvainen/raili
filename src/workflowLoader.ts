@@ -69,10 +69,26 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
   // fields cause a fail-fast validation error.
   validateWorkflowConfig(main);
 
+  // Normalize inputs to [{name, description}] form for downstream code (description required)
+  let normalizedInputs: any[] | undefined = undefined;
+  if (main.inputs !== undefined) {
+    if (!Array.isArray(main.inputs)) {
+      throw new Error('Field "inputs" must be an array');
+    }
+    normalizedInputs = main.inputs.map((it: any, idx: number) => {
+      if (typeof it === 'object' && it !== null) {
+        if (typeof it.name !== 'string') throw new Error(`inputs[${idx}].name must be a string`);
+        if (typeof it.description !== 'string') throw new Error(`inputs[${idx}].description must be a string and is now required`);
+        return { name: it.name, description: it.description };
+      }
+      throw new Error(`Invalid input declaration at index ${idx}: inputs must be objects with 'name' and 'description'`);
+    });
+  }
+
   const config: WorkflowConfig = {
     initial: main.initial,
     states: main.states,
-    inputs: main.inputs,
+    inputs: normalizedInputs,
   };
 
   if (main.error) {

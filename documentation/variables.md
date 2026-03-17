@@ -5,13 +5,22 @@
 
 ## Declaring Inputs
 
-Declare the variables your workflow needs:
+Declare the variables your workflow needs. Two forms are accepted:
+
+Declaring Inputs
+
+Inputs must be declared as objects with `name` and `description` fields. Example:
 
 ```yaml
 inputs:
-  - ticket_id
-  - branch
-  - description
+  - name: ticket_id
+    description: |
+      The upstream issue tracker ID for this work.
+      Example: PROJ-123
+  - name: branch
+    description: "Git branch to use for the patch"
+  - name: description
+    description: "Short description of the change"
 ```
 
 ## Supplying Values
