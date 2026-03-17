@@ -37,13 +37,17 @@ export async function runApprovalStep(
   const vars = options.context?.vars ?? {};
   const interpolatedQuestion = interpolateString(approval.question, vars);
 
-  const result: ManualResult = await handleManualTransition({
-    question: interpolatedQuestion,
-    options: {
-      PASSED: approval.PASSED,
-      FAILED: approval.FAILED,
+  const result: ManualResult = await handleManualTransition(
+    {
+      question: interpolatedQuestion,
+        options: {
+          PASSED: approval.PASSED,
+          FAILED: approval.FAILED,
+      },
     },
-  });
+    {multiline: approval.multiline}
+  );
+
 
   return {
     chosen: result.chosen,

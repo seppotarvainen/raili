@@ -62,6 +62,11 @@ export const ApprovalConfigSchema: ObjectSchema = {
     required: true,
     type: 'string',
     description: 'Next state if approval is failed'
+  },
+  multiline: {
+    required: false,
+    type: 'boolean',
+    description: 'When true, accept multiline input terminated by a line containing only "/q"'
   }
 };
 

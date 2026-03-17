@@ -48,3 +48,13 @@ intent: |
         command: echo "Process ended because of: $RAILI_START_FAILED" # START is the state name where approval was requested
     ```
 ```
+
+```
+title: Improve approval state with multiline reason input
+intent: |
+   Sometimes approval declines require more detailed explanations why it cannot be approved. Being able to give multiline
+   input would be helpful for example the next coding agent to edit the solution further.
+   
+   This should however be optional. Workflow approval should contain option "multiline: boolean". The input ends when
+   user inputs a line containing only '/q'. 
+```
