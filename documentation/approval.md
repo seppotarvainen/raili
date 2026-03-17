@@ -20,6 +20,8 @@ review:
 - Press **Enter** → routes to PASSED state
 - Type **anything** → routes to FAILED state
 
+There is an optional multiline mode (see below).
+
 ## Approval Fields
 
 | Field      | Required  | Type   | Description                                                           |
@@ -28,6 +30,7 @@ review:
 | `PASSED`   | ✅         | string | Next state if user presses Enter                                      |
 | `FAILED`   | ✅         | string | Next state if user types a reason                                     |
 | `notify`   | ❌         | string | Shell command run BEFORE the prompt (e.g., alert reviewers)           |
+| `multiline`| ❌         | boolean| When true, allow the user to enter multiple lines as a reason; terminate input with a line containing only `/q` |
 
 ## With Optional Notification
 
@@ -44,6 +47,26 @@ review:
 ```
 
 The notification runs after the state handler completes but before the user is prompted.
+
+## Multiline approval
+
+Enable multiline input for richer rejection reasons:
+
+```yaml
+review:
+  type: engine
+  approval:
+    multiline: true
+    question: |
+      The diff is large. Please provide a reason for rejection (finish with /q):
+    PASSED: continue
+    FAILED: rework
+```
+
+Behavior:
+- Raili collects lines from stdin until a line containing only `/q` is entered (that `/q` line is not included in the saved reason).
+- If the assembled reason is empty (user entered `/q` immediately), the answer is treated as PASSED.
+- If the assembled reason contains any text, the answer is treated as FAILED and the full multiline reason is persisted.
 
 ## With Variable Interpolation
 

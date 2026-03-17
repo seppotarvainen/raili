@@ -17,6 +17,7 @@ export interface ApprovalConfig {
   notify?: string;   // Optional shell command to run before showing the approval prompt
   PASSED: string;
   FAILED: string;
+  multiline?: boolean; // Optional: allow multiline reason input when prompting (terminator: /q)
 }
 
 export interface StateConfig {
