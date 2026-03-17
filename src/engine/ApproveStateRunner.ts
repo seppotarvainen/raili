@@ -33,9 +33,9 @@ export async function runApprovalStep(
     notifyRes = await runNotify(approval.notify, options.cwd, options.context?.vars ?? {});
   }
 
-  // Interpolate the question with variables from context
+  // Interpolate the question with variables from context (YAML semantics: missing -> empty string)
   const vars = options.context?.vars ?? {};
-  const interpolatedQuestion = interpolateString(approval.question, vars);
+  const interpolatedQuestion = interpolateString(approval.question, vars, { throwOnMissing: false, missingValue: '' });
 
   const result: ManualResult = await handleManualTransition(
     {

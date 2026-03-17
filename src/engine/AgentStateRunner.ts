@@ -20,10 +20,10 @@ export class AgentStateRunner implements IStateRunner {
 
     const agentId = state.config.agent!;
 
-    // Interpolate the prompt with variables from vars
+    // Interpolate the prompt with variables from vars (YAML semantics: missing -> empty string)
     let interpolatedPrompt = state.config.prompt;
     if (interpolatedPrompt && vars) {
-      interpolatedPrompt = interpolateString(interpolatedPrompt, vars);
+      interpolatedPrompt = interpolateString(interpolatedPrompt, vars, { throwOnMissing: false, missingValue: '' });
     }
 
     const result = await executeAgent(this.registry, agentId, cwd, previousOutputPath, interpolatedPrompt);

@@ -36,7 +36,7 @@ describe('variable interpolation in approval blocks', () => {
     });
   });
 
-  test('throws if variable in question is not defined', async () => {
+  test('missing variable in question becomes empty string', async () => {
     const context: WorkflowContext = {
       stateHistory: [],
       vars: { TICKET_ID: 'PROJ-123' },
@@ -48,9 +48,12 @@ describe('variable interpolation in approval blocks', () => {
       FAILED: 'back',
     };
 
-    await expect(
-      runApprovalStep('review', approval, { cwd: '/tmp', context })
-    ).rejects.toThrow("Variable 'UNDEFINED_VAR' is not defined");
+    await runApprovalStep('review', approval, { cwd: '/tmp', context });
+
+    expect(mockHandleManual).toHaveBeenCalledWith({
+      question: 'Ticket: PROJ-123, Title: ',
+      options: { PASSED: 'next', FAILED: 'back' },
+    });
   });
 
   test('handles multiline approval question with variables', async () => {

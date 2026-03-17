@@ -65,6 +65,11 @@ Description: \${DESCRIPTION}`;
       expect(result).toBe('Hello ${NAME}');
     });
 
+    test('replaces missing variable with empty string when requested', () => {
+      const result = interpolateString('Hello ${NAME}', {}, { throwOnMissing: false, missingValue: '' });
+      expect(result).toBe('Hello ');
+    });
+
     test('handles variable names with underscores', () => {
       const result = interpolateString('${MY_VAR_NAME}', { MY_VAR_NAME: 'value' });
       expect(result).toBe('value');

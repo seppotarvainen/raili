@@ -27,7 +27,7 @@ export type ManualOpts = { multiline: boolean | undefined };
  *  - handleManualTransition(config, {multiline: true})
  *  - handleManualTransition({multiline: true}) // deprecated but tolerated in tests
  */
-export async function handleManualTransition(config: ManualTransitionConfig, opts: ManualOpts): Promise<ManualResult> {
+export async function handleManualTransition(config: ManualTransitionConfig, opts: ManualOpts = { multiline: undefined }): Promise<ManualResult> {
   const keys = Object.keys(config.options || {});
   if (keys.length === 0) throw new Error('No manual options provided');
 
