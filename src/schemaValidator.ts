@@ -271,19 +271,24 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     }
   }
 
-  // Validate inputs: require array of objects {name, description}
+  // Validate inputs: accept array of strings or objects {name, description?}
   if (config.inputs !== undefined) {
     if (!Array.isArray(config.inputs)) {
       throw new SchemaValidationError(`Field 'inputs' must be an array`);
     }
     for (let i = 0; i < config.inputs.length; i++) {
       const item = config.inputs[i];
+      // Accept shorthand string form: e.g. - ticket_id
+      if (typeof item === 'string') {
+        continue; // valid shorthand
+      }
       if (typeof item === 'object' && item !== null) {
         if (!('name' in item) || typeof item.name !== 'string') {
           throw new SchemaValidationError(`Field 'inputs[${i}]' must have a string 'name' property`);
         }
-        if (!('description' in item) || typeof item.description !== 'string') {
-          throw new SchemaValidationError(`Field 'inputs[${i}].description' must be a string and is required`);
+        // description is now optional but if present must be a string
+        if ('description' in item && typeof item.description !== 'string') {
+          throw new SchemaValidationError(`Field 'inputs[${i}].description' must be a string when provided`);
         }
         // no unknown keys allowed
         for (const k of Object.keys(item)) {
@@ -293,7 +298,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
         }
         continue;
       }
-      throw new SchemaValidationError(`Field 'inputs[${i}]' must be an object with 'name' and 'description'`);
+      throw new SchemaValidationError(`Field 'inputs[${i}]' must be either a string or an object with 'name' and optional 'description'`);
     }
   }
 

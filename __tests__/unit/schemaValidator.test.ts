@@ -430,6 +430,40 @@ describe('SchemaValidator', () => {
       expect(() => validateWorkflowConfig(config)).not.toThrow();
     });
 
+    it('should accept inputs declared as strings (shorthand)', () => {
+      const config = {
+        initial: 'start',
+        inputs: [
+          'ticket_id',
+          'branch'
+        ],
+        states: {
+          start: {
+            type: 'agent',
+            agent: 'copilot'
+          }
+        }
+      };
+      expect(() => validateWorkflowConfig(config)).not.toThrow();
+    });
+
+    it('should accept input objects without description (description optional)', () => {
+      const config = {
+        initial: 'start',
+        inputs: [
+          { name: 'ticket_id' },
+          { name: 'branch', description: 'Branch name' }
+        ],
+        states: {
+          start: {
+            type: 'agent',
+            agent: 'copilot'
+          }
+        }
+      };
+      expect(() => validateWorkflowConfig(config)).not.toThrow();
+    });
+
 
     it('should throw if required field "initial" is missing', () => {
       const config = {

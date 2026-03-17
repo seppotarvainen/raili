@@ -78,6 +78,29 @@ describe('workflowLoader', () => {
       expect((config.inputs as any[])[1].name).toBe('branch');
       expect((config.inputs as any[])[1].description).toBe('Git branch name');
     });
+
+    test('parses inputs declared as strings (shorthand)', () => {
+      const railiDir = path.join(tmpdir, '.raili');
+      fs.mkdirSync(railiDir);
+      const workflow = [
+        'initial: init',
+        'inputs:',
+        '  - ticket_id',
+        '  - branch',
+        'states:',
+        '  init:',
+        '    type: engine',
+      ].join('\n');
+      fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), workflow);
+
+      const config = loadWorkflowConfig(tmpdir);
+      expect(config.inputs).toBeDefined();
+      expect(Array.isArray(config.inputs)).toBe(true);
+      expect((config.inputs as any[])[0].name).toBe('ticket_id');
+      expect((config.inputs as any[])[0].description).toBeUndefined();
+      expect((config.inputs as any[])[1].name).toBe('branch');
+      expect((config.inputs as any[])[1].description).toBeUndefined();
+    });
   });
 
   describe('buildStateMachine', () => {

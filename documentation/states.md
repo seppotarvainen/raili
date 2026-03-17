@@ -31,6 +31,8 @@ analyze:
 - `prompt` (optional) — Instruction for agent. Default: "Work according to your rules"
 - `output` (optional) — Storage and filtering config
 
+- NOTE: Inputs may be declared as shorthand strings (e.g. `- ticket_id`) or as objects with `name` and an optional `description`. See documentation/variables.md for details.
+
 **Routing:** Use `transitions:` (not `on:`), agent prints outcome key as last line.
 
 **Memory:** With `output.store: true`, previous output is appended to prompt on next run.

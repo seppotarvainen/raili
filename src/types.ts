@@ -40,7 +40,7 @@ export interface StateConfig {
 
 export interface InputDef {
   name: string;
-  description: string;
+  description?: string;
 }
 
 export interface WorkflowConfig {
