@@ -1,4 +1,4 @@
-# RAI-15: My title
+# RAI-15: Fix input validation to allow shorthand prompt/value forms without description
 
 **Type:** bug
 
