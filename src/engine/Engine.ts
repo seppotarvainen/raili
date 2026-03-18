@@ -115,8 +115,12 @@ export class Engine {
           saveContext(this.cwd, this.context);
         }
 
-        // Terminal state: no routing defined, stop execution
+        // Terminal state: no routing defined, persist optional success flag and stop execution
         if (!config.on && !config.transitions && !config.approval) {
+          const successValue = config.success === undefined ? null : !!config.success;
+          const newCtxTerm = addStateToHistory(this.context, stateId, { success: successValue });
+          if (newCtxTerm) this.context = newCtxTerm;
+          saveContext(this.cwd, this.context);
           console.log(`✓ Reached terminal state: ${stateId}`);
           break;
         }

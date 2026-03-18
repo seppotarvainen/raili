@@ -35,6 +35,9 @@ export interface StateConfig {
   prompt?: string; // Optional prompt for agent
   args?: string[]; // For type: script — ordered list of arguments forwarded to the script process
   approval?: ApprovalConfig;
+  // Optional success flag for terminal (engine) states. When present it will be persisted
+  // to .raili/context.json for the state's run. If omitted, context should record null.
+  success?: boolean | null;
   transitions?: Record<string, string>;
   on?: Record<string, string>;
   expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>
