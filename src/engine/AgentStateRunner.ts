@@ -1,10 +1,11 @@
-import { StateDef } from '../types';
+import { StateDef, LearnSource } from '../types';
 import { AgentRegistry } from '../agentRegistry';
 import { executeAgent } from '../handlers/agentHandler';
-import { saveOutput, loadAgentOutputPath } from '../outputStore';
+import { saveOutput, loadAgentOutputPath, readLatestRun } from '../outputStore';
 import { interpolateString } from '../variableInterpolation';
 import type { StateResult } from './Engine';
 import { IStateRunner } from './StateRunner';
+import { readLearnings, appendUniqueLearning } from '../learningStore';
 
 /**
  * AgentStateRunner - prototype implementation of the StateRunner interface
@@ -29,12 +30,51 @@ export class AgentStateRunner implements IStateRunner {
       });
     }
 
+    // Process learn_from sources if declared. Gather sources and append unique learnings.
+    if (state.config.learn_from && state.config.learn_from.length > 0) {
+      for (const src of state.config.learn_from as LearnSource[]) {
+        try {
+          if ((src as any).output) {
+            const fromState = (src as any).output as string;
+            const latest = readLatestRun(cwd, fromState);
+            if (latest && latest.trim()) {
+              // Compress to single-line summary
+              const oneLine = latest.replace(/\s+/g, ' ').trim();
+              appendUniqueLearning(cwd, agentId, `output:${fromState}`, oneLine);
+            }
+          } else if ((src as any).var) {
+            const varPattern = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
+            const raw = (src as any).var as string;
+            const m = varPattern.exec(raw);
+            if (m) {
+              const varName = m[1];
+              const value = vars?.[varName];
+              if (value && value.trim()) {
+                const oneLine = value.replace(/\s+/g, ' ').trim();
+                appendUniqueLearning(cwd, agentId, `var:${varName}`, oneLine);
+              }
+            }
+          }
+        } catch (e) {
+          // Per spec: missing/empty sources are skipped silently. Only validation at load-time should fail fast.
+          // Here, skip any runtime read errors.
+        }
+      }
+    }
+
+    // Load full learnings and inject into prompt if present
+    const fullLearnings = readLearnings(cwd, agentId).trim();
+    let assembledPrompt = interpolatedPrompt ?? 'Work according to your rules';
+    if (fullLearnings) {
+      assembledPrompt = `${assembledPrompt}\n\n## Learnings from previous runs\n${fullLearnings}`;
+    }
+
     const result = await executeAgent(
       this.registry,
       agentId,
       cwd,
       previousOutputPath,
-      interpolatedPrompt,
+      assembledPrompt,
     );
 
     // Store output if configured

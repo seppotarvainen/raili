@@ -21,3 +21,10 @@ export function resolveRegistryPath(baseDir: string, p: string): string {
   }
   return path.resolve(baseDir, tildeResolved);
 }
+
+/**
+ * Return the canonical path to the learnings file for an agent.
+ */
+export function learningsFilePath(cwd: string, agentId: string): string {
+  return path.join(cwd, '.raili', 'learnings', `${agentId}.md`);
+}

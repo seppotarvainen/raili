@@ -228,6 +228,55 @@ export function validateStateMachine(machine: StateMachine): void {
     if (config.type === 'command' && !config.command) {
       throw new Error(`Invalid state '${id}': command type requires 'command' property`);
     }
+
+    // Basic validation for learn_from entries shape (must be objects with 'output' or 'var')
+    if (config.learn_from) {
+      if (!Array.isArray(config.learn_from)) {
+        throw new Error(`Invalid state '${id}': learn_from must be an array`);
+      }
+      for (const entry of config.learn_from) {
+        if (typeof entry !== 'object' || entry === null) {
+          throw new Error(`Invalid state '${id}': learn_from entries must be objects`);
+        }
+        const keys = Object.keys(entry);
+        if (keys.length !== 1 || !['output', 'var'].includes(keys[0])) {
+          throw new Error(
+            `Invalid state '${id}': learn_from entries must be of form {output: <stateId>} or {var: "${'{VAR}'}"}`,
+          );
+        }
+      }
+    }
+  }
+
+  // Cross-state validation: ensure learn_from output references exist and have output.store=true
+  for (const [id, def] of Object.entries(machine.states)) {
+    const cfg = def.config;
+    if (!cfg.learn_from) continue;
+    for (const entry of cfg.learn_from) {
+      if ((entry as any).output) {
+        const ref = (entry as any).output as string;
+        if (!stateKeys.has(ref)) {
+          throw new Error(
+            `Invalid state '${id}': learn_from references unknown state '${ref}' via output:${ref}`,
+          );
+        }
+        const refCfg = machine.states[ref].config;
+        if (!refCfg.output || !refCfg.output.store) {
+          throw new Error(
+            `Invalid state '${id}': learn_from output reference '${ref}' must have output.store: true`,
+          );
+        }
+      }
+      if ((entry as any).var) {
+        const raw = (entry as any).var as string;
+        const varPattern = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
+        if (!varPattern.test(raw)) {
+          throw new Error(
+            `Invalid state '${id}': learn_from var entry '${raw}' must be in the form ${'${VAR_NAME}'} `,
+          );
+        }
+      }
+    }
   }
 
   // Validate declared error state exists in machine and is terminal
