@@ -45,7 +45,11 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
     // If absolute path provided, use it
     if (path.isAbsolute(workflowPath)) {
       resolvedPath = workflowPath;
-    } else if (workflowPath.includes(path.sep) || workflowPath.startsWith('./') || workflowPath.startsWith('../')) {
+    } else if (
+      workflowPath.includes(path.sep) ||
+      workflowPath.startsWith('./') ||
+      workflowPath.startsWith('../')
+    ) {
       // If it looks like a relative path or contains directories, resolve relative to cwd
       resolvedPath = path.resolve(cwd, workflowPath);
     } else {
@@ -82,10 +86,16 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
       }
       if (typeof it === 'object' && it !== null) {
         if (typeof it.name !== 'string') throw new Error(`inputs[${idx}].name must be a string`);
-        if ('description' in it && typeof it.description !== 'string') throw new Error(`inputs[${idx}].description must be a string when provided`);
-        return { name: it.name, description: typeof it.description === 'string' ? it.description : undefined };
+        if ('description' in it && typeof it.description !== 'string')
+          throw new Error(`inputs[${idx}].description must be a string when provided`);
+        return {
+          name: it.name,
+          description: typeof it.description === 'string' ? it.description : undefined,
+        };
       }
-      throw new Error(`Invalid input declaration at index ${idx}: inputs must be strings or objects with 'name'`);
+      throw new Error(
+        `Invalid input declaration at index ${idx}: inputs must be strings or objects with 'name'`,
+      );
     });
   }
 
@@ -168,7 +178,9 @@ export function validateStateMachine(machine: StateMachine): void {
   }
 
   if (typeof machine.initial !== 'string' || !(machine.initial in machine.states)) {
-    throw new Error(`Invalid state machine: initial state '${machine.initial}' not defined in states`);
+    throw new Error(
+      `Invalid state machine: initial state '${machine.initial}' not defined in states`,
+    );
   }
 
   const stateKeys = new Set(Object.keys(machine.states));
@@ -185,18 +197,24 @@ export function validateStateMachine(machine: StateMachine): void {
     // Validate all transitions point to existing states
     for (const t of def.transitions) {
       if (!stateKeys.has(t)) {
-        throw new Error(`Invalid state machine: state '${id}' has transition to unknown state '${t}'`);
+        throw new Error(
+          `Invalid state machine: state '${id}' has transition to unknown state '${t}'`,
+        );
       }
     }
 
     // Validate state config
     const config = def.config;
     if (!config.type || !['agent', 'script', 'command', 'engine'].includes(config.type)) {
-      throw new Error(`Invalid state '${id}': type must be 'agent', 'script', 'command', or 'engine'`);
+      throw new Error(
+        `Invalid state '${id}': type must be 'agent', 'script', 'command', or 'engine'`,
+      );
     }
 
     if (config.on && config.transitions) {
-      throw new Error(`Invalid state '${id}': cannot have both 'on' and 'transitions' — use 'on' for binary PASSED/FAILED outcomes, 'transitions' for named outcomes`);
+      throw new Error(
+        `Invalid state '${id}': cannot have both 'on' and 'transitions' — use 'on' for binary PASSED/FAILED outcomes, 'transitions' for named outcomes`,
+      );
     }
 
     if (config.type === 'agent' && !config.agent) {
@@ -215,11 +233,15 @@ export function validateStateMachine(machine: StateMachine): void {
   // Validate declared error state exists in machine and is terminal
   if (machine.error) {
     if (!(machine.error in machine.states)) {
-      throw new Error(`Invalid state machine: declared error state '${machine.error}' not found in states`);
+      throw new Error(
+        `Invalid state machine: declared error state '${machine.error}' not found in states`,
+      );
     }
     const errDef = machine.states[machine.error];
     if (errDef.transitions.length > 0) {
-      throw new Error(`Invalid state machine: error state '${machine.error}' must be terminal and have no transitions`);
+      throw new Error(
+        `Invalid state machine: error state '${machine.error}' must be terminal and have no transitions`,
+      );
     }
   }
 }

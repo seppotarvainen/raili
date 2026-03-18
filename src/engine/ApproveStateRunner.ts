@@ -1,5 +1,9 @@
 import { ApprovalConfig } from '../types';
-import { handleManualTransition, ManualResult, ManualTransitionConfig } from '../handlers/manualHandler';
+import {
+  handleManualTransition,
+  ManualResult,
+  ManualTransitionConfig,
+} from '../handlers/manualHandler';
 import { runNotify, NotifyResult } from '../handlers/notifyHandler';
 import { interpolateString } from '../variableInterpolation';
 import { WorkflowContext } from '../types';
@@ -27,7 +31,6 @@ export async function runApprovalStep(
   approval: ApprovalConfig,
   options: ApprovalStepOptions,
 ): Promise<ApprovalOutcome> {
-
   let notifyRes: NotifyResult | undefined = undefined;
   if (approval.notify) {
     notifyRes = await runNotify(approval.notify, options.cwd, options.context?.vars ?? {});
@@ -35,7 +38,10 @@ export async function runApprovalStep(
 
   // Interpolate the question with variables from context (YAML semantics: missing -> empty string)
   const vars = options.context?.vars ?? {};
-  const interpolatedQuestion = interpolateString(approval.question, vars, { throwOnMissing: false, missingValue: '' });
+  const interpolatedQuestion = interpolateString(approval.question, vars, {
+    throwOnMissing: false,
+    missingValue: '',
+  });
 
   const manualCallArg: ManualTransitionConfig = {
     question: interpolatedQuestion,
@@ -43,7 +49,7 @@ export async function runApprovalStep(
       PASSED: approval.PASSED,
       FAILED: approval.FAILED,
     },
-    multiline: approval.multiline
+    multiline: approval.multiline,
   };
 
   const result: ManualResult = await handleManualTransition(manualCallArg);

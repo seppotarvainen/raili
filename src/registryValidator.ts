@@ -31,7 +31,7 @@ export function validateScriptRegistry(dir: string): ScriptRegistry {
 export function validateWorkflowReferences(
   workflow: WorkflowConfig,
   agents: AgentRegistry,
-  scripts: ScriptRegistry
+  scripts: ScriptRegistry,
 ): void {
   const missingAgents: string[] = [];
   const missingScripts: string[] = [];
@@ -40,14 +40,18 @@ export function validateWorkflowReferences(
     // Check agent states
     if (stateConfig.type === 'agent' && stateConfig.agent) {
       if (!(stateConfig.agent in agents)) {
-        missingAgents.push(`State '${stateName}' references agent '${stateConfig.agent}' which is not defined in agent-registry.json`);
+        missingAgents.push(
+          `State '${stateName}' references agent '${stateConfig.agent}' which is not defined in agent-registry.json`,
+        );
       }
     }
 
     // Check script states
     if (stateConfig.type === 'script' && stateConfig.script) {
       if (!(stateConfig.script in scripts)) {
-        missingScripts.push(`State '${stateName}' references script '${stateConfig.script}' which is not defined in script-registry.json`);
+        missingScripts.push(
+          `State '${stateName}' references script '${stateConfig.script}' which is not defined in script-registry.json`,
+        );
       }
     }
   }
@@ -56,17 +60,18 @@ export function validateWorkflowReferences(
   const errors: string[] = [];
 
   if (missingAgents.length > 0) {
-    errors.push('Missing agent definitions:', ...missingAgents.map(e => `  - ${e}`));
+    errors.push('Missing agent definitions:', ...missingAgents.map((e) => `  - ${e}`));
   }
 
   if (missingScripts.length > 0) {
-    errors.push('Missing script definitions:', ...missingScripts.map(e => `  - ${e}`));
+    errors.push('Missing script definitions:', ...missingScripts.map((e) => `  - ${e}`));
   }
 
   if (errors.length > 0) {
     throw new Error(
-      'Workflow validation failed:\n' + errors.join('\n') +
-      '\n\nPlease ensure all referenced agents and scripts are defined in their registries and files exist.'
+      'Workflow validation failed:\n' +
+        errors.join('\n') +
+        '\n\nPlease ensure all referenced agents and scripts are defined in their registries and files exist.',
     );
   }
 }

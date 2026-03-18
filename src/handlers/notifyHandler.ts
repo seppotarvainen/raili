@@ -14,7 +14,11 @@ export interface NotifyResult {
  * Returns a structured result so callers can persist notify metadata.
  * Failures are logged but do not abort the workflow — notification is best-effort.
  */
-export async function runNotify(command: string, cwd: string, vars?: Record<string, string>): Promise<NotifyResult | undefined> {
+export async function runNotify(
+  command: string,
+  cwd: string,
+  vars?: Record<string, string>,
+): Promise<NotifyResult | undefined> {
   const envOverrides: Record<string, string> = {};
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
@@ -33,4 +37,3 @@ export async function runNotify(command: string, cwd: string, vars?: Record<stri
     stderr: result.stderr || undefined,
   };
 }
-

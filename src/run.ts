@@ -2,13 +2,22 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { loadWorkflowConfig, buildStateMachine, validateStateMachine } from './workflowLoader';
-import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from "./registryValidator";
+import {
+  validateAgentRegistry,
+  validateScriptRegistry,
+  validateWorkflowReferences,
+} from './registryValidator';
 import { loadContext, clearContext } from './context';
 import { Engine } from './engine/Engine';
 
 export type RunMode = 'continue' | 'clean';
 
-export async function runCommand(cwd: string, mode: RunMode = 'continue', vars: Record<string, string> = {}, workflowPath?: string) {
+export async function runCommand(
+  cwd: string,
+  mode: RunMode = 'continue',
+  vars: Record<string, string> = {},
+  workflowPath?: string,
+) {
   const railiDir = path.join(cwd, '.raili');
   if (!fs.existsSync(railiDir) || !fs.statSync(railiDir).isDirectory()) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');

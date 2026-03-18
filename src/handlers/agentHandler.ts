@@ -1,7 +1,7 @@
-import {spawn} from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
-import {AgentRegistry} from '../agentRegistry';
-import {resolveRegistryPath} from '../pathUtils';
+import { AgentRegistry } from '../agentRegistry';
+import { resolveRegistryPath } from '../pathUtils';
 
 export type AgentExecutionResult = {
   success: boolean;
@@ -12,7 +12,7 @@ export type AgentExecutionResult = {
 function parseFrontmatterModel(content: string): string | undefined {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return undefined;
-  const modelLine = match[1].split(/\r?\n/).find(l => l.startsWith('model:'));
+  const modelLine = match[1].split(/\r?\n/).find((l) => l.startsWith('model:'));
   return modelLine ? modelLine.replace(/^model:\s*/, '').trim() : undefined;
 }
 
@@ -40,9 +40,8 @@ export function executeAgent(
     const fullHistory = fs.readFileSync(previousOutputPath, 'utf8');
     const lastRunMarker = '--- Run ';
     const lastMarkerIdx = fullHistory.lastIndexOf(lastRunMarker);
-    const lastRun = lastMarkerIdx !== -1
-      ? fullHistory.slice(lastMarkerIdx).trim()
-      : fullHistory.trim();
+    const lastRun =
+      lastMarkerIdx !== -1 ? fullHistory.slice(lastMarkerIdx).trim() : fullHistory.trim();
     resolvedPrompt = `${resolvedPrompt}\n\nYour previous output was:\n${lastRun}`;
   }
 
@@ -60,13 +59,13 @@ export function executeAgent(
 
     child.stdout.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
-      process.stdout.write(text);  // stream live
+      process.stdout.write(text); // stream live
       stdout += text;
     });
 
     child.stderr.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
-      process.stderr.write(text);  // stream live
+      process.stderr.write(text); // stream live
       stderr += text;
     });
 

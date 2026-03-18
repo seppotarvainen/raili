@@ -7,7 +7,7 @@ import { initCommand } from './init';
 import { runCommand, RunMode } from './run';
 import { loadContext, getCurrentState } from './context';
 import { loadWorkflowConfig } from './workflowLoader';
-import colors from "colors/safe";
+import colors from 'colors/safe';
 import { printHelp } from './cli/help';
 import { printDocs } from './cli/docs';
 import { printSchema } from './cli/schema';
@@ -40,7 +40,11 @@ function promptLine(rl: readline.Interface, question: string): Promise<string> {
 }
 
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
-export function loadVarsFile(cwd: string, declared: string[], workflowPath?: string): Record<string, string> {
+export function loadVarsFile(
+  cwd: string,
+  declared: string[],
+  workflowPath?: string,
+): Record<string, string> {
   // Support paired vars file naming when workflowPath is provided.
   // Precedence:
   // 1. .raili/vars.<suffix>.yaml
@@ -59,7 +63,11 @@ export function loadVarsFile(cwd: string, declared: string[], workflowPath?: str
       if (declaredSet.has(key)) {
         if (value != null) result[key] = String(value);
       } else {
-        console.warn(colors.yellow(`[Warning] Variable '${key}' in ${path.basename(filePath)} is not declared in workflow inputs. It will be ignored.`));
+        console.warn(
+          colors.yellow(
+            `[Warning] Variable '${key}' in ${path.basename(filePath)} is not declared in workflow inputs. It will be ignored.`,
+          ),
+        );
       }
     }
     return result;
@@ -101,13 +109,22 @@ export function loadVarsFile(cwd: string, declared: string[], workflowPath?: str
 }
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */
-export async function collectVars(cwd: string, flagVars: Record<string, string>, workflowPath?: string): Promise<Record<string, string>> {
-  let declaredInputs: {name: string; description: string;}[] = [];
+export async function collectVars(
+  cwd: string,
+  flagVars: Record<string, string>,
+  workflowPath?: string,
+): Promise<Record<string, string>> {
+  let declaredInputs: { name: string; description: string }[] = [];
   try {
     const config = loadWorkflowConfig(cwd, workflowPath);
     const raw = config.inputs ?? [];
     declaredInputs = raw.map((it: any) => {
-      if (typeof it !== 'object' || it === null || typeof it.name !== 'string' || typeof it.description !== 'string') {
+      if (
+        typeof it !== 'object' ||
+        it === null ||
+        typeof it.name !== 'string' ||
+        typeof it.description !== 'string'
+      ) {
         throw new Error('Workflow inputs must be objects with "name" and "description"');
       }
       return { name: it.name, description: it.description };
@@ -116,7 +133,7 @@ export async function collectVars(cwd: string, flagVars: Record<string, string>,
     // If workflow can't be loaded here, run() will fail with a proper error
   }
 
-  const declaredNames = declaredInputs.map(d => d.name);
+  const declaredNames = declaredInputs.map((d) => d.name);
 
   // Precedence: flags > vars file > interactive prompt
   const fileVars = loadVarsFile(cwd, declaredNames, workflowPath);
@@ -128,7 +145,7 @@ export async function collectVars(cwd: string, flagVars: Record<string, string>,
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const collected: Record<string, string> = { ...merged };
   for (const name of missingNames) {
-    const def = declaredInputs.find(d => d.name === name);
+    const def = declaredInputs.find((d) => d.name === name);
     if (def && def.description) {
       // Print description before prompting (allow multiline)
       console.log(def.description);
@@ -160,7 +177,7 @@ async function promptRunMode(cwd: string): Promise<RunMode> {
       (answer) => {
         rl.close();
         resolve(answer.trim().toLowerCase() === 'c' ? 'clean' : 'continue');
-      }
+      },
     );
   });
 }
@@ -190,13 +207,15 @@ async function main() {
       }
 
       const flagVars = parseVarFlags();
-      const workflowFlagIndex = runArgs.findIndex(arg => arg === '--workflow' || arg === '-wf');
-      const workflowPath = (workflowFlagIndex !== -1 && runArgs[workflowFlagIndex + 1]) ? runArgs[workflowFlagIndex + 1] : undefined;
+      const workflowFlagIndex = runArgs.findIndex((arg) => arg === '--workflow' || arg === '-wf');
+      const workflowPath =
+        workflowFlagIndex !== -1 && runArgs[workflowFlagIndex + 1]
+          ? runArgs[workflowFlagIndex + 1]
+          : undefined;
 
       // Only prompt for missing vars on a clean run — continue reuses context.json
-      const vars = mode === 'clean'
-        ? await collectVars(process.cwd(), flagVars, workflowPath)
-        : flagVars;
+      const vars =
+        mode === 'clean' ? await collectVars(process.cwd(), flagVars, workflowPath) : flagVars;
 
       await runCommand(process.cwd(), mode, vars, workflowPath);
     } else if (cmd === 'help') {

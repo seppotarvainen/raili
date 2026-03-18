@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { WorkflowContext, StateHistoryEntry } from './types';
-import {clearAllOutputs} from "./outputStore";
+import { clearAllOutputs } from './outputStore';
 
 /**
  * Load workflow context from .raili/context.json
@@ -85,7 +85,11 @@ export function getPreviousState(context: WorkflowContext): string | null {
  * metadata is attached to the state where it occurred even if a later state
  * was already appended (routing from previous states).
  */
-export function addStateToHistory(context: WorkflowContext, state: string, meta?: any): WorkflowContext {
+export function addStateToHistory(
+  context: WorkflowContext,
+  state: string,
+  meta?: any,
+): WorkflowContext {
   const now = new Date().toISOString();
 
   if (meta) {
@@ -99,7 +103,11 @@ export function addStateToHistory(context: WorkflowContext, state: string, meta?
             ...meta,
           },
         };
-        const newHistory = [...context.stateHistory.slice(0, i), merged, ...context.stateHistory.slice(i + 1)];
+        const newHistory = [
+          ...context.stateHistory.slice(0, i),
+          merged,
+          ...context.stateHistory.slice(i + 1),
+        ];
         return { ...context, stateHistory: newHistory };
       }
     }
@@ -143,4 +151,3 @@ export function initializeContext(vars: Record<string, string>): WorkflowContext
     stateHistory: [],
   };
 }
-

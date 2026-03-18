@@ -10,20 +10,20 @@ import { ObjectSchema, FieldSchema } from '../schemas';
 function formatField(key: string, field: FieldSchema, indent: string = '  '): string {
   const required = field.required ? '(REQUIRED)' : '(OPTIONAL)';
   const typeStr = field.type === 'record' ? 'object' : field.type;
-  
+
   let line = `${indent}${key}: ${typeStr} ${required}`;
-  
+
   if (field.enum) {
     line += ` — one of: ${field.enum.join(', ')}`;
   }
-  
+
   const description = field.description ? `\n${indent}  ${field.description}` : '';
-  
+
   if (field.validForTypes) {
     const types = field.validForTypes.join(', ');
     return `${line}${description}\n${indent}  (only for type: ${types})`;
   }
-  
+
   return line + description;
 }
 
@@ -32,11 +32,11 @@ function formatField(key: string, field: FieldSchema, indent: string = '  '): st
  */
 function formatObjectSchema(title: string, schema: ObjectSchema): string {
   const lines = [`${title}\n`];
-  
+
   for (const [key, field] of Object.entries(schema)) {
     lines.push(formatField(key, field));
   }
-  
+
   return lines.join('\n');
 }
 
@@ -93,4 +93,3 @@ export function generateSchemaOutput(): string {
 }
 
 export const SCHEMA_OUTPUT = generateSchemaOutput();
-

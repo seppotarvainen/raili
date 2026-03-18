@@ -1,0 +1,14 @@
+node_modules
+dist
+.raili/outputs
+.raili/context.json
+.raili/*.yaml
+coverage
+.git
+README.md
+.github
+docs
+documentation
+scripts
+__tests__
+

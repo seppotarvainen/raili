@@ -24,7 +24,7 @@ export interface InterpolationOptions {
 export function interpolateString(
   text: string,
   vars: Record<string, string>,
-  options: InterpolationOptions = {}
+  options: InterpolationOptions = {},
 ): string {
   const { throwOnMissing = true, missingValue } = options;
 
@@ -62,7 +62,7 @@ export function interpolateString(
 export function interpolateObject(
   obj: any,
   vars: Record<string, string>,
-  options: InterpolationOptions = {}
+  options: InterpolationOptions = {},
 ): any {
   if (typeof obj === 'string') {
     return interpolateString(obj, vars, options);
@@ -83,4 +83,3 @@ export function interpolateObject(
   // Primitives (number, boolean, null)
   return obj;
 }
-

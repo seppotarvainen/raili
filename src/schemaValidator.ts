@@ -1,19 +1,17 @@
-import {
-  StateType,
-  StateConfig,
-  ApprovalConfig,
-  WorkflowConfig
-} from './types';
+import { StateType, StateConfig, ApprovalConfig, WorkflowConfig } from './types';
 import {
   StateConfigSchema,
   ApprovalConfigSchema,
   WorkflowConfigSchema,
   FieldSchema,
-  ObjectSchema
+  ObjectSchema,
 } from './schemas';
 
 export class SchemaValidationError extends Error {
-  constructor(message: string, public context?: string) {
+  constructor(
+    message: string,
+    public context?: string,
+  ) {
     const fullMessage = context ? `${message} (in ${context})` : message;
     super(fullMessage);
     this.name = 'SchemaValidationError';
@@ -32,42 +30,42 @@ function validateFieldType(value: any, expectedType: string, fieldName: string):
     case 'string':
       if (typeof value !== 'string') {
         throw new SchemaValidationError(
-          `Field '${fieldName}': expected string, got ${typeof value}`
+          `Field '${fieldName}': expected string, got ${typeof value}`,
         );
       }
       break;
     case 'boolean':
       if (typeof value !== 'boolean') {
         throw new SchemaValidationError(
-          `Field '${fieldName}': expected boolean, got ${typeof value}`
+          `Field '${fieldName}': expected boolean, got ${typeof value}`,
         );
       }
       break;
     case 'number':
       if (typeof value !== 'number') {
         throw new SchemaValidationError(
-          `Field '${fieldName}': expected number, got ${typeof value}`
+          `Field '${fieldName}': expected number, got ${typeof value}`,
         );
       }
       break;
     case 'array':
       if (!Array.isArray(value)) {
         throw new SchemaValidationError(
-          `Field '${fieldName}': expected array, got ${typeof value}`
+          `Field '${fieldName}': expected array, got ${typeof value}`,
         );
       }
       break;
     case 'object':
       if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new SchemaValidationError(
-          `Field '${fieldName}': expected object, got ${Array.isArray(value) ? 'array' : typeof value}`
+          `Field '${fieldName}': expected object, got ${Array.isArray(value) ? 'array' : typeof value}`,
         );
       }
       break;
     case 'record':
       if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new SchemaValidationError(
-          `Field '${fieldName}': expected object, got ${Array.isArray(value) ? 'array' : typeof value}`
+          `Field '${fieldName}': expected object, got ${Array.isArray(value) ? 'array' : typeof value}`,
         );
       }
       break;
@@ -82,7 +80,7 @@ function validateField(
   fieldValue: any,
   fieldSchema: FieldSchema,
   stateType?: string,
-  context?: string
+  context?: string,
 ): void {
   // Check if field is required but missing
   if (fieldSchema.required && (fieldValue === null || fieldValue === undefined)) {
@@ -99,8 +97,8 @@ function validateField(
     if (!fieldSchema.validForTypes.includes(stateType as StateType)) {
       throw new SchemaValidationError(
         `Field '${fieldName}' is only valid for type: ${fieldSchema.validForTypes.join(', ')}. ` +
-        `This state has type: ${stateType}`,
-        context
+          `This state has type: ${stateType}`,
+        context,
       );
     }
   }
@@ -113,7 +111,7 @@ function validateField(
     if (!fieldSchema.enum.includes(fieldValue)) {
       throw new SchemaValidationError(
         `Field '${fieldName}' must be one of: ${fieldSchema.enum.join(', ')}. Got: ${fieldValue}`,
-        context
+        context,
       );
     }
   }
@@ -121,13 +119,13 @@ function validateField(
   // Check record key enum constraint
   if (fieldSchema.recordKeyEnum && fieldSchema.type === 'record') {
     const invalidKeys = Object.keys(fieldValue).filter(
-      key => !fieldSchema.recordKeyEnum!.includes(key)
+      (key) => !fieldSchema.recordKeyEnum!.includes(key),
     );
     if (invalidKeys.length > 0) {
       throw new SchemaValidationError(
         `Field '${fieldName}': unknown key '${invalidKeys[0]}'. ` +
-        `Allowed keys: ${fieldSchema.recordKeyEnum.join(', ')}`,
-        context
+          `Allowed keys: ${fieldSchema.recordKeyEnum.join(', ')}`,
+        context,
       );
     }
   }
@@ -140,12 +138,12 @@ function validateObject(
   obj: any,
   schema: ObjectSchema,
   context: string = '',
-  stateType?: string
+  stateType?: string,
 ): void {
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
     throw new SchemaValidationError(
       `Expected object, got ${Array.isArray(obj) ? 'array' : typeof obj}`,
-      context
+      context,
     );
   }
 
@@ -158,10 +156,7 @@ function validateObject(
   // Check for unknown fields
   for (const fieldName of Object.keys(obj)) {
     if (!(fieldName in schema)) {
-      throw new SchemaValidationError(
-        `Unknown field '${fieldName}'`,
-        context
-      );
+      throw new SchemaValidationError(`Unknown field '${fieldName}'`, context);
     }
   }
 }
@@ -186,16 +181,13 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
   if (config.on && config.transitions) {
     throw new SchemaValidationError(
       `State cannot have both 'on' and 'transitions' fields`,
-      context
+      context,
     );
   }
 
   // Custom validation: 'on' requires 'PASSED' key
   if (config.on && !('PASSED' in config.on)) {
-    throw new SchemaValidationError(
-      `Field 'on' requires key 'PASSED' to be defined`,
-      context
-    );
+    throw new SchemaValidationError(`Field 'on' requires key 'PASSED' to be defined`, context);
   }
 
   // Validate nested approval config if present
@@ -204,9 +196,7 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
       validateApprovalConfig(config.approval);
     } catch (error) {
       if (error instanceof SchemaValidationError) {
-        throw new SchemaValidationError(
-          `Field 'approval': ${error.message}`
-        );
+        throw new SchemaValidationError(`Field 'approval': ${error.message}`);
       }
       throw error;
     }
@@ -215,7 +205,9 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
   // 'expose' must only be used with script or command states
   if (config.expose !== undefined && config.expose !== null) {
     if (!config.type || !['script', 'command'].includes(config.type)) {
-      throw new SchemaValidationError(`Field 'expose' is only valid for 'script' or 'command' state types`);
+      throw new SchemaValidationError(
+        `Field 'expose' is only valid for 'script' or 'command' state types`,
+      );
     }
     // ensure it's an array (basic check) and elements are strings
     if (!Array.isArray(config.expose) || config.expose.some((v: any) => typeof v !== 'string')) {
@@ -235,9 +227,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
   // Validate that initial state exists in states
   if (config.initial && config.states) {
     if (!(config.initial in config.states)) {
-      throw new SchemaValidationError(
-        `Initial state '${config.initial}' does not exist in states`
-      );
+      throw new SchemaValidationError(`Initial state '${config.initial}' does not exist in states`);
     }
   }
 
@@ -249,7 +239,9 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     // Ensure the error state is terminal: no on, no transitions, no approval
     const errState = config.states[config.error];
     if (errState.on || errState.transitions || errState.approval) {
-      throw new SchemaValidationError(`Error state '${config.error}' must be terminal and must not have 'on', 'transitions', or 'approval'`);
+      throw new SchemaValidationError(
+        `Error state '${config.error}' must be terminal and must not have 'on', 'transitions', or 'approval'`,
+      );
     }
   }
 
@@ -261,10 +253,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
       } catch (error) {
         if (error instanceof SchemaValidationError) {
           // Re-throw with state context added
-          throw new SchemaValidationError(
-            error.message,
-            `state '${stateId}'`
-          );
+          throw new SchemaValidationError(error.message, `state '${stateId}'`);
         }
         throw error;
       }
@@ -284,11 +273,15 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
       }
       if (typeof item === 'object' && item !== null) {
         if (!('name' in item) || typeof item.name !== 'string') {
-          throw new SchemaValidationError(`Field 'inputs[${i}]' must have a string 'name' property`);
+          throw new SchemaValidationError(
+            `Field 'inputs[${i}]' must have a string 'name' property`,
+          );
         }
         // description is now optional but if present must be a string
         if ('description' in item && typeof item.description !== 'string') {
-          throw new SchemaValidationError(`Field 'inputs[${i}].description' must be a string when provided`);
+          throw new SchemaValidationError(
+            `Field 'inputs[${i}].description' must be a string when provided`,
+          );
         }
         // no unknown keys allowed
         for (const k of Object.keys(item)) {
@@ -298,7 +291,9 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
         }
         continue;
       }
-      throw new SchemaValidationError(`Field 'inputs[${i}]' must be either a string or an object with 'name' and optional 'description'`);
+      throw new SchemaValidationError(
+        `Field 'inputs[${i}]' must be either a string or an object with 'name' and optional 'description'`,
+      );
     }
   }
 

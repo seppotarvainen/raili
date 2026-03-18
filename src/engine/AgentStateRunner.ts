@@ -23,10 +23,19 @@ export class AgentStateRunner implements IStateRunner {
     // Interpolate the prompt with variables from vars (YAML semantics: missing -> empty string)
     let interpolatedPrompt = state.config.prompt;
     if (interpolatedPrompt && vars) {
-      interpolatedPrompt = interpolateString(interpolatedPrompt, vars, { throwOnMissing: false, missingValue: '' });
+      interpolatedPrompt = interpolateString(interpolatedPrompt, vars, {
+        throwOnMissing: false,
+        missingValue: '',
+      });
     }
 
-    const result = await executeAgent(this.registry, agentId, cwd, previousOutputPath, interpolatedPrompt);
+    const result = await executeAgent(
+      this.registry,
+      agentId,
+      cwd,
+      previousOutputPath,
+      interpolatedPrompt,
+    );
 
     // Store output if configured
     if (state.config.output) {
@@ -42,7 +51,7 @@ export class AgentStateRunner implements IStateRunner {
       const lastLine = result.stdout.trimEnd().split('\n').pop()?.trim() ?? '';
       if (!lastLine) {
         throw new Error(
-          `State '${state.id}': agent produced no output — expected a transition key as last stdout line`
+          `State '${state.id}': agent produced no output — expected a transition key as last stdout line`,
         );
       }
       return { outcome: lastLine };
@@ -53,7 +62,12 @@ export class AgentStateRunner implements IStateRunner {
 }
 
 // Backwards-compatible helper exported as before
-export async function runAgentState(state: StateDef, registry: AgentRegistry, cwd: string, vars?: Record<string, string>): Promise<StateResult> {
+export async function runAgentState(
+  state: StateDef,
+  registry: AgentRegistry,
+  cwd: string,
+  vars?: Record<string, string>,
+): Promise<StateResult> {
   const runner = new AgentStateRunner(registry);
   return runner.run(state, cwd, vars);
 }

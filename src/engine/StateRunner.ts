@@ -6,5 +6,5 @@ import type { StateResult } from './Engine';
  * Implementations should execute the state and return a StateResult.
  */
 export interface IStateRunner {
-  run(state: StateDef, cwd: string, vars?: Record<string,string>): Promise<StateResult>;
+  run(state: StateDef, cwd: string, vars?: Record<string, string>): Promise<StateResult>;
 }

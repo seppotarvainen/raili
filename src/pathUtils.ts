@@ -21,4 +21,3 @@ export function resolveRegistryPath(baseDir: string, p: string): string {
   }
   return path.resolve(baseDir, tildeResolved);
 }
-

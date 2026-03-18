@@ -16,6 +16,8 @@
     "start": "node dist/cli.js",
     "test": "jest --runInBand",
     "lint": "echo 'no linter configured'",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "knip": "knip",
     "prepublishOnly": "npm run build"
   },
@@ -34,6 +36,7 @@
     "jest": "^29.6.1",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
+    "prettier": "^3.8.1",
     "typescript": "^5.1.6"
   },
   "dependencies": {

@@ -79,17 +79,25 @@ export async function initCommand(cwd: string) {
     '    type: engine',
     '',
   ].join('\n');
-  const agentRegistry = JSON.stringify({
-    'analyzer.agent': { path: './agents/analyzer.agent.md' },
-    'planner.agent': { path: './agents/planner.agent.md' },
-    'executor.agent': { path: './agents/executor.agent.md' },
-    'verifier.agent': { path: './agents/verifier.agent.md' },
-  }, null, 2);
-  const scriptRegistry = JSON.stringify({
-    'archive-part': { path: './scripts/archive.sh' },
-    'test-runner':  { path: './scripts/run-tests.sh' },
-    'git-commit':   { path: './scripts/commit.sh' },
-  }, null, 2);
+  const agentRegistry = JSON.stringify(
+    {
+      'analyzer.agent': { path: './agents/analyzer.agent.md' },
+      'planner.agent': { path: './agents/planner.agent.md' },
+      'executor.agent': { path: './agents/executor.agent.md' },
+      'verifier.agent': { path: './agents/verifier.agent.md' },
+    },
+    null,
+    2,
+  );
+  const scriptRegistry = JSON.stringify(
+    {
+      'archive-part': { path: './scripts/archive.sh' },
+      'test-runner': { path: './scripts/run-tests.sh' },
+      'git-commit': { path: './scripts/commit.sh' },
+    },
+    null,
+    2,
+  );
 
   fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), workflowYaml);
   fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), agentRegistry);
@@ -97,4 +105,3 @@ export async function initCommand(cwd: string) {
 
   return { created: true };
 }
-

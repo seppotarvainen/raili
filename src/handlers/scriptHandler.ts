@@ -1,11 +1,17 @@
-import {spawn} from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
-import {ScriptRegistry} from '../scriptRegistry';
-import {resolveRegistryPath} from '../pathUtils';
+import { ScriptRegistry } from '../scriptRegistry';
+import { resolveRegistryPath } from '../pathUtils';
 
 export type ScriptExecutionResult = { success: boolean; stdout: string; stderr: string };
 
-export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: string, args: string[] = [], envOverrides: Record<string,string> = {}): Promise<ScriptExecutionResult> {
+export function executeScript(
+  registry: ScriptRegistry,
+  scriptId: string,
+  cwd: string,
+  args: string[] = [],
+  envOverrides: Record<string, string> = {},
+): Promise<ScriptExecutionResult> {
   const entry = registry[scriptId];
   if (!entry) throw new Error(`Script '${scriptId}' not found in registry`);
 
@@ -15,7 +21,11 @@ export function executeScript(registry: ScriptRegistry, scriptId: string, cwd: s
   }
 
   return new Promise((resolve) => {
-    const child = spawn(fullPath, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...envOverrides } });
+    const child = spawn(fullPath, args, {
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, ...envOverrides },
+    });
 
     let stdout = '';
     let stderr = '';

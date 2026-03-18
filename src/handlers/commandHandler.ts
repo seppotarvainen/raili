@@ -1,10 +1,23 @@
 import { spawn } from 'child_process';
 
-export type CommandExecutionResult = { success: boolean; stdout: string; stderr: string; exitCode?: number };
+export type CommandExecutionResult = {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  exitCode?: number;
+};
 
-export function executeCommand(command: string, cwd: string, envOverrides: Record<string,string> = {}): Promise<CommandExecutionResult> {
+export function executeCommand(
+  command: string,
+  cwd: string,
+  envOverrides: Record<string, string> = {},
+): Promise<CommandExecutionResult> {
   return new Promise((resolve) => {
-    const child = spawn('sh', ['-c', command], { cwd, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...envOverrides } });
+    const child = spawn('sh', ['-c', command], {
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, ...envOverrides },
+    });
 
     let stdout = '';
     let stderr = '';
@@ -29,4 +42,3 @@ export function executeCommand(command: string, cwd: string, envOverrides: Recor
 
 // New handler alias to conform to a "handler" naming convention used by abstractions
 export const executeCommandHandler = executeCommand;
-

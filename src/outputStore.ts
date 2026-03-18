@@ -38,7 +38,9 @@ export function filterOutput(output: string, config: OutputConfig): string {
         result = filtered.join('\n');
       }
     } catch (e) {
-      console.warn(`Invalid regex pattern in include_search_pattern: ${config.include_search_pattern}`);
+      console.warn(
+        `Invalid regex pattern in include_search_pattern: ${config.include_search_pattern}`,
+      );
     }
   }
 
@@ -57,7 +59,12 @@ export function filterOutput(output: string, config: OutputConfig): string {
  * Append output for a state to .raili/outputs/<stateId>.md.
  * Each run is separated by a timestamped header so the full history is preserved.
  */
-export function saveOutput(cwd: string, stateId: string, output: string, outputConfig?: OutputConfig): void {
+export function saveOutput(
+  cwd: string,
+  stateId: string,
+  output: string,
+  outputConfig?: OutputConfig,
+): void {
   if (!outputConfig || !outputConfig.store) {
     return;
   }

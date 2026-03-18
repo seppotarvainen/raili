@@ -28,7 +28,9 @@ export type ManualOpts = { multiline: boolean | undefined };
  *  - handleManualTransition(config, {multiline: true})
  *  - handleManualTransition({multiline: true}) // deprecated but tolerated in tests
  */
-export async function handleManualTransition(config: ManualTransitionConfig): Promise<ManualResult> {
+export async function handleManualTransition(
+  config: ManualTransitionConfig,
+): Promise<ManualResult> {
   const keys = Object.keys(config.options || {});
   if (keys.length === 0) throw new Error('No manual options provided');
 
@@ -42,11 +44,13 @@ export async function handleManualTransition(config: ManualTransitionConfig): Pr
 
   if (config.multiline) {
     // Inform the user about the terminator and start collecting lines
-    console.log(`\n${config.question}\n[Enter multiple lines, finish with a single line containing '/q']`);
+    console.log(
+      `\n${config.question}\n[Enter multiple lines, finish with a single line containing '/q']`,
+    );
     rl.setPrompt('> ');
     rl.prompt();
 
-    return await new Promise<ManualResult>(resolve => {
+    return await new Promise<ManualResult>((resolve) => {
       const lines: string[] = [];
 
       const onLine = (line: string) => {
@@ -59,12 +63,12 @@ export async function handleManualTransition(config: ManualTransitionConfig): Pr
           lines.push(line);
           rl.prompt();
         }
-      }
-      rl.on('line', onLine)
+      };
+      rl.on('line', onLine);
     });
   }
 
-  const answer = await new Promise<string>(resolve => {
+  const answer = await new Promise<string>((resolve) => {
     rl.question(`\n${config.question}\n[Enter = PASSED, type reason = FAILED]: `, resolve);
   });
 

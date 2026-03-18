@@ -12,7 +12,7 @@ import { resolveTransition } from '../transition';
 import colors from 'colors/safe';
 
 /** Result returned by every state runner: outcome and optional exports */
-export type StateResult = { outcome: string; exports?: Record<string,string> };
+export type StateResult = { outcome: string; exports?: Record<string, string> };
 
 export interface EngineConfig {
   stateMachine: StateMachine;
@@ -26,11 +26,15 @@ export interface EngineConfig {
  * Resolves the next state from a state's routing config and an outcome key.
  * Throws immediately if outcome is not mapped (fail-fast). Supports reserved `default` key.
  */
-function resolveNextState(stateId: string, routing: Record<string, string>, outcome: string): string {
+function resolveNextState(
+  stateId: string,
+  routing: Record<string, string>,
+  outcome: string,
+): string {
   const next = resolveTransition(routing, outcome);
   if (!next) {
     throw new Error(
-      `State '${stateId}': outcome '${outcome}' has no matching transition (defined: ${Object.keys(routing).join(', ')})`
+      `State '${stateId}': outcome '${outcome}' has no matching transition (defined: ${Object.keys(routing).join(', ')})`,
     );
   }
   return next;
@@ -85,9 +89,7 @@ export class Engine {
           const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
           this.visitCounts.set(stateId, visits);
           if (visits > config.max_visits) {
-            throw new Error(
-              `State '${stateId}' exceeded max_visits limit of ${config.max_visits}`
-            );
+            throw new Error(`State '${stateId}' exceeded max_visits limit of ${config.max_visits}`);
           }
         }
 
@@ -121,14 +123,23 @@ export class Engine {
 
         console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
 
-
         // Execute the state handler and capture exports if any
         let stateResult = { outcome: 'PASSED' } as StateResult;
 
         if (config.type === 'agent') {
-          stateResult = await runAgentState(stateDef, this.agentRegistry, this.cwd, this.context?.vars);
+          stateResult = await runAgentState(
+            stateDef,
+            this.agentRegistry,
+            this.cwd,
+            this.context?.vars,
+          );
         } else if (config.type === 'script') {
-          stateResult = await runScriptState(stateDef, this.scriptRegistry, this.cwd, this.context?.vars);
+          stateResult = await runScriptState(
+            stateDef,
+            this.scriptRegistry,
+            this.cwd,
+            this.context?.vars,
+          );
         } else if (config.type === 'command') {
           stateResult = await runCommandState(stateDef, this.cwd, this.context?.vars);
         } else {
@@ -144,7 +155,9 @@ export class Engine {
           for (const name of config.expose) {
             const val = stateResult.exports?.[name];
             if (val === undefined || val === null || String(val).trim() === '') {
-              throw new Error(`State '${stateId}': exposed variable '${name}' was not produced by the state`);
+              throw new Error(
+                `State '${stateId}': exposed variable '${name}' was not produced by the state`,
+              );
             }
             this.context.vars[name] = String(val);
           }
@@ -166,10 +179,14 @@ export class Engine {
             cwd: this.cwd,
             context: this.context,
           });
-          const nextStateId = resolveNextState(stateId, {
-            PASSED: config.approval.PASSED,
-            FAILED: config.approval.FAILED,
-          }, approvalOutcome.chosen);
+          const nextStateId = resolveNextState(
+            stateId,
+            {
+              PASSED: config.approval.PASSED,
+              FAILED: config.approval.FAILED,
+            },
+            approvalOutcome.chosen,
+          );
 
           console.log(`  approval: ${approvalOutcome.chosen} → ${nextStateId}`);
           // Persist approval decision on the current state's history entry (approval asked/executed here)
@@ -187,7 +204,11 @@ export class Engine {
           if (!this.context.approvals) this.context.approvals = {};
           if (!this.context.vars) this.context.vars = {};
           // Only persist non-empty reasons (avoid creating empty entries for PASSED)
-          if (approvalOutcome.chosen === 'FAILED' && approvalOutcome.reason && approvalOutcome.reason.trim() !== '') {
+          if (
+            approvalOutcome.chosen === 'FAILED' &&
+            approvalOutcome.reason &&
+            approvalOutcome.reason.trim() !== ''
+          ) {
             const key = `${stateId}_${approvalOutcome.chosen}`.toUpperCase();
             this.context.approvals[key] = approvalOutcome.reason;
             this.context.vars[key] = approvalOutcome.reason;
@@ -213,7 +234,9 @@ export class Engine {
           const errStateId = this.stateMachine.error;
           const errDef = this.stateMachine.states[errStateId];
           if (!errDef) {
-            throw new Error(`Engine encountered error and declared error state '${errStateId}' not found`);
+            throw new Error(
+              `Engine encountered error and declared error state '${errStateId}' not found`,
+            );
           }
           // On entry: clear outputs and run notify for the error state (like normal entry)
           const errConfig = errDef.config;

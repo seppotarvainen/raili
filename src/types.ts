@@ -1,20 +1,20 @@
 // Shared types for workflow configuration and state machine
 
 // Workflow configuration loaded from workflow.yaml
-import {deprecate} from "node:util";
+import { deprecate } from 'node:util';
 
 export type StateType = 'agent' | 'script' | 'command' | 'engine';
 
 export interface OutputConfig {
-  store: boolean;                    // Save output to .raili/outputs/<stateId>.md
-  tail?: number;                     // Keep only the last N lines of output
-  include_search_pattern?: string;   // Regex pattern to search for matching lines
-  include_after?: number;            // Include N lines after each matched line
+  store: boolean; // Save output to .raili/outputs/<stateId>.md
+  tail?: number; // Keep only the last N lines of output
+  include_search_pattern?: string; // Regex pattern to search for matching lines
+  include_after?: number; // Include N lines after each matched line
 }
 
 export interface ApprovalConfig {
   question: string;
-  notify?: string;   // Optional shell command to run before showing the approval prompt
+  notify?: string; // Optional shell command to run before showing the approval prompt
   PASSED: string;
   FAILED: string;
   multiline?: boolean; // Optional: allow multiline reason input when prompting (terminator: /q)
@@ -22,16 +22,16 @@ export interface ApprovalConfig {
 
 export interface StateConfig {
   type: StateType;
-  notify?: string;       // Optional shell command to run when this state is entered
-  output?: OutputConfig;           // Structured output configuration
-  reset_outputs?: string[];        // Clear saved outputs for these state IDs on entry
-  max_visits?: number;             // Throw if this state is entered more than N times
-  agent?: string;        // For type: agent
-  script?: string;       // For type: script
-  command?: string;      // For type: command — inline shell command
-  directory?: string;    // For type: command — working directory (defaults to cwd)
-  prompt?: string;       // Optional prompt for agent
-  args?: string[];       // For type: script — ordered list of arguments forwarded to the script process
+  notify?: string; // Optional shell command to run when this state is entered
+  output?: OutputConfig; // Structured output configuration
+  reset_outputs?: string[]; // Clear saved outputs for these state IDs on entry
+  max_visits?: number; // Throw if this state is entered more than N times
+  agent?: string; // For type: agent
+  script?: string; // For type: script
+  command?: string; // For type: command — inline shell command
+  directory?: string; // For type: command — working directory (defaults to cwd)
+  prompt?: string; // Optional prompt for agent
+  args?: string[]; // For type: script — ordered list of arguments forwarded to the script process
   approval?: ApprovalConfig;
   transitions?: Record<string, string>;
   on?: Record<string, string>;
@@ -54,7 +54,7 @@ export interface WorkflowConfig {
 export interface StateDef {
   id: string;
   config: StateConfig;
-  transitions: string[];  // All possible next states
+  transitions: string[]; // All possible next states
 }
 
 export interface StateMachine {
@@ -79,13 +79,13 @@ export interface ApprovalMeta {
 
 export interface StateHistoryEntry {
   state: string;
-  enteredAt: string;  // ISO timestamp
+  enteredAt: string; // ISO timestamp
   // Optional structured metadata about this entry (notify results, approval decisions, etc.)
   meta?: any;
 }
 
 export interface WorkflowContext {
-  vars?: Record<string, string>;   // User-supplied variables (e.g. ticket_id, description)
+  vars?: Record<string, string>; // User-supplied variables (e.g. ticket_id, description)
   approvals?: Record<string, string>; // Approval reasons keyed by <STATE>_<OUTCOME> uppercase
   stateHistory: StateHistoryEntry[];
 }

@@ -4,7 +4,10 @@ export type TransitionOutcome = 'PASSED' | 'FAILED' | string;
 
 // Given a state's transition configuration and an outcome key, resolve the target state.
 // stateTransitions is an object where keys are outcome names or 'default' mapping to target state string.
-export function resolveTransition(stateTransitions: Record<string, any>, outcome: TransitionOutcome): string | null {
+export function resolveTransition(
+  stateTransitions: Record<string, any>,
+  outcome: TransitionOutcome,
+): string | null {
   if (!stateTransitions) return null;
   // Direct mapping
   if (stateTransitions[outcome]) return stateTransitions[outcome];

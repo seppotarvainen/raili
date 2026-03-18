@@ -6,10 +6,12 @@ import { DOCS_SECTIONS, USAGE_DOCS, AVAILABLE_SECTIONS, AVAILABLE_USAGE } from '
 export function formatDocs(section?: string): string {
   if (!section) {
     // Main index showing both usage and sections
-    return "RAILI DOCUMENTATION\n\nTo look up either usage or available sections, type e.g. `raili docs init` or `raili docs routing`\n\nUsage:\n  " +
-      AVAILABLE_USAGE.join("\n  ") +
-      "\n\nAvailable sections:\n  " +
-      AVAILABLE_SECTIONS.join("\n  ");
+    return (
+      'RAILI DOCUMENTATION\n\nTo look up either usage or available sections, type e.g. `raili docs init` or `raili docs routing`\n\nUsage:\n  ' +
+      AVAILABLE_USAGE.join('\n  ') +
+      '\n\nAvailable sections:\n  ' +
+      AVAILABLE_SECTIONS.join('\n  ')
+    );
   }
 
   // Check usage docs first
@@ -23,10 +25,9 @@ export function formatDocs(section?: string): string {
   }
 
   const allAvailable = [...AVAILABLE_USAGE, ...AVAILABLE_SECTIONS];
-  return `Unknown section: ${section}\n\nAvailable: ${allAvailable.join(", ")}`;
+  return `Unknown section: ${section}\n\nAvailable: ${allAvailable.join(', ')}`;
 }
 
 export function printDocs(section?: string): void {
-  process.stdout.write(formatDocs(section) + "\n");
+  process.stdout.write(formatDocs(section) + '\n');
 }
-

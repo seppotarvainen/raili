@@ -7,8 +7,8 @@
  * Matching is case-insensitive for the key and trims surrounding quotes/spaces.
  */
 
-export function parseExports(stdout: string, names: string[]): Record<string,string> {
-  const exports: Record<string,string> = {};
+export function parseExports(stdout: string, names: string[]): Record<string, string> {
+  const exports: Record<string, string> = {};
   if (!stdout || !names || names.length === 0) return exports;
 
   const lines = stdout.split(/\r?\n/);

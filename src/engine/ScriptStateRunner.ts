@@ -13,14 +13,14 @@ import { parseExports } from '../variableExports';
 export class ScriptStateRunner implements IStateRunner {
   constructor(private registry: ScriptRegistry) {}
 
-  async run(state: StateDef, cwd: string, vars?: Record<string,string>): Promise<StateResult> {
+  async run(state: StateDef, cwd: string, vars?: Record<string, string>): Promise<StateResult> {
     const scriptId = state.config.script!;
     const args = state.config.args ?? [];
 
     // Prepare env overrides from current vars
-    const envOverrides: Record<string,string> = {};
+    const envOverrides: Record<string, string> = {};
     if (vars) {
-      for (const [k,v] of Object.entries(vars)) {
+      for (const [k, v] of Object.entries(vars)) {
         envOverrides[`RAILI_VAR_${k.toUpperCase()}`] = v;
       }
     }
@@ -34,10 +34,10 @@ export class ScriptStateRunner implements IStateRunner {
     }
 
     // Parse exposes if configured (supports `name=value`, `export name=value`, case-insensitive key, and quoted values)
-    const exports: Record<string,string> = {};
+    const exports: Record<string, string> = {};
     if (state.config.expose && state.config.expose.length) {
       const parsed = parseExports(result.stdout, state.config.expose);
-      for (const [k,v] of Object.entries(parsed)) {
+      for (const [k, v] of Object.entries(parsed)) {
         exports[k] = v;
       }
     }
@@ -49,7 +49,7 @@ export class ScriptStateRunner implements IStateRunner {
       const lastLine = result.stdout.trimEnd().split('\n').pop()?.trim() ?? '';
       if (!lastLine) {
         throw new Error(
-          `State '${state.id}': script produced no output — expected a transition key as last stdout line`
+          `State '${state.id}': script produced no output — expected a transition key as last stdout line`,
         );
       }
       outcome = lastLine;
@@ -62,7 +62,12 @@ export class ScriptStateRunner implements IStateRunner {
 }
 
 // Backwards-compatible helper exported as before
-export async function runScriptState(state: StateDef, registry: ScriptRegistry, cwd: string, vars?: Record<string,string>): Promise<StateResult> {
+export async function runScriptState(
+  state: StateDef,
+  registry: ScriptRegistry,
+  cwd: string,
+  vars?: Record<string, string>,
+): Promise<StateResult> {
   const runner = new ScriptStateRunner(registry);
   return runner.run(state, cwd, vars);
 }

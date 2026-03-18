@@ -8,6 +8,5 @@ export function formatSchema(): string {
 }
 
 export function printSchema(): void {
-  process.stdout.write(formatSchema() + "\n");
+  process.stdout.write(formatSchema() + '\n');
 }
-
