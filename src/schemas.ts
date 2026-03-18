@@ -153,6 +153,13 @@ export const StateConfigSchema: ObjectSchema = {
     type: 'object',
     description: 'Approval configuration',
   },
+  success: {
+    required: false,
+    type: 'boolean',
+    description:
+      'Optional success flag for terminal (engine) states; persisted to context.json when present',
+    validForTypes: ['engine'],
+  },
   transitions: {
     required: false,
     type: 'record',

@@ -112,6 +112,11 @@ start:
 done:
   type: engine
   notify: "msg.sh 'Complete'"
+  # Optional: explicit success signal for terminal engine states
+  # If provided, the engine will persist this boolean into .raili/context.json
+  # as the state's `meta.success` value for the run. When omitted the value
+  # recorded will be null.
+  success: true
 ```
 
 **Always returns:** PASSED
