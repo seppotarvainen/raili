@@ -135,7 +135,13 @@ review:
 **Sources (precedence):**
 1. `--var key=value` CLI flags
 2. `.raili/vars.yaml` (only keys declared in `workflow.inputs`)
+   - Additionally, when you run a specific workflow file via `--workflow <path>` the CLI will look for workflow-scoped files in `.raili/` before falling back to `vars.yaml`:
+     - `.raili/vars.<suffix>.yaml` (preferred)
+     - `.raili/vars-<suffix>.yaml`
+     - `.raili/vars.<suffix>.yml`
+     These candidates derive the <suffix> from the basename of the workflow file (see `src/cli.ts::loadVarsFile`).
 3. Interactive prompt (for declared inputs not supplied via flags)
+   - Note: interactive prompting only occurs for clean runs. When continuing a previous run the engine reuses values from `.raili/context.json` instead of prompting.
 
 **Example workflow input:**
 ```yaml
@@ -152,7 +158,8 @@ states:
 - All vars exported as `RAILI_VAR_<UPPERCASE>` for shell scripts & notifications
 - Access in commands: `$RAILI_VAR_TICKET_ID`
 
-**Fail-fast:** Missing variable throws error immediately.
+- **Fail-fast (default):** The interpolation utility (`src/variableInterpolation.ts`) throws on missing variables by default.
+- **YAML-style exceptions for prompts/questions:** Agent prompts and approval questions intentionally use YAML-style interpolation — missing variables are substituted with an empty string instead of throwing. This behavior is implemented in `src/engine/AgentStateRunner.ts` and `src/engine/ApproveStateRunner.ts` (they call the interpolator with `{ throwOnMissing: false, missingValue: '' }`).
 
 ---
 
@@ -213,6 +220,36 @@ output:
 - Test registry validation, error states, loopbacks
 
 Run tests: `npm test` (uses `--runInBand` to avoid race conditions)
+
+### Integration tests
+
+- Location: `__tests__/integration` — these are the project's integration-style tests.
+- Purpose: exercise the engine end-to-end inside a temporary workspace while still avoiding real external side effects. Integration tests validate the full control flow (state entry, notify, runners, routing, context persistence, and output storage) using lightweight process and filesystem simulation.
+- Style & patterns used in this repo:
+  - Tests create a sandboxed temporary workspace using helpers from `__tests__/integration/testUtils.ts` (e.g. `createTmpWorkspace`, `writeWorkflow`, `writeAgentRegistry`, `writeAgentFile`, `writeScriptRegistry`). These helpers write real files under a temp dir so workflows and `.raili/` are exercised.
+  - External processes are mocked with `jest.mock('child_process')` and a `fakeChild` helper that simulates `stdout`, `stderr`, and an exit code. See `__tests__/integration/*` (for example `agent.test.ts` and `command.test.ts`) for usage.
+  - Integration tests still DO NOT spawn real external programs — they stub `spawn` to return controlled outputs. This keeps tests deterministic and fast while verifying interactions (commands invoked, env vars exported, notify commands executed).
+  - To assert notify/command execution, tests inspect `spawn.mock.calls` and check for `sh -c <command>` or `copilot` invocations.
+  - Approval prompts are automated in tests by setting `process.env.RAILI_MANUAL_CHOICE` to `PASSED` or `FAILED` before `runCommand` so the approval flow can be exercised without human input.
+  - Integration tests may assert on on-disk artifacts inside the temp workspace (for example `.raili/outputs/<stateId>.md` and `.raili/context.json`) to ensure output storage and context persistence work as expected.
+
+Examples (patterns to copy):
+
+- Mocking `spawn` and simulating a copilot run that returns a transition key on the last stdout line:
+
+  - `jest.mock('child_process', () => ({ spawn: jest.fn() }));`
+  - `spawn.mockImplementation((cmd) => cmd === 'copilot' ? fakeChild('analysis\napprove','',0) : fakeChild('', '', 0));`
+
+- Creating a temp workspace and running the engine:
+
+  - `const tmp = createTmpWorkspace(); writeWorkflow(tmp, '...'); writeAgentRegistry(tmp, {...}); await runCommand(tmp, 'clean', {});`
+
+- Asserting the final state via context and verifying output files:
+
+  - `const ctx = loadContext(tmp); expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');`
+  - `expect(fs.existsSync(path.join(tmp, '.raili', 'outputs', 'analyze.md'))).toBe(true);`
+
+Keep integration tests focused on control-flow and I/O boundaries (context, outputs, notify, approvals) and rely on unit tests for detailed handler logic.
 
 ---
 
