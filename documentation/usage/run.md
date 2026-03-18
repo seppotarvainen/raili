@@ -31,7 +31,7 @@ raili run --clean --var ticket_id=PROJ-123 --var branch=main
 raili run --workflow workflow-dev.yaml --clean --var ticket_id=PROJ-123
 ```
 
-Note: When running an alternate workflow, Raili will attempt to load a paired vars file matching the workflow name. For example, running `--workflow workflow-dev.yaml` causes Raili to prefer `.raili/vars.dev.yaml` or `.raili/vars-dev.yaml` (in that order) and fall back to `.raili/vars.yaml` if no paired file exists. This allows per-environment defaults while remaining backwards-compatible with `.raili/vars.yaml`.
+Note: When running an alternate workflow, Raili will attempt to load a paired vars file matching the workflow name. For example, running `--workflow workflow-dev.yaml` (or `-wf workflow-dev.yaml`) causes Raili to prefer `.raili/vars.dev.yaml` or `.raili/vars-dev.yaml` (in that order) and fall back to `.raili/vars.yaml` if no paired file exists. This allows per-environment defaults while remaining backwards-compatible with `.raili/vars.yaml`.
 ```
 
 ### Resume from last state

@@ -190,7 +190,7 @@ async function main() {
       }
 
       const flagVars = parseVarFlags();
-      const workflowFlagIndex = runArgs.indexOf('--workflow');
+      const workflowFlagIndex = runArgs.findIndex(arg => arg === '--workflow' || arg === '-wf');
       const workflowPath = (workflowFlagIndex !== -1 && runArgs[workflowFlagIndex + 1]) ? runArgs[workflowFlagIndex + 1] : undefined;
 
       // Only prompt for missing vars on a clean run — continue reuses context.json
