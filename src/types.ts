@@ -20,6 +20,8 @@ export interface ApprovalConfig {
   multiline?: boolean; // Optional: allow multiline reason input when prompting (terminator: /q)
 }
 
+export type LearnSource = { output: string } | { var: string };
+
 export interface StateConfig {
   type: StateType;
   notify?: string; // Optional shell command to run when this state is entered
@@ -36,6 +38,7 @@ export interface StateConfig {
   transitions?: Record<string, string>;
   on?: Record<string, string>;
   expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>
+  learn_from?: LearnSource[]; // Optional: declare persistent learning sources for agent states
 }
 
 export interface InputDef {

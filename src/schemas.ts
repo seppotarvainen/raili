@@ -141,6 +141,13 @@ export const StateConfigSchema: ObjectSchema = {
     description: 'Optional prompt for agent',
     validForTypes: ['agent'],
   },
+  learn_from: {
+    required: false,
+    type: 'array',
+    description:
+      'List of sources to learn from: objects like {output: stateId} or {var: "${VAR_NAME}"}',
+    validForTypes: ['agent'],
+  },
   approval: {
     required: false,
     type: 'object',

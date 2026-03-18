@@ -97,6 +97,26 @@ export function loadAgentOutputPath(cwd: string, stateId: string): string | null
 }
 
 /**
+ * Read the latest run content for a state (text after the last run separator).
+ * Returns null if no file exists or no content found.
+ */
+export function readLatestRun(cwd: string, stateId: string): string | null {
+  const p = outputPath(cwd, stateId);
+  if (!fs.existsSync(p)) return null;
+  const full = fs.readFileSync(p, 'utf8');
+  const lastRunMarker = '--- Run ';
+  const idx = full.lastIndexOf(lastRunMarker);
+  if (idx !== -1) {
+    const nl = full.indexOf('\n', idx);
+    const start = nl !== -1 ? nl + 1 : idx + lastRunMarker.length;
+    const content = full.slice(start).trim();
+    return content === '' ? null : content;
+  }
+  const content = full.trim();
+  return content === '' ? null : content;
+}
+
+/**
  * Delete saved output files for the given state IDs.
  * Silent if files do not exist.
  */

@@ -59,6 +59,8 @@ bounded while maintaining iterative memory.
 
 Full history is always stored on disk for audit trail.
 
+Learnings (opt-in): Agent states may declare `learn_from:` to collect persistent, append-only learnings from other outputs or variables. Learnings are stored at `.raili/learnings/<agentId>.md` and are injected into the agent prompt under `## Learnings from previous runs` before execution. Learnings are deduplicated on append to avoid loops.
+
 ## Common Patterns
 
 ### Test state — capture failures
