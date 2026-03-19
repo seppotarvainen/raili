@@ -1,4 +1,4 @@
-import { computeMetrics, computeComparison, RunEntry } from '../../src/cli/stats';
+import { computeMetrics, computeComparison, RunEntry, readRunLog, statsCommand } from '../../src/cli/stats';
 
 describe('computeMetrics', () => {
   test('returns zeros for empty runs', () => {
@@ -54,4 +54,42 @@ describe('computeComparison', () => {
 
 
 
-// readRunLog is a thin wrapper around fs; unit tests for it would require fs mocking and are omitted here.
+// readRunLog is a thin wrapper around fs; add unit tests to verify parsing of the `states` field and statsCommand output.
+import fs from 'fs';
+
+describe('readRunLog and statsCommand', () => {
+  const originalLog = `{"runId":"r1","states":3,"loops":0,"approvalFailures":0,"duration":1000,"success":true}\n{"runId":"r2","states":5,"loops":1,"approvalFailures":1,"duration":2000,"success":false}\n`;
+
+  beforeEach(() => {
+    jest.spyOn(fs, 'existsSync').mockImplementation(() => true);
+    jest.spyOn(fs, 'readFileSync').mockImplementation(() => originalLog as any);
+  });
+  afterEach(() => {
+    (fs.existsSync as jest.MockedFunction<any>).mockRestore();
+    (fs.readFileSync as jest.MockedFunction<any>).mockRestore();
+  });
+
+  test('readRunLog parses states field and computeMetrics aggregates correctly', () => {
+    const runs = readRunLog('/repo', 'main');
+    expect(runs.length).toBe(2);
+    expect((runs[0] as any).states).toBe(3);
+    const metrics = computeMetrics(runs);
+    expect(metrics.avgStates).toBeCloseTo((3 + 5) / 2);
+  });
+
+  test('statsCommand prints non-zero Average states/run', () => {
+    const logs: string[] = [];
+    jest.spyOn(console, 'log').mockImplementation((...args: any[]) => logs.push(args.join(' ')));
+    try {
+      statsCommand('/repo', 'main', 10);
+      const line = logs.find((l) => l.includes('Average states/run:'));
+      expect(line).toBeDefined();
+      const m = line!.match(/Average states\/run:\s*(\d+\.\d+)/);
+      expect(m).not.toBeNull();
+      expect(parseFloat(m![1])).toBeGreaterThan(0);
+    } finally {
+      (console.log as jest.MockedFunction<any>).mockRestore();
+    }
+  });
+});
+
