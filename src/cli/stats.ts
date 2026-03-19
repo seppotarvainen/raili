@@ -227,4 +227,3 @@ export function statsCommand(cwd: string, workflow = 'main', latest = 10) {
   const currMetrics = computeMetrics(currWindow);
   printComparison(prevMetrics, currMetrics);
 }
-
