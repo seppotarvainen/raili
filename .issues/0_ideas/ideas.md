@@ -168,24 +168,32 @@ Before appending, do a simple substring check — if the same feedback text (nor
 
 ## Phase 3: Metrics & Trend Detection
 
-You mentioned wanting to know if things are trending in the right direction. Build on what you already have.
+I need to know if things are trending in the right direction. For that, I need the following:
 
-### Data source: `context.json` history across runs
+Currently `<workflow>/context.json` is wiped on each clean run. To track trends, I need **run log**.
 
-Currently `context.json` is wiped on each clean run. To track trends, you need a **run log**.
-
-#### New: `.raili/run-log.jsonl`
+Let's add new file after run: `.raili/<workflow>/run-log.jsonl`
 
 After each workflow completes (terminal state reached), append a summary line:
 
 ```json
-{"runId": "2026-03-18T10:32:00Z", "ticket": "RAILI-42", "states": 12, "loops": 3, "approvalFailures": 1, "terminalState": "done", "duration": "4m32s"}
+{
+   "runId": "2026-03-18T10:32:00Z",
+   "ticket": "RAILI-42",
+   "states": 12,
+   "loops": 3,
+   "approvalFailures": 1,
+   "terminalState": "done",
+   "successful": true,
+   "duration": "4m32s"
+}
 ```
 
 Where:
 - **`loops`** = number of times any state was visited more than once (a proxy for rework)
 - **`approvalFailures`** = count of `FAILED` approvals (human corrections)
-- **`terminalState`** = `done` vs `exit` (success vs failure)
+- **`terminalState`** = state where the run ended (`done`, `exit`, etc.)
+- **`successful`** = terminal states have success property. If not, this may be omitted or 'undefined', which ever is simpler codewise.
 
 #### Trend command: `raili stats`
 

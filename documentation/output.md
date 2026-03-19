@@ -140,3 +140,7 @@ The complete history file contains all runs with separators:
 
 On disk for audit trail, but only last run injected into agent prompt (bounded context).
 
+### Run log JSONL
+
+For longitudinal metrics, Raili also writes a compact JSONL run log to `.raili/<workflow>/run-log.jsonl`. Each line is a single JSON object summarizing the run (runId, declared input vars, state counts, loops, approvalFailures, terminalState, duration). This file is append-only and safe to read concurrently.
+
