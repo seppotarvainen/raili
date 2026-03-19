@@ -11,6 +11,7 @@ import colors from 'colors/safe';
 import { printHelp } from './cli/help';
 import { printDocs } from './cli/docs';
 import { printSchema } from './cli/schema';
+import { statsCommand } from './cli/stats';
 
 const args = process.argv.slice(2);
 const cmd = args[0];
@@ -237,6 +238,19 @@ async function main() {
       // raili schema
       printSchema();
       process.exit(0);
+    } else if (cmd === 'stats') {
+      // raili stats [<workflow>] [--latest N]
+      const workflowArg = runArgs.find((a) => !a.startsWith('-')) || 'main';
+      const latestIndex = runArgs.findIndex((a) => a === '--latest');
+      const latest =
+        latestIndex !== -1 && runArgs[latestIndex + 1] ? Number(runArgs[latestIndex + 1]) : 10;
+      try {
+        await Promise.resolve(statsCommand(process.cwd(), workflowArg, latest));
+        process.exit(0);
+      } catch (err: any) {
+        console.error(err.message || String(err));
+        process.exit(1);
+      }
     } else if (!cmd) {
       printHelp();
       process.exit(0);
