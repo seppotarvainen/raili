@@ -144,3 +144,5 @@ On disk for audit trail, but only last run injected into agent prompt (bounded c
 
 For longitudinal metrics, Raili also writes a compact JSONL run log to `.raili/<workflow>/run-log.jsonl`. Each line is a single JSON object summarizing the run (runId, declared input vars, state counts, loops, approvalFailures, terminalState, duration). This file is append-only and safe to read concurrently. Only input variables declared in the workflow with `log: true` are included in the `vars` object — all other inputs are excluded by default.
 
+The canonical success indicator field in each run object is `success` (boolean). Older legacy `successful` field is no longer supported.
+
