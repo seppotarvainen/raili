@@ -9,6 +9,7 @@ export type RunEntry = {
   duration?: number;
   loops?: number;
   approvalFailures?: number;
+  states?: number;
   stateCount?: number;
   statesVisited?: number;
   terminalState?: string;
@@ -39,7 +40,7 @@ export function computeMetrics(runs: RunEntry[]) {
     const loops = r.loops ?? 0;
     sumLoops += loops;
     sumApprovalFailures += r.approvalFailures ?? 0;
-    const sc = r.stateCount ?? r.statesVisited ?? 0;
+    const sc = r.states ?? r.stateCount ?? r.statesVisited ?? 0;
     sumStates += sc;
     const dur = r.durationMs ?? r.duration ?? 0;
     sumDuration += dur;
