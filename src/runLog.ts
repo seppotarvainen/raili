@@ -83,7 +83,7 @@ export function appendRunLog(
   const endTime =
     terminalEntry && terminalEntry.enteredAt ? new Date(terminalEntry.enteredAt) : new Date();
   const durationMs = endTime.getTime() - runStart.getTime();
-  output.duration = humanDuration(durationMs >= 0 ? durationMs : 0);
+  output.duration = durationMs >= 0 ? durationMs : 0;
 
   // Include only declared workflow inputs which are marked log: true
   for (const input of workflowConfig.inputs || []) {
