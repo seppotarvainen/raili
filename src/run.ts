@@ -10,6 +10,7 @@ import {
 import { loadContext, clearContext, initializeContext } from './context';
 import { Engine } from './engine/Engine';
 import { appendRunLog } from './runLog';
+import { loadVarsFile } from './varsLoader';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -63,8 +64,21 @@ export async function runCommand(
     clearContext(cwd, workflowPath);
   }
 
+  // When doing a clean run, load vars file filtered to declared inputs and merge with supplied vars (flags override file)
+  let initialVars = vars;
+  if (mode === 'clean') {
+    const declaredRaw = workflowConfig.inputs ?? [];
+    const declaredNames: string[] = (declaredRaw as any[])
+      .map((it: any) =>
+        typeof it === 'string' ? it : it && typeof it.name === 'string' ? it.name : '',
+      )
+      .filter(Boolean);
+    const fileVars = loadVarsFile(cwd, declaredNames, workflowPath);
+    initialVars = { ...fileVars, ...vars };
+  }
+
   // Load (or create) the execution context, then merge any supplied vars
-  let context = mode === 'clean' ? initializeContext(vars) : loadContext(cwd, workflowPath);
+  let context = mode === 'clean' ? initializeContext(initialVars) : loadContext(cwd, workflowPath);
 
   if (mode !== 'clean' && Object.keys(vars).length > 0) {
     context = { ...context, vars: { ...context.vars, ...vars } };
