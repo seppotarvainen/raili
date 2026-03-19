@@ -69,14 +69,14 @@ export function appendRunLog(
     terminalState,
   };
 
-  // Only include successful if the engine recorded an explicit success value
+  // Only include success if the engine recorded an explicit success value
   if (
     terminalEntry &&
     terminalEntry.meta &&
     terminalEntry.meta.success !== null &&
     terminalEntry.meta.success !== undefined
   ) {
-    output.successful = !!terminalEntry.meta.success;
+    output.success = !!terminalEntry.meta.success;
   }
 
   // Duration: from runStart to terminalEntry.enteredAt (or now)
