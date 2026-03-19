@@ -48,12 +48,12 @@ describe('raili init', () => {
     await initCommand(tmpDir);
 
     expect(fs.existsSync(path.join(tmpDir, '.raili'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, '.raili', 'workflow.yaml'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.raili', 'main', 'workflow.yaml'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, '.raili', 'agent-registry.json'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, '.raili', 'script-registry.json'))).toBe(true);
 
     // workflow.yaml contains expected initial state
-    const workflow = fs.readFileSync(path.join(tmpDir, '.raili', 'workflow.yaml'), 'utf8');
+    const workflow = fs.readFileSync(path.join(tmpDir, '.raili', 'main', 'workflow.yaml'), 'utf8');
     expect(workflow).toContain('initial: init');
     expect(workflow).toContain('states:');
   });
@@ -117,7 +117,7 @@ states:
     // First run stops at step_b (we'll run clean, which goes all the way through).
     // To test resume, we manually write context stopping at step_b.
     fs.writeFileSync(
-      path.join(tmpDir, '.raili', 'context.json'),
+      path.join(tmpDir, '.raili', 'main', 'context.json'),
       JSON.stringify({
         stateHistory: [
           { state: 'step_a', enteredAt: '2026-01-01T00:00:00Z' },
@@ -194,9 +194,9 @@ states:
   start:
     type: engine
 `);
-    // Write vars.yaml
+    // Write vars.yaml to the main workflow directory
     fs.writeFileSync(
-      path.join(tmpDir, '.raili', 'vars.yaml'),
+      path.join(tmpDir, '.raili', 'main', 'vars.yaml'),
       'ticket_id: PROJ-999\nbranch: main\nextra_var: should_be_ignored\n',
       'utf8',
     );

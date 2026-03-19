@@ -4,7 +4,7 @@ import { readLatestRun } from '../../src/outputStore';
 
 describe('readLatestRun', () => {
   const cwd = path.join(__dirname, 'tmp_project');
-  const outputsDir = path.join(cwd, '.raili', 'outputs');
+  const outputsDir = path.join(cwd, '.raili', 'main', 'outputs');
 
   beforeEach(() => {
     if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });

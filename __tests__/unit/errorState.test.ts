@@ -45,7 +45,7 @@ test('routes to declared error state on unhandled exception and runs entry actio
   await expect(engine.run()).resolves.not.toThrow();
 
   // Assert: entry actions for error state were executed
-  expect(mockClear).toHaveBeenCalledWith('/tmp', ['a']);
+  expect(mockClear).toHaveBeenCalledWith('/tmp', ['a'], undefined);
   expect(mockNotify).toHaveBeenCalledWith('echo error', '/tmp', {});
 
   // addStateToHistory should have been called to record the error state entry

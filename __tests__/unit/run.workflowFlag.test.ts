@@ -11,9 +11,11 @@ const { Engine } = require('../../src/engine/Engine');
 
 describe('runCommand with workflow path', () => {
   let tmpdir: string;
+  let railiDir: string;
 
   beforeEach(() => {
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-run-'));
+    railiDir = path.join(tmpdir, '.raili');
     jest.resetAllMocks();
     Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
@@ -22,14 +24,12 @@ describe('runCommand with workflow path', () => {
     fs.rmSync(tmpdir, { recursive: true, force: true });
   });
 
-  test('loads alternate workflow and runs engine (clean mode)', async () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+  test('loads named workflow and runs engine (clean mode)', async () => {
+    const devDir = path.join(railiDir, 'dev');
+    fs.mkdirSync(devDir, { recursive: true });
 
     const altWorkflow = ['initial: alt', 'states:', '  alt:', "    type: engine", '  done:', '    type: engine'].join('\n');
-    // Place the alternate workflow in .raili to test preference
-    fs.writeFileSync(path.join(railiDir, 'workflow-dev.yaml'), altWorkflow);
-
+    fs.writeFileSync(path.join(devDir, 'workflow.yaml'), altWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
 
@@ -40,37 +40,33 @@ describe('runCommand with workflow path', () => {
     const mockRun = jest.fn().mockResolvedValue(undefined);
     Engine.mockImplementation(() => ({ run: mockRun }));
 
-    await runCommand(tmpdir, 'clean', {}, 'workflow-dev.yaml');
+    await runCommand(tmpdir, 'clean', {}, 'dev');
 
     expect(Engine).toHaveBeenCalledTimes(1);
     expect(mockRun).toHaveBeenCalledTimes(1);
   });
 
-  test('continue mode preserves context.json even when using alternate workflow', async () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+  test('continue mode preserves context.json for named workflow', async () => {
+    const devDir = path.join(railiDir, 'dev');
+    fs.mkdirSync(devDir, { recursive: true });
 
-    // Create alternate workflow in cwd
     const altWorkflow = ['initial: alt', 'states:', '  alt:', "    type: engine", '  done:', '    type: engine'].join('\n');
-    fs.writeFileSync(path.join(tmpdir, 'workflow-other.yaml'), altWorkflow);
+    fs.writeFileSync(path.join(devDir, 'workflow.yaml'), altWorkflow);
 
-    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n');
+    const existingContext = JSON.stringify({ stateHistory: [{ state: 'alt', enteredAt: new Date().toISOString() }] });
+    fs.writeFileSync(path.join(devDir, 'context.json'), existingContext);
+
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
-
-    // Write an existing context
-    const existingContext = JSON.stringify({ stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }] });
-    fs.writeFileSync(path.join(railiDir, 'context.json'), existingContext);
 
     registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
     registryValidator.validateScriptRegistry.mockImplementation(() => ({}));
     registryValidator.validateWorkflowReferences.mockImplementation(() => {});
-
     Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
 
-    await runCommand(tmpdir, 'continue', {}, 'workflow-other.yaml');
+    await runCommand(tmpdir, 'continue', {}, 'dev');
 
-    expect(fs.existsSync(path.join(railiDir, 'context.json'))).toBe(true);
-    expect(fs.readFileSync(path.join(railiDir, 'context.json'), 'utf8')).toBe(existingContext);
+    expect(fs.existsSync(path.join(devDir, 'context.json'))).toBe(true);
+    expect(fs.readFileSync(path.join(devDir, 'context.json'), 'utf8')).toBe(existingContext);
   });
 });

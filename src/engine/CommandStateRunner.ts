@@ -12,7 +12,12 @@ import { parseExports } from '../variableExports';
 export class CommandStateRunner implements IStateRunner {
   constructor() {}
 
-  async run(state: StateDef, cwd: string, vars?: Record<string, string>): Promise<StateResult> {
+  async run(
+    state: StateDef,
+    cwd: string,
+    vars?: Record<string, string>,
+    workflowArg?: string,
+  ): Promise<StateResult> {
     const command = state.config.command!;
     const workdir = state.config.directory ?? cwd;
 
@@ -29,7 +34,13 @@ export class CommandStateRunner implements IStateRunner {
     // Store output if configured
     if (state.config.output) {
       const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-      if (combined) saveOutput(cwd, state.id, combined, state.config.output);
+      if (combined) {
+        if (typeof workflowArg !== 'undefined') {
+          saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
+        } else {
+          saveOutput(cwd, state.id, combined, state.config.output);
+        }
+      }
     }
 
     // Parse exposes if configured (supports `name=value`, `export name=value`, case-insensitive key, and quoted values)
@@ -65,7 +76,8 @@ export async function runCommandState(
   state: StateDef,
   cwd: string,
   vars?: Record<string, string>,
+  workflowArg?: string,
 ): Promise<StateResult> {
   const runner = new CommandStateRunner();
-  return runner.run(state, cwd, vars);
+  return runner.run(state, cwd, vars, workflowArg);
 }

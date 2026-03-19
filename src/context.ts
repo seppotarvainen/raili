@@ -2,37 +2,38 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { WorkflowContext, StateHistoryEntry } from './types';
 import { clearAllOutputs } from './outputStore';
+import { resolveWorkflowDir } from './pathUtils';
 
 /**
- * Load workflow context from .raili/context.json
- * Returns a new context if file doesn't exist
+ * Load workflow context from workflowDir/context.json.
+ * Returns an empty context if the file doesn't exist (non-workflow-scoped runs only).
  * Backwards-compatible: accepts entries without `meta` fields.
  */
-export function loadContext(cwd: string): WorkflowContext {
-  const contextPath = path.join(cwd, '.raili', 'context.json');
+export function loadContext(cwd: string, workflowArg?: string): WorkflowContext {
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
+  const contextPath = path.join(workflowDir, 'context.json');
 
   if (!fs.existsSync(contextPath)) {
-    return {
-      stateHistory: [],
-    };
+    if (workflowArg) {
+      throw new Error(
+        `Missing context.json for workflow '${workflowArg}'. Cannot run without an existing context.`,
+      );
+    }
+    return { stateHistory: [] };
   }
 
-  const content = fs.readFileSync(contextPath, 'utf8');
-  const parsed = JSON.parse(content);
+  const parsed = JSON.parse(fs.readFileSync(contextPath, 'utf8'));
 
-  // Validate structure
   if (!Array.isArray(parsed.stateHistory)) {
     throw new Error('Invalid context.json: stateHistory must be an array');
   }
 
-  // Ensure old entries without meta still work
   parsed.stateHistory = parsed.stateHistory.map((e: any) => ({
     state: e.state,
     enteredAt: e.enteredAt,
     meta: e.meta ?? undefined,
   }));
 
-  // Backwards-compatible: ensure vars and approvals maps exist
   parsed.vars = parsed.vars ?? {};
   parsed.approvals = parsed.approvals ?? {};
 
@@ -40,16 +41,18 @@ export function loadContext(cwd: string): WorkflowContext {
 }
 
 /**
- * Save workflow context to .raili/context.json
+ *
+ * Save workflow context to workflowDir/context.json
  */
-export function saveContext(cwd: string, context: WorkflowContext): void {
-  const railiDir = path.join(cwd, '.raili');
+export function saveContext(cwd: string, context: WorkflowContext, workflowArg?: string): void {
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
 
-  if (!fs.existsSync(railiDir)) {
-    throw new Error('.raili/ directory does not exist');
+  // Ensure .raili/ (or workflowDir) exists
+  if (!fs.existsSync(workflowDir)) {
+    throw new Error('.raili/ workflow directory does not exist: ' + workflowDir);
   }
 
-  const contextPath = path.join(railiDir, 'context.json');
+  const contextPath = path.join(workflowDir, 'context.json');
   fs.writeFileSync(contextPath, JSON.stringify(context, null, 2), 'utf8');
 }
 
@@ -131,14 +134,16 @@ export function addStateToHistory(
 }
 
 /**
+ *
  * Clear the persisted context file and all output files (used for a clean run)
  */
-export function clearContext(cwd: string): void {
-  const contextPath = path.join(cwd, '.raili', 'context.json');
+export function clearContext(cwd: string, workflowArg?: string): void {
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
+  const contextPath = path.join(workflowDir, 'context.json');
   if (fs.existsSync(contextPath)) {
     fs.unlinkSync(contextPath);
   }
-  clearAllOutputs(cwd);
+  clearAllOutputs(cwd, workflowArg);
 }
 
 /**

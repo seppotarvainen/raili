@@ -12,7 +12,7 @@ output:
   store: true
 ```
 
-Output saved to `.raili/outputs/<stateId>.md` with run separators.
+Output saved to `.raili/<workflow>/outputs/<stateId>.md` with run separators.
 
 ## Filtering by Pattern
 
@@ -59,7 +59,7 @@ bounded while maintaining iterative memory.
 
 Full history is always stored on disk for audit trail.
 
-Learnings (opt-in): Agent states may declare `learn_from:` to collect persistent, append-only learnings from other outputs or variables. Learnings are stored at `.raili/learnings/<agentId>.md` and are injected into the agent prompt under `## Learnings from previous runs` before execution. Learnings are deduplicated on append to avoid loops.
+Learnings (opt-in): Agent states may declare `learn_from:` to collect persistent, append-only learnings from other outputs or variables. Learnings are stored at `.raili/<workflow>/learnings/<agentId>.md` and are injected into the agent prompt under `## Learnings from previous runs` before execution. Learnings are deduplicated on append to avoid loops.
 
 ## Common Patterns
 

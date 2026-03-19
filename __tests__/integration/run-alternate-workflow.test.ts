@@ -1,14 +1,15 @@
+import fs from 'fs';
+import path from 'path';
 import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context';
 import {
     cleanupRailiEnvVars,
     cleanupTmpWorkspace,
     createTmpWorkspace,
     fakeChild,
     writeAgentRegistry,
+    writeNamedWorkflow,
     writeScriptRegistry,
     writeWorkflow,
-    writeWorkflowFile,
     //@ts-ignore
 } from './testUtils';
 
@@ -30,8 +31,8 @@ afterEach(() => {
 });
 
 describe('run (integration - alternate workflow)', () => {
-  it('runs with alternate workflow and respects workflowPath', async () => {
-    // Default workflow.yaml should point to 'main'
+  it('runs with named workflow and persists context in its own directory', async () => {
+    // Default main workflow
     writeWorkflow(tmpDir, `
 initial: main
 states:
@@ -39,8 +40,8 @@ states:
     type: engine
 `);
 
-    // Alternate workflow in .raili/ with a different initial state
-    writeWorkflowFile(tmpDir, 'workflow-dev.yaml', `
+    // Named workflow 'dev'
+    writeNamedWorkflow(tmpDir, 'dev', `
 initial: devstart
 states:
   devstart:
@@ -50,9 +51,12 @@ states:
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
-    await runCommand(tmpDir, 'clean', {}, 'workflow-dev.yaml');
+    await runCommand(tmpDir, 'clean', {}, 'dev');
 
-    const ctx = loadContext(tmpDir);
+    // Context should be in .raili/dev/context.json
+    const ctxPath = path.join(tmpDir, '.raili', 'dev', 'context.json');
+    expect(fs.existsSync(ctxPath)).toBe(true);
+    const ctx = JSON.parse(fs.readFileSync(ctxPath, 'utf8'));
     const states = ctx.stateHistory.map((e: any) => e.state);
     expect(states).toEqual(['devstart']);
   });

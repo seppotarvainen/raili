@@ -15,7 +15,7 @@ describe('collectVars', () => {
   beforeEach(() => {
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-cli-test-'));
     railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+    fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
   });
 
   afterEach(() => {

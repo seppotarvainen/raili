@@ -8,7 +8,7 @@ describe('Integration: success field in terminal engine states', () => {
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-test-'));
-    fs.mkdirSync(path.join(tmpDir, '.raili'));
+    fs.mkdirSync(path.join(tmpDir, '.raili', 'main'), { recursive: true });
   });
 
   afterEach(() => {
@@ -31,7 +31,7 @@ states:
     type: engine
     success: true
 `;
-    const wfPath = path.join(tmpDir, '.raili', 'workflow.yaml');
+    const wfPath = path.join(tmpDir, '.raili', 'main', 'workflow.yaml');
     fs.writeFileSync(wfPath, yaml, 'utf8');
 
     expect(() => {

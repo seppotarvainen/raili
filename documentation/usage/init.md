@@ -10,9 +10,20 @@ raili init
 
 ## What It Creates
 
-The `raili init` command creates a `.raili/` directory in your project with three template files:
+The `raili init` command creates a `.raili/` directory with a default `main` workflow scaffold:
 
-### `workflow.yaml`
+```
+.raili/
+├── agent-registry.json       # Agent mappings (shared across all workflows)
+├── script-registry.json      # Script mappings (shared across all workflows)
+└── main/                     # Default workflow directory
+    ├── workflow.yaml          # Workflow state machine definition
+    ├── vars.yaml              # Input variable defaults (optional)
+    ├── outputs/               # Agent/script outputs (auto-populated on run)
+    └── learnings/             # Agent learnings (auto-populated on run)
+```
+
+### `main/workflow.yaml`
 The main workflow configuration file. Defines:
 - Initial state
 - All states and their types
@@ -22,7 +33,7 @@ The main workflow configuration file. Defines:
 Edit this file to describe your workflow.
 
 ### `agent-registry.json`
-Maps agent names to their files and optional model overrides.
+Maps agent names to their files and optional model overrides. Shared across all workflows.
 
 Example:
 ```json
@@ -38,7 +49,7 @@ Example:
 ```
 
 ### `script-registry.json`
-Maps script names to their files.
+Maps script names to their files. Shared across all workflows.
 
 Example:
 ```json
@@ -52,23 +63,39 @@ Example:
 }
 ```
 
+## Adding More Workflows
+
+To create an additional named workflow, add a new subdirectory under `.raili/`:
+
+```bash
+mkdir -p .raili/dev/outputs .raili/dev/learnings
+# create .raili/dev/workflow.yaml
+```
+
+Run it with:
+```bash
+raili run --workflow dev
+```
+
+Each workflow directory is independent — its `context.json`, `outputs/`, and `learnings/` never mix with other workflows. Registries are always shared from `.raili/`.
+
 ## Next Steps
 
-1. **Edit `.raili/workflow.yaml`** — Define your workflow states and transitions
+1. **Edit `.raili/main/workflow.yaml`** — Define your workflow states and transitions
 2. **Register agents** — Add entries to `agent-registry.json` pointing to your agent files
 3. **Register scripts** — Add entries to `script-registry.json` pointing to your shell scripts
 4. **Run your workflow** — Use `raili run` to execute
 
 ## Error Handling
 
-If `.raili/` already exists, `raili init` will not overwrite existing files. Create a new directory or manually delete `.raili/` if you want to reinitialize.
+If `.raili/` already exists, `raili init` will not overwrite existing files and exits with an error.
 
 ## Configuration Files
 
-- `.raili/workflow.yaml` — Your workflow definition (required)
-- `.raili/agent-registry.json` — Agent mappings (required)
-- `.raili/script-registry.json` — Script mappings (required)
-- `.raili/context.json` — Runtime state (auto-created on first run)
-- `.raili/outputs/` — Stored agent/script outputs (auto-created)
-- `.raili/vars.yaml` — Input variables (optional, create manually)
-
+- `.raili/agent-registry.json` — Agent mappings (required, shared)
+- `.raili/script-registry.json` — Script mappings (required, shared)
+- `.raili/main/workflow.yaml` — Default workflow definition (required)
+- `.raili/main/vars.yaml` — Input variable defaults (optional)
+- `.raili/main/context.json` — Runtime state (auto-created on first run)
+- `.raili/main/outputs/` — Stored agent/script outputs (auto-created)
+- `.raili/main/learnings/` — Agent learnings (auto-created)

@@ -14,30 +14,29 @@ describe('loadWorkflowConfig with workflow path', () => {
     fs.rmSync(tmpdir, { recursive: true, force: true });
   });
 
-  test('prefers .raili/<name> when present', () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+  test('loads workflow from .raili/<name>/ directory', () => {
+    const devDir = path.join(tmpdir, '.raili', 'dev');
+    fs.mkdirSync(devDir, { recursive: true });
     const workflow = ['initial: init', 'states:', '  init:', "    type: engine", '  done:', '    type: engine'].join('\n');
-    fs.writeFileSync(path.join(railiDir, 'workflow-dev.yaml'), workflow);
+    fs.writeFileSync(path.join(devDir, 'workflow.yaml'), workflow);
 
-    const config = loadWorkflowConfig(tmpdir, 'workflow-dev.yaml');
+    const config = loadWorkflowConfig(tmpdir, 'dev');
     expect(config.initial).toBe('init');
   });
 
-  test('loads cwd/<name> when .raili/<name> missing', () => {
+  test('throws when named workflow directory does not exist', () => {
     const railiDir = path.join(tmpdir, '.raili');
     fs.mkdirSync(railiDir);
-    const workflow = ['initial: start', 'states:', '  start:', "    type: engine", '  done:', '    type: engine'].join('\n');
-    fs.writeFileSync(path.join(tmpdir, 'workflow-dev.yaml'), workflow);
 
-    const config = loadWorkflowConfig(tmpdir, 'workflow-dev.yaml');
-    expect(config.initial).toBe('start');
+    expect(() => loadWorkflowConfig(tmpdir, 'nonexistent')).toThrow(
+      'Unable to resolve workflow directory',
+    );
   });
 
-  test('throws when referenced workflow file does not exist', () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+  test('throws when workflow.yaml missing in named directory', () => {
+    const devDir = path.join(tmpdir, '.raili', 'dev');
+    fs.mkdirSync(devDir, { recursive: true });
 
-    expect(() => loadWorkflowConfig(tmpdir, 'nonexistent.yaml')).toThrow('Workflow file not found');
+    expect(() => loadWorkflowConfig(tmpdir, 'dev')).toThrow('Workflow file not found');
   });
 });

@@ -10,6 +10,10 @@ export async function initCommand(cwd: string) {
 
   fs.mkdirSync(railiDir);
 
+  // Create a default workflow directory 'main' for scoped artifacts
+  const mainWorkflowDir = path.join(railiDir, 'main');
+  fs.mkdirSync(mainWorkflowDir, { recursive: true });
+
   const workflowYaml = [
     '# Raili Workflow Configuration',
     '# Defines the workflow state machine',
@@ -99,9 +103,16 @@ export async function initCommand(cwd: string) {
     2,
   );
 
-  fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), workflowYaml);
+  // Write registries at .raili root (shared)
   fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), agentRegistry);
   fs.writeFileSync(path.join(railiDir, 'script-registry.json'), scriptRegistry);
 
+  // Write workflow.yaml and vars.yaml into .raili/main/
+  fs.writeFileSync(path.join(mainWorkflowDir, 'workflow.yaml'), workflowYaml);
+  fs.writeFileSync(path.join(mainWorkflowDir, 'vars.yaml'), '# vars for main workflow\n');
+  fs.mkdirSync(path.join(mainWorkflowDir, 'outputs'), { recursive: true });
+  fs.mkdirSync(path.join(mainWorkflowDir, 'learnings'), { recursive: true });
+
+  // Backwards-compatible: also write a top-level workflow.yaml if desired (leave absent to prefer scoped)
   return { created: true };
 }

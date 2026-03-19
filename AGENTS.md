@@ -134,12 +134,8 @@ review:
 
 **Sources (precedence):**
 1. `--var key=value` CLI flags
-2. `.raili/vars.yaml` (only keys declared in `workflow.inputs`)
-   - Additionally, when you run a specific workflow file via `--workflow <path>` the CLI will look for workflow-scoped files in `.raili/` before falling back to `vars.yaml`:
-     - `.raili/vars.<suffix>.yaml` (preferred)
-     - `.raili/vars-<suffix>.yaml`
-     - `.raili/vars.<suffix>.yml`
-     These candidates derive the <suffix> from the basename of the workflow file (see `src/cli.ts::loadVarsFile`).
+2. `.raili/<workflow>/vars.yaml` — workflow-specific vars (e.g. `.raili/main/vars.yaml`)
+   - Falls back to `.raili/vars.yaml` — shared across all workflows
 3. Interactive prompt (for declared inputs not supplied via flags)
    - Note: interactive prompting only occurs for clean runs. When continuing a previous run the engine reuses values from `.raili/context.json` instead of prompting.
 

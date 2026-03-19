@@ -40,22 +40,56 @@ function promptLine(rl: readline.Interface, question: string): Promise<string> {
 }
 
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
+import { resolveWorkflowDir } from './pathUtils';
+
 export function loadVarsFile(
   cwd: string,
   declared: string[],
   workflowPath?: string,
 ): Record<string, string> {
-  // Support paired vars file naming when workflowPath is provided.
-  // Precedence:
-  // 1. .raili/vars.<suffix>.yaml
-  // 2. .raili/vars-<suffix>.yaml
-  // 3. .raili/vars.yaml
+  // Vars file precedence:
+  // 1. .raili/<workflow>/vars.yaml  — workflow-specific vars
+  // 2. .raili/vars.yaml             — shared across all workflows (fallback)
   const railiDir = path.join(cwd, '.raili');
 
   // Helper to read and filter a vars file
   function readAndFilter(filePath: string): Record<string, string> {
     if (!fs.existsSync(filePath)) return {};
-    const parsed = yaml.load(fs.readFileSync(filePath, 'utf8')) as any;
+    // Guard against directories (EISDIR) and unreadable files
+    try {
+      const stat = fs.statSync(filePath);
+      const isDir =
+        typeof (stat as any).isDirectory === 'function'
+          ? (stat as any).isDirectory()
+          : Boolean((stat as any).isDirectory);
+      if (isDir) {
+        console.warn(
+          colors.yellow(`[Warning] Skipping ${path.basename(filePath)} because it is a directory.`),
+        );
+        return {};
+      }
+    } catch (err: any) {
+      // If we can't stat the file, skip it (don't throw here — vars loading should be best-effort)
+      console.warn(
+        colors.yellow(
+          `[Warning] Unable to access ${path.basename(filePath)}: ${err && err.message ? err.message : String(err)}`,
+        ),
+      );
+      return {};
+    }
+
+    let parsed: any;
+    try {
+      parsed = yaml.load(fs.readFileSync(filePath, 'utf8')) as any;
+    } catch (err: any) {
+      console.warn(
+        colors.yellow(
+          `[Warning] Could not parse ${path.basename(filePath)}: ${err && err.message ? err.message : String(err)}`,
+        ),
+      );
+      return {};
+    }
+
     if (!parsed || typeof parsed !== 'object') return {};
     const result: Record<string, string> = {};
     const declaredSet = new Set(declared);
@@ -73,39 +107,13 @@ export function loadVarsFile(
     return result;
   }
 
-  // If no workflowPath, default behavior
-  if (!workflowPath) {
-    const varsPath = path.join(railiDir, 'vars.yaml');
-    return readAndFilter(varsPath);
-  }
+  // Resolve the workflow directory (main if no workflowPath, else the named dir)
+  const workflowDir = resolveWorkflowDir(cwd, workflowPath);
+  const data = readAndFilter(path.join(workflowDir, 'vars.yaml'));
+  if (Object.keys(data).length > 0) return data;
 
-  // Derive suffix from workflowPath
-  let basename = path.basename(workflowPath);
-  // strip extension
-  basename = basename.replace(/\.(yaml|yml)$/i, '');
-  // If name starts with 'workflow-' or 'workflow_', prefer the suffix after that
-  let suffix = basename;
-  if (basename.startsWith('workflow-') || basename.startsWith('workflow_')) {
-    suffix = basename.split(/[-_]/).slice(1).join('-');
-  } else if (basename === 'workflow') {
-    // exact 'workflow' -> no suffix
-    suffix = '';
-  }
-
-  const candidates: string[] = [];
-  if (suffix) {
-    candidates.push(path.join(railiDir, `vars.${suffix}.yaml`));
-    candidates.push(path.join(railiDir, `vars-${suffix}.yaml`));
-    candidates.push(path.join(railiDir, `vars.${suffix}.yml`));
-  }
-  candidates.push(path.join(railiDir, 'vars.yaml'));
-
-  for (const cand of candidates) {
-    const data = readAndFilter(cand);
-    if (Object.keys(data).length > 0) return data;
-  }
-
-  return {};
+  // Fall back to shared .raili/vars.yaml
+  return readAndFilter(path.join(railiDir, 'vars.yaml'));
 }
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */
@@ -119,15 +127,18 @@ export async function collectVars(
     const config = loadWorkflowConfig(cwd, workflowPath);
     const raw = config.inputs ?? [];
     declaredInputs = raw.map((it: any) => {
-      if (
-        typeof it !== 'object' ||
-        it === null ||
-        typeof it.name !== 'string' ||
-        typeof it.description !== 'string'
-      ) {
-        throw new Error('Workflow inputs must be objects with "name" and "description"');
+      // Allow shorthand string form or object with optional description
+      if (typeof it === 'string') {
+        return { name: it, description: '' };
       }
-      return { name: it.name, description: it.description };
+      if (typeof it === 'object' && it !== null) {
+        if (typeof it.name !== 'string') throw new Error('inputs entries must have a string name');
+        return {
+          name: it.name,
+          description: typeof it.description === 'string' ? it.description : '',
+        };
+      }
+      throw new Error('Invalid input declaration: must be a string or object with a name');
     });
   } catch {
     // If workflow can't be loaded here, run() will fail with a proper error
@@ -157,18 +168,11 @@ export async function collectVars(
   return collected;
 }
 
-async function promptRunMode(cwd: string): Promise<RunMode> {
-  let hasExistingContext: boolean;
-  try {
-    const context = loadContext(cwd);
-    hasExistingContext = getCurrentState(context) !== null;
-  } catch {
-    hasExistingContext = false;
-  }
-
-  if (!hasExistingContext) {
-    return 'clean';
-  }
+export async function promptRunMode(cwd: string, workflowPath?: string): Promise<RunMode> {
+  // missing context.json for workflow-scoped runs, malformed JSON, etc.)
+  const context = loadContext(cwd, workflowPath);
+  const hasExistingContext = getCurrentState(context) !== null;
+  if (!hasExistingContext) return 'clean';
 
   return new Promise((resolve) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -197,21 +201,22 @@ async function main() {
     if (cmd === 'init') {
       await initCommand(process.cwd());
     } else if (cmd === 'run') {
-      let mode: RunMode;
-      if (hasFlag('--clean')) {
-        mode = 'clean';
-      } else if (hasFlag('--continue')) {
-        mode = 'continue';
-      } else {
-        mode = await promptRunMode(process.cwd());
-      }
-
       const flagVars = parseVarFlags();
       const workflowFlagIndex = runArgs.findIndex((arg) => arg === '--workflow' || arg === '-wf');
       const workflowPath =
         workflowFlagIndex !== -1 && runArgs[workflowFlagIndex + 1]
           ? runArgs[workflowFlagIndex + 1]
           : undefined;
+
+      let mode: RunMode;
+      if (hasFlag('--clean')) {
+        mode = 'clean';
+      } else if (hasFlag('--continue')) {
+        mode = 'continue';
+      } else {
+        // promptRunMode calls loadContext which handles all fail-fast validation
+        mode = await promptRunMode(process.cwd(), workflowPath);
+      }
 
       // Only prompt for missing vars on a clean run — continue reuses context.json
       const vars =

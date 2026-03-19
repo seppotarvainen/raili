@@ -3,12 +3,21 @@ import * as agentHandler from '../../src/handlers/agentHandler';
 import { WorkflowContext, StateDef } from '../../src/types';
 
 jest.mock('../../src/handlers/agentHandler');
+jest.mock('../../src/outputStore');
+jest.mock('../../src/learningStore');
+
+import * as learningStore from '../../src/learningStore';
+import * as outputStore from '../../src/outputStore';
 
 const mockExecuteAgent = agentHandler.executeAgent as jest.MockedFunction<typeof agentHandler.executeAgent>;
 
 beforeEach(() => {
   jest.resetAllMocks();
   mockExecuteAgent.mockResolvedValue({ success: true, stdout: 'PASSED', stderr: '' });
+  (learningStore.readLearnings as jest.Mock).mockReturnValue('');
+  (learningStore.appendUniqueLearning as jest.Mock).mockReturnValue(true);
+  (outputStore.loadAgentOutputPath as jest.Mock).mockReturnValue(null);
+  (outputStore.saveOutput as jest.Mock).mockReturnValue(undefined);
 });
 
 describe('variable interpolation in agent prompts', () => {

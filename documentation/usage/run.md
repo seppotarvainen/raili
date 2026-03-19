@@ -5,10 +5,12 @@
 ## Usage
 
 ```bash
-raili run                    # Resume from last state or start fresh if prompted
-raili run --clean           # Force a clean run (clear context, reprompt for inputs)
-raili run --continue        # Resume from last state (error if no context)
-raili run --var key=value   # Supply workflow inputs
+raili run                              # Resume or start the main workflow
+raili run --clean                      # Force a clean run (clears context, re-prompts for inputs)
+raili run --continue                   # Resume from last state
+raili run --var key=value              # Supply workflow inputs
+raili run --workflow <name>            # Run a named workflow (e.g. .raili/dev/)
+raili run --workflow <name> --clean    # Start a named workflow fresh
 ```
 
 ## Examples
@@ -16,8 +18,7 @@ raili run --var key=value   # Supply workflow inputs
 ### Basic run
 ```bash
 raili run
-# If context.json exists, resumes from last state
-# If not, prompts for clean vs continue
+# Prompts to continue existing run or start clean
 ```
 
 ### Clean run with inputs
@@ -25,13 +26,10 @@ raili run
 raili run --clean --var ticket_id=PROJ-123 --var branch=main
 ```
 
-### Using an alternate workflow file
+### Named workflow
 ```bash
-# Prefer .raili/workflow-dev.yaml if present, otherwise uses ./workflow-dev.yaml
-raili run --workflow workflow-dev.yaml --clean --var ticket_id=PROJ-123
-```
-
-Note: When running an alternate workflow, Raili will attempt to load a paired vars file matching the workflow name. For example, running `--workflow workflow-dev.yaml` (or `-wf workflow-dev.yaml`) causes Raili to prefer `.raili/vars.dev.yaml` or `.raili/vars-dev.yaml` (in that order) and fall back to `.raili/vars.yaml` if no paired file exists. This allows per-environment defaults while remaining backwards-compatible with `.raili/vars.yaml`.
+# Runs .raili/dev/workflow.yaml
+raili run --workflow dev --clean --var ticket_id=PROJ-123
 ```
 
 ### Resume from last state
@@ -48,17 +46,46 @@ raili run --clean \
   --var branch=develop
 ```
 
+## Workflow Directories
+
+`raili run` always operates on a workflow directory under `.raili/`. The `--workflow` flag selects which one:
+
+| Command | Workflow directory |
+|---|---|
+| `raili run` | `.raili/main/` |
+| `raili run --workflow dev` | `.raili/dev/` |
+| `raili run --workflow test` | `.raili/test/` |
+
+The selected directory must already exist and contain a `workflow.yaml`. Registries (`agent-registry.json`, `script-registry.json`) are always loaded from `.raili/` root and are shared.
+
+Each workflow directory keeps its own isolated artifacts:
+```
+.raili/
+├── agent-registry.json        # shared
+├── script-registry.json       # shared
+├── main/
+│   ├── workflow.yaml
+│   ├── vars.yaml
+│   ├── context.json           # main run state
+│   └── outputs/
+└── dev/
+    ├── workflow.yaml
+    ├── vars.yaml
+    ├── context.json           # dev run state (independent)
+    └── outputs/
+```
+
 ## Execution Flow
 
-1. **Load & Validate** → Reads `.raili/` directory, registries, and workflow
-2. **Initialize Context** → On clean run, prompts for declared inputs; on continue, reuses saved variables
-3. **Build State Machine** → Converts workflow.yaml into runtime state DAG
+1. **Load & Validate** → Reads `.raili/` directory, shared registries, and the selected workflow
+2. **Initialize Context** → On clean run, creates fresh context with declared inputs; on continue, loads saved state
+3. **Build State Machine** → Converts `workflow.yaml` into a runtime state DAG
 4. **Run Loop** → Executes states in order:
    - Enter state (run notify hook if present)
-   - Clear outputs (if reset_outputs specified)
+   - Clear outputs (if `reset_outputs` specified)
    - Execute handler (agent, script, command, or engine)
    - Route based on outcome
-   - Save context to `.raili/context.json`
+   - Save context to `<workflow>/context.json`
 5. **Stop** → Terminal state reached or error occurred
 
 ## Input Variables
@@ -78,13 +105,16 @@ inputs:
    raili run --var ticket_id=PROJ-123
    ```
 
-2. **`.raili/vars.yaml`** (optional, git-ignored)
+2. **Vars file** (optional, git-ignored)
+   - `.raili/<workflow>/vars.yaml` — workflow-specific
+   - `.raili/vars.yaml` — shared fallback
+
    ```yaml
    ticket_id: PROJ-123
    branch: main
    ```
 
-3. **Interactive prompt** (lowest priority)
+3. **Interactive prompt** (lowest priority, clean runs only)
    ```
    ticket_id: PROJ-123
    branch: main
@@ -93,7 +123,7 @@ inputs:
 
 ## Context & Resumption
 
-Raili saves execution state to `.raili/context.json`:
+Raili saves execution state to `<workflow>/context.json`:
 - State history (ordered list of entered states with timestamps)
 - Variable values
 - Approval responses
@@ -101,19 +131,22 @@ Raili saves execution state to `.raili/context.json`:
 ### Resume behavior
 - `raili run` with existing context → prompts "Continue from existing run (Enter) or clean run (c)?"
 - `raili run --continue` → always resumes
-- `raili run --clean` → always starts fresh (clears context.json)
+- `raili run --clean` → always starts fresh (clears context.json and outputs)
+
+### Named workflow resume behavior
+When `--workflow` is given and no `context.json` exists, Raili fails fast — use `--clean` to start a new run.
 
 ## Monitoring
 
 ### Check last run state
 ```bash
-cat .raili/context.json | jq '.stateHistory[-1]'
+cat .raili/main/context.json | jq '.stateHistory[-1]'
 ```
 
 ### View stored outputs
 ```bash
-ls -la .raili/outputs/
-cat .raili/outputs/analyze.md       # Output from 'analyze' state
+ls -la .raili/main/outputs/
+cat .raili/main/outputs/analyze.md       # Output from 'analyze' state
 ```
 
 ## Error Handling
@@ -123,6 +156,7 @@ If any of these fail, execution stops immediately:
 - `.raili/` directory missing
 - `agent-registry.json` or `script-registry.json` missing or malformed
 - Referenced agent or script not found in registries
+- Selected workflow directory does not exist
 - Declared input variable not defined
 - Illegal transition (outcome not mapped)
 
@@ -147,8 +181,6 @@ If workflow defines `error: error_state`, engine routes to that state on unhandl
 - Resuming long-running workflows
 - Keeping the same inputs
 
-**Use `--var` when:**
-- Running in CI/CD (non-interactive)
-- Passing dynamic values from scripts
-- Overriding defaults
-
+**Use `--workflow` when:**
+- Running a non-default workflow (e.g. a dev or test variant)
+- Keeping parallel workflows isolated with separate context and outputs
