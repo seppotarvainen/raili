@@ -11,6 +11,8 @@ const COMMAND_HELP: Record<string, string> = {
   help: 'Usage: raili help [topic]\n\nShow help on general usage or a specific topic.',
   docs: 'Usage: raili docs [section]\n\nDisplay full workflow.yaml reference documentation.',
   schema: 'Usage: raili schema\n\nDisplay YAML workflow schema with all state fields and types.',
+  stats:
+    'Usage: raili stats [<workflow>] [--latest N]\n\nShow recent workflow run metrics. Defaults to workflow "main" and latest 10 runs.',
 };
 
 export function formatHelp(command?: string, topic?: string): string {

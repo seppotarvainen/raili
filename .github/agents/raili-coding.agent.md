@@ -93,7 +93,6 @@ When implementing a feature, read the relevant doc to understand current behavio
 
 ### Types & Validation
 - Use strong TypeScript types. No `any` types.
-- Use Zod for runtime validation of JSON (registries, workflows, context).
 - Throw with clear error messages—include validation context.
 - Use discriminated unions for handler results.
 
