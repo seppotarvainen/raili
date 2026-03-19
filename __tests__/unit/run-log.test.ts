@@ -41,6 +41,7 @@ describe('runLog.appendRunLog', () => {
     expect(obj.approvalFailures).toBe(1);
     expect(obj.terminalState).toBe('done');
     expect(obj.successful).toBe(true);
-    expect(obj.duration).toBeDefined();
+    expect(typeof obj.duration).toBe('number');
+    expect(Number.isInteger(obj.duration)).toBe(true);
   });
 });
