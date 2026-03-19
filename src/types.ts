@@ -38,6 +38,8 @@ export interface StateConfig {
   // Optional success flag for terminal (engine) states. When present it will be persisted
   // to .raili/context.json for the state's run. If omitted, context should record null.
   success?: boolean | null;
+  // Optional skip target: when set the engine will bypass this state and immediately route to the given state id
+  skip?: string;
   transitions?: Record<string, string>;
   on?: Record<string, string>;
   expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>

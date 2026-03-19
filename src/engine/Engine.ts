@@ -87,6 +87,25 @@ export class Engine {
 
         const { config } = stateDef;
 
+        // If state is configured to be skipped, immediately route to its target
+        if ((config as any).skip) {
+          const target = (config as any).skip as string;
+          if (!(target in this.stateMachine.states)) {
+            throw new Error(
+              `State '${stateId}': skip target '${target}' not found in state machine`,
+            );
+          }
+
+          // Record skip in state history (skipped states do not run notify/reset_outputs or increment visits)
+          const newCtxSkip = addStateToHistory(this.context, stateId, { skipped: { target } });
+          if (newCtxSkip) this.context = newCtxSkip;
+          saveContext(this.cwd, this.context, this.workflowArg);
+
+          // Route to target state
+          stateId = target;
+          continue;
+        }
+
         // On state entry: enforce max_visits first
         if (config.max_visits !== undefined) {
           const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
