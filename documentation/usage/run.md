@@ -184,3 +184,13 @@ If workflow defines `error: error_state`, engine routes to that state on unhandl
 **Use `--workflow` when:**
 - Running a non-default workflow (e.g. a dev or test variant)
 - Keeping parallel workflows isolated with separate context and outputs
+
+### Run log (JSONL)
+
+Raili appends a one-line JSON summary to `.raili/<workflow>/run-log.jsonl` when a run reaches a terminal state. Each line contains run metadata useful for longitudinal metrics (runId, inputs, state counts, loops, approval failures, terminalState, duration). Use this file to build trend dashboards or telemetry.
+
+Example:
+
+```bash
+cat .raili/main/run-log.jsonl | jq '.[-1]'
+```

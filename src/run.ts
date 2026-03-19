@@ -9,6 +9,7 @@ import {
 } from './registryValidator';
 import { loadContext, clearContext, initializeContext } from './context';
 import { Engine } from './engine/Engine';
+import { appendRunLog } from './runLog';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -76,6 +77,8 @@ export async function runCommand(
     process.env[`RAILI_VAR_${key.toUpperCase()}`] = value;
   }
 
+  const runStart = new Date().toISOString();
+
   const engine = new Engine({
     stateMachine,
     agentRegistry: agents,
@@ -86,4 +89,6 @@ export async function runCommand(
   });
 
   await engine.run();
+
+  appendRunLog(cwd, workflowPath, runStart, workflowConfig);
 }
