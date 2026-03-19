@@ -47,6 +47,7 @@ export interface StateConfig {
 export interface InputDef {
   name: string;
   description?: string;
+  log?: boolean;
 }
 
 export interface WorkflowConfig {

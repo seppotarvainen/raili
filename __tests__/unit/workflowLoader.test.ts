@@ -77,8 +77,11 @@ describe('workflowLoader', () => {
       expect(Array.isArray(config.inputs)).toBe(true);
       expect((config.inputs as any[])[0].name).toBe('ticket_id');
       expect((config.inputs as any[])[0].description).toBe('The ticket id');
+      // log flag defaults to false when omitted
+      expect((config.inputs as any[])[0].log).toBe(false);
       expect((config.inputs as any[])[1].name).toBe('branch');
       expect((config.inputs as any[])[1].description).toBe('Git branch name');
+      expect((config.inputs as any[])[1].log).toBe(false);
     });
 
     test('parses inputs declared as strings (shorthand)', () => {
@@ -100,8 +103,11 @@ describe('workflowLoader', () => {
       expect(Array.isArray(config.inputs)).toBe(true);
       expect((config.inputs as any[])[0].name).toBe('ticket_id');
       expect((config.inputs as any[])[0].description).toBeUndefined();
+      // shorthand inputs default log to false
+      expect((config.inputs as any[])[0].log).toBe(false);
       expect((config.inputs as any[])[1].name).toBe('branch');
       expect((config.inputs as any[])[1].description).toBeUndefined();
+      expect((config.inputs as any[])[1].log).toBe(false);
     });
   });
 

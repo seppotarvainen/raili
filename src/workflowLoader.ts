@@ -63,15 +63,18 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
     normalizedInputs = main.inputs.map((it: any, idx: number) => {
       // allow shorthand string form
       if (typeof it === 'string') {
-        return { name: it, description: undefined };
+        return { name: it, description: undefined, log: false };
       }
       if (typeof it === 'object' && it !== null) {
         if (typeof it.name !== 'string') throw new Error(`inputs[${idx}].name must be a string`);
         if ('description' in it && typeof it.description !== 'string')
           throw new Error(`inputs[${idx}].description must be a string when provided`);
+        if ('log' in it && typeof it.log !== 'boolean')
+          throw new Error(`inputs[${idx}].log must be a boolean when provided`);
         return {
           name: it.name,
           description: typeof it.description === 'string' ? it.description : undefined,
+          log: typeof it.log === 'boolean' ? it.log : false,
         };
       }
       throw new Error(

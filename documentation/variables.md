@@ -17,6 +17,7 @@ inputs:
     description: |
       The upstream issue tracker ID for this work.
       Example: PROJ-123
+    log: true
   - name: branch
     description: "Git branch to use for the patch"
   - name: description

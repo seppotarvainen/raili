@@ -260,7 +260,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     }
   }
 
-  // Validate inputs: accept array of strings or objects {name, description?}
+  // Validate inputs: accept array of strings or objects {name, description?, log?}
   if (config.inputs !== undefined) {
     if (!Array.isArray(config.inputs)) {
       throw new SchemaValidationError(`Field 'inputs' must be an array`);
@@ -283,9 +283,15 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
             `Field 'inputs[${i}].description' must be a string when provided`,
           );
         }
+        // log is optional but if present must be boolean
+        if ('log' in item && typeof item.log !== 'boolean') {
+          throw new SchemaValidationError(
+            `Field 'inputs[${i}].log' must be a boolean when provided`,
+          );
+        }
         // no unknown keys allowed
         for (const k of Object.keys(item)) {
-          if (!['name', 'description'].includes(k)) {
+          if (!['name', 'description', 'log'].includes(k)) {
             throw new SchemaValidationError(`Field 'inputs[${i}]' contains unknown key '${k}'`);
           }
         }
