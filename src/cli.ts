@@ -41,81 +41,8 @@ function promptLine(rl: readline.Interface, question: string): Promise<string> {
 }
 
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
-import { resolveWorkflowDir } from './pathUtils';
-
-export function loadVarsFile(
-  cwd: string,
-  declared: string[],
-  workflowPath?: string,
-): Record<string, string> {
-  // Vars file precedence:
-  // 1. .raili/<workflow>/vars.yaml  — workflow-specific vars
-  // 2. .raili/vars.yaml             — shared across all workflows (fallback)
-  const railiDir = path.join(cwd, '.raili');
-
-  // Helper to read and filter a vars file
-  function readAndFilter(filePath: string): Record<string, string> {
-    if (!fs.existsSync(filePath)) return {};
-    // Guard against directories (EISDIR) and unreadable files
-    try {
-      const stat = fs.statSync(filePath);
-      const isDir =
-        typeof (stat as any).isDirectory === 'function'
-          ? (stat as any).isDirectory()
-          : Boolean((stat as any).isDirectory);
-      if (isDir) {
-        console.warn(
-          colors.yellow(`[Warning] Skipping ${path.basename(filePath)} because it is a directory.`),
-        );
-        return {};
-      }
-    } catch (err: any) {
-      // If we can't stat the file, skip it (don't throw here — vars loading should be best-effort)
-      console.warn(
-        colors.yellow(
-          `[Warning] Unable to access ${path.basename(filePath)}: ${err && err.message ? err.message : String(err)}`,
-        ),
-      );
-      return {};
-    }
-
-    let parsed: any;
-    try {
-      parsed = yaml.load(fs.readFileSync(filePath, 'utf8')) as any;
-    } catch (err: any) {
-      console.warn(
-        colors.yellow(
-          `[Warning] Could not parse ${path.basename(filePath)}: ${err && err.message ? err.message : String(err)}`,
-        ),
-      );
-      return {};
-    }
-
-    if (!parsed || typeof parsed !== 'object') return {};
-    const result: Record<string, string> = {};
-    const declaredSet = new Set(declared);
-    for (const [key, value] of Object.entries(parsed)) {
-      if (declaredSet.has(key)) {
-        if (value != null) result[key] = String(value);
-      } else {
-        console.warn(
-          colors.yellow(
-            `[Warning] Variable '${key}' in ${path.basename(filePath)} is not declared in workflow inputs. It will be ignored.`,
-          ),
-        );
-      }
-    }
-    return result;
-  }
-
-  // Resolve the workflow directory (main if no workflowPath, else the named dir)
-  const workflowDir = resolveWorkflowDir(cwd, workflowPath);
-  const data = readAndFilter(path.join(workflowDir, 'vars.yaml'));
-  if (Object.keys(data).length > 0) return data;
-
-  // Fall back to shared .raili/vars.yaml
-  return readAndFilter(path.join(railiDir, 'vars.yaml'));
-}
+import { loadVarsFile } from './varsLoader';
+export { loadVarsFile };
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */
 export async function collectVars(
