@@ -2,7 +2,7 @@ import { runCommand } from '../../src/run';
 import { loadWorkflowConfig } from '../../src/workflowLoader';
 import * as fs from 'fs';
 import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from '../../src/registryValidator';
-import { loadContext } from '../../src/context';
+import { loadContext, clearContext, initializeContext } from '../../src/context';
 import { Engine } from '../../src/engine/Engine';
 
 jest.mock('../../src/workflowLoader');
@@ -20,7 +20,9 @@ describe('runCommand', () => {
     (validateAgentRegistry as jest.Mock).mockReturnValue({});
     (validateScriptRegistry as jest.Mock).mockReturnValue({});
     (validateWorkflowReferences as jest.Mock).mockReturnValue(undefined);
-    (loadContext as jest.Mock).mockReturnValue({ stateHistory: [] });
+    (loadContext as jest.Mock).mockReturnValue({ stateHistory: [], vars: {} });
+    (initializeContext as jest.Mock).mockReturnValue({ stateHistory: [], vars: {} });
+    (clearContext as jest.Mock).mockReturnValue(undefined);
     (Engine as unknown as jest.Mock).mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
 

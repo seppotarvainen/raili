@@ -54,7 +54,7 @@ test('clears reset_outputs on entry for agent state', async () => {
 
   await engine.run();
 
-  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code', 'analyze']);
+  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code', 'analyze'], undefined);
 });
 
 test('clears reset_outputs on entry for engine state', async () => {
@@ -69,7 +69,7 @@ test('clears reset_outputs on entry for engine state', async () => {
 
   await engine.run();
 
-  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code']);
+  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code'], undefined);
 });
 
 test('clears reset_outputs on entry for script state', async () => {
@@ -84,7 +84,7 @@ test('clears reset_outputs on entry for script state', async () => {
 
   await engine.run();
 
-  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code']);
+  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code'], undefined);
 });
 
 test('clears reset_outputs on entry for command state', async () => {
@@ -99,7 +99,7 @@ test('clears reset_outputs on entry for command state', async () => {
 
   await engine.run();
 
-  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code']);
+  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code'], undefined);
 });
 
 test('clears reset_outputs on entry for terminal engine state', async () => {
@@ -113,7 +113,7 @@ test('clears reset_outputs on entry for terminal engine state', async () => {
 
   await engine.run();
 
-  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code']);
+  expect(mockClear).toHaveBeenCalledWith('/tmp', ['code'], undefined);
 });
 
 test('does not call clearAgentOutputs when reset_outputs is not set', async () => {

@@ -5,7 +5,7 @@ import { readLearnings, appendUniqueLearning } from '../../src/learningStore';
 describe('learningStore appendUniqueLearning', () => {
   const cwd = path.join(__dirname, 'tmp_project_ls');
   const railiDir = path.join(cwd, '.raili');
-  const learningsDir = path.join(railiDir, 'learnings');
+  const learningsDir = path.join(railiDir, 'main', 'learnings');
 
   beforeEach(() => {
     if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });

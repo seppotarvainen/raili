@@ -35,7 +35,12 @@ raili run --clean --var ticket_id=PROJ-123 --var branch=main
 
 ### vars.yaml File
 
-Create `.raili/vars.yaml` (gitignored) to avoid typing every run:
+Two locations are supported (workflow-specific takes precedence):
+
+- **`.raili/<workflow>/vars.yaml`** — vars for a specific workflow (e.g. `.raili/main/vars.yaml` or `.raili/dev/vars.yaml`)
+- **`.raili/vars.yaml`** — shared fallback available to all workflows
+
+Create the appropriate file (gitignored) to avoid typing every run:
 
 ```yaml
 ticket_id: PROJ-123
@@ -43,9 +48,7 @@ branch: main
 description: "Fix login bug"
 ```
 
-Only keys declared in `inputs:` are read from this file.
-
-Paired vars files: Raili also supports per-workflow vars files. When running an alternate workflow (via `--workflow`), Raili will prefer a paired vars file derived from the workflow name. For example, running `--workflow workflow-dev.yaml` will cause Raili to prefer `.raili/vars.dev.yaml` then `.raili/vars-dev.yaml` before falling back to `.raili/vars.yaml`. This enables environment/workflow-specific defaults without breaking existing behavior.
+Only keys declared in `inputs:` are read from these files.
 
 ### Interactive Prompt
 

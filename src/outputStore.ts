@@ -1,11 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { OutputConfig } from './types';
+import { resolveWorkflowDir } from './pathUtils';
 
 const OUTPUTS_DIR = 'outputs';
 
-function outputPath(cwd: string, stateId: string): string {
-  return path.join(cwd, '.raili', OUTPUTS_DIR, `${stateId}.md`);
+function outputPath(cwd: string, stateId: string, workflowArg?: string): string {
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
+  return path.join(workflowDir, OUTPUTS_DIR, `${stateId}.md`);
 }
 
 /**
@@ -64,6 +66,7 @@ export function saveOutput(
   stateId: string,
   output: string,
   outputConfig?: OutputConfig,
+  workflowArg?: string,
 ): void {
   if (!outputConfig || !outputConfig.store) {
     return;
@@ -76,23 +79,28 @@ export function saveOutput(
     return;
   }
 
-  const dir = path.join(cwd, '.raili', OUTPUTS_DIR);
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
+  const dir = path.join(workflowDir, OUTPUTS_DIR);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
   const separator = `\n\n--- Run ${new Date().toISOString()} ---\n\n`;
-  const entry = fs.existsSync(outputPath(cwd, stateId))
+  const entry = fs.existsSync(outputPath(cwd, stateId, workflowArg))
     ? separator + filteredOutput
     : filteredOutput;
-  fs.appendFileSync(outputPath(cwd, stateId), entry, 'utf8');
+  fs.appendFileSync(outputPath(cwd, stateId, workflowArg), entry, 'utf8');
 }
 
 /**
  * Load previous agent output for a state.
  * Returns the file path if the output file exists, null otherwise.
  */
-export function loadAgentOutputPath(cwd: string, stateId: string): string | null {
-  const p = outputPath(cwd, stateId);
+export function loadAgentOutputPath(
+  cwd: string,
+  stateId: string,
+  workflowArg?: string,
+): string | null {
+  const p = outputPath(cwd, stateId, workflowArg);
   return fs.existsSync(p) ? p : null;
 }
 
@@ -100,8 +108,8 @@ export function loadAgentOutputPath(cwd: string, stateId: string): string | null
  * Read the latest run content for a state (text after the last run separator).
  * Returns null if no file exists or no content found.
  */
-export function readLatestRun(cwd: string, stateId: string): string | null {
-  const p = outputPath(cwd, stateId);
+export function readLatestRun(cwd: string, stateId: string, workflowArg?: string): string | null {
+  const p = outputPath(cwd, stateId, workflowArg);
   if (!fs.existsSync(p)) return null;
   const full = fs.readFileSync(p, 'utf8');
   const lastRunMarker = '--- Run ';
@@ -120,9 +128,9 @@ export function readLatestRun(cwd: string, stateId: string): string | null {
  * Delete saved output files for the given state IDs.
  * Silent if files do not exist.
  */
-export function clearAgentOutputs(cwd: string, stateIds: string[]): void {
+export function clearAgentOutputs(cwd: string, stateIds: string[], workflowArg?: string): void {
   for (const stateId of stateIds) {
-    const p = outputPath(cwd, stateId);
+    const p = outputPath(cwd, stateId, workflowArg);
     if (fs.existsSync(p)) {
       fs.unlinkSync(p);
     }
@@ -130,11 +138,12 @@ export function clearAgentOutputs(cwd: string, stateIds: string[]): void {
 }
 
 /**
- * Delete all output files by removing the entire .raili/outputs directory.
+ * Delete all output files by removing the entire workflowDir/outputs directory.
  * Silent if the directory does not exist.
  */
-export function clearAllOutputs(cwd: string): void {
-  const outputsDir = path.join(cwd, '.raili', OUTPUTS_DIR);
+export function clearAllOutputs(cwd: string, workflowArg?: string): void {
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
+  const outputsDir = path.join(workflowDir, OUTPUTS_DIR);
   if (fs.existsSync(outputsDir)) {
     fs.rmSync(outputsDir, { recursive: true, force: true });
   }

@@ -15,9 +15,14 @@ import { readLearnings, appendUniqueLearning } from '../learningStore';
 export class AgentStateRunner implements IStateRunner {
   constructor(private registry: AgentRegistry) {}
 
-  async run(state: StateDef, cwd: string, vars?: Record<string, string>): Promise<StateResult> {
+  async run(
+    state: StateDef,
+    cwd: string,
+    vars?: Record<string, string>,
+    workflowArg?: string,
+  ): Promise<StateResult> {
     // Step 1: load previous output path for this state (may be null)
-    const previousOutputPath = loadAgentOutputPath(cwd, state.id);
+    const previousOutputPath = loadAgentOutputPath(cwd, state.id, workflowArg);
 
     const agentId = state.config.agent!;
 
@@ -36,11 +41,11 @@ export class AgentStateRunner implements IStateRunner {
         try {
           if ((src as any).output) {
             const fromState = (src as any).output as string;
-            const latest = readLatestRun(cwd, fromState);
+            const latest = readLatestRun(cwd, fromState, workflowArg);
             if (latest && latest.trim()) {
               // Compress to single-line summary
               const oneLine = latest.replace(/\s+/g, ' ').trim();
-              appendUniqueLearning(cwd, agentId, `output:${fromState}`, oneLine);
+              appendUniqueLearning(cwd, agentId, `output:${fromState}`, oneLine, workflowArg);
             }
           } else if ((src as any).var) {
             const varPattern = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
@@ -51,7 +56,7 @@ export class AgentStateRunner implements IStateRunner {
               const value = vars?.[varName];
               if (value && value.trim()) {
                 const oneLine = value.replace(/\s+/g, ' ').trim();
-                appendUniqueLearning(cwd, agentId, `var:${varName}`, oneLine);
+                appendUniqueLearning(cwd, agentId, `var:${varName}`, oneLine, workflowArg);
               }
             }
           }
@@ -63,9 +68,11 @@ export class AgentStateRunner implements IStateRunner {
     }
 
     // Load full learnings and inject into prompt if present
-    const fullLearnings = readLearnings(cwd, agentId).trim();
-    let assembledPrompt = interpolatedPrompt ?? 'Work according to your rules';
-    if (fullLearnings) {
+    const fullLearnings = readLearnings(cwd, agentId, workflowArg).trim();
+    // Do not inject a default instructional prompt. If no prompt is defined, pass undefined so
+    // handlers can decide how to behave. Only prepend learnings when an explicit prompt exists.
+    let assembledPrompt = interpolatedPrompt ?? undefined;
+    if (fullLearnings && assembledPrompt) {
       assembledPrompt = `${assembledPrompt}\n\n## Learnings from previous runs\n${fullLearnings}`;
     }
 
@@ -80,7 +87,7 @@ export class AgentStateRunner implements IStateRunner {
     // Store output if configured
     if (state.config.output) {
       const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-      if (combined) saveOutput(cwd, state.id, combined, state.config.output);
+      if (combined) saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
     }
 
     if (state.config.on) {
@@ -107,7 +114,8 @@ export async function runAgentState(
   registry: AgentRegistry,
   cwd: string,
   vars?: Record<string, string>,
+  workflowArg?: string,
 ): Promise<StateResult> {
   const runner = new AgentStateRunner(registry);
-  return runner.run(state, cwd, vars);
+  return runner.run(state, cwd, vars, workflowArg);
 }

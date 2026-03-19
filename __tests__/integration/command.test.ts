@@ -184,7 +184,7 @@ states:
     expect(commands).toContain("echo 'lint starting'");
 
     // Output was stored
-    const outputFile = path.join(tmpDir, '.raili', 'outputs', 'lint.md');
+    const outputFile = path.join(tmpDir, '.raili', 'main', 'outputs', 'lint.md');
     expect(fs.existsSync(outputFile)).toBe(true);
     expect(fs.readFileSync(outputFile, 'utf8')).toContain('lint passed');
 

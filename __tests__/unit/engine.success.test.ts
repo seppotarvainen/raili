@@ -12,15 +12,14 @@ jest.mock('../../src/engine/AgentStateRunner');
 jest.mock('../../src/engine/ScriptStateRunner');
 jest.mock('../../src/engine/CommandStateRunner');
 
-// Mock context functions to inspect calls
-const mockAddStateToHistory = jest.fn((ctx, state, meta) => ctx);
-const mockSaveContext = jest.fn();
-
 jest.mock('../../src/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
-  addStateToHistory: mockAddStateToHistory,
-  saveContext: mockSaveContext,
+  addStateToHistory: jest.fn((ctx) => ctx),
+  saveContext: jest.fn(),
 }));
+
+// Access mocks after module resolution
+const contextModule = require('../../src/context');
 
 const mockClear = outputStore.clearAgentOutputs as jest.MockedFunction<typeof outputStore.clearAgentOutputs>;
 const mockRunAgent = agentStateRunner.runAgentState as jest.MockedFunction<typeof agentStateRunner.runAgentState>;
@@ -45,6 +44,8 @@ beforeEach(() => {
   mockRunAgent.mockResolvedValue({ outcome: 'PASSED' });
   mockRunScript.mockResolvedValue({ outcome: 'PASSED' });
   mockRunCommand.mockResolvedValue({ outcome: 'PASSED' });
+  contextModule.addStateToHistory.mockImplementation((ctx: any) => ctx);
+  contextModule.getCurrentState.mockReturnValue(null);
 });
 
 test('persists success:true for terminal engine state', async () => {
@@ -54,9 +55,9 @@ test('persists success:true for terminal engine state', async () => {
 
   await engine.run();
 
-  // Expect addStateToHistory to be called with meta containing success: true
-  expect(mockAddStateToHistory.mock.calls.some((c) => c[1] === 'start' && c[2] && c[2].success === true)).toBe(true);
-  expect(mockSaveContext).toHaveBeenCalled();
+  const calls = contextModule.addStateToHistory.mock.calls;
+  expect(calls.some((c: any[]) => c[1] === 'start' && c[2] && c[2].success === true)).toBe(true);
+  expect(contextModule.saveContext).toHaveBeenCalled();
 });
 
 test('persists success:null when success omitted for terminal engine state', async () => {
@@ -66,7 +67,7 @@ test('persists success:null when success omitted for terminal engine state', asy
 
   await engine.run();
 
-  // success should be explicitly recorded as null
-  expect(mockAddStateToHistory.mock.calls.some((c) => c[1] === 'start' && c[2] && c[2].success === null)).toBe(true);
-  expect(mockSaveContext).toHaveBeenCalled();
+  const calls = contextModule.addStateToHistory.mock.calls;
+  expect(calls.some((c: any[]) => c[1] === 'start' && c[2] && c[2].success === null)).toBe(true);
+  expect(contextModule.saveContext).toHaveBeenCalled();
 });

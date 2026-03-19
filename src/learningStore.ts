@@ -6,8 +6,8 @@ function normalizeForCompare(s: string): string {
   return s.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-export function readLearnings(cwd: string, agentId: string): string {
-  const p = learningsFilePath(cwd, agentId);
+export function readLearnings(cwd: string, agentId: string, workflowArg?: string): string {
+  const p = learningsFilePath(cwd, agentId, workflowArg);
   if (!fs.existsSync(p)) return '';
   return fs.readFileSync(p, 'utf8');
 }
@@ -21,8 +21,9 @@ export function appendUniqueLearning(
   agentId: string,
   sourceTag: string,
   content: string,
+  workflowArg?: string,
 ): boolean {
-  const p = learningsFilePath(cwd, agentId);
+  const p = learningsFilePath(cwd, agentId, workflowArg);
   const normalizedNew = normalizeForCompare(content);
 
   let existing = '';

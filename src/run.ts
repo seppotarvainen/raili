@@ -7,7 +7,7 @@ import {
   validateScriptRegistry,
   validateWorkflowReferences,
 } from './registryValidator';
-import { loadContext, clearContext } from './context';
+import { loadContext, clearContext, initializeContext } from './context';
 import { Engine } from './engine/Engine';
 
 export type RunMode = 'continue' | 'clean';
@@ -19,7 +19,15 @@ export async function runCommand(
   workflowPath?: string,
 ) {
   const railiDir = path.join(cwd, '.raili');
-  if (!fs.existsSync(railiDir) || !fs.statSync(railiDir).isDirectory()) {
+  if (!fs.existsSync(railiDir)) {
+    throw new Error('.raili/ directory not found. Run `raili init` first.');
+  }
+  const railiStat = fs.statSync(railiDir);
+  const railiIsDirectory =
+    typeof (railiStat as any).isDirectory === 'function'
+      ? (railiStat as any).isDirectory()
+      : Boolean((railiStat as any).isDirectory);
+  if (!railiIsDirectory) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');
   }
 
@@ -42,7 +50,7 @@ export async function runCommand(
     throw new Error('script-registry.json not found in .raili/');
   }
 
-  // Validate registries and referenced files using validators
+  // Validate registries and referenced files using validators (registries live at .raili root)
   const agents = validateAgentRegistry(cwd);
   const scripts = validateScriptRegistry(cwd);
 
@@ -51,12 +59,13 @@ export async function runCommand(
 
   // Clear persisted context for a clean run
   if (mode === 'clean') {
-    clearContext(cwd);
+    clearContext(cwd, workflowPath);
   }
 
-  // Load execution context, then apply vars
-  let context = loadContext(cwd);
-  if (Object.keys(vars).length > 0) {
+  // Load (or create) the execution context, then merge any supplied vars
+  let context = mode === 'clean' ? initializeContext(vars) : loadContext(cwd, workflowPath);
+
+  if (mode !== 'clean' && Object.keys(vars).length > 0) {
     context = { ...context, vars: { ...context.vars, ...vars } };
   }
 
@@ -73,6 +82,7 @@ export async function runCommand(
     scriptRegistry: scripts,
     context,
     cwd,
+    workflowArg: workflowPath,
   });
 
   await engine.run();

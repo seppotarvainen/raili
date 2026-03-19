@@ -6,10 +6,13 @@ import { resolveRegistryPath } from './pathUtils';
 
 export function validateAgentRegistry(dir: string): AgentRegistry {
   const reg = loadAgentRegistry(dir);
-  // ensure each referenced file exists
+  // ensure each referenced file exists and is a regular file
   for (const [id, entry] of Object.entries(reg)) {
     const full = resolveRegistryPath(dir, entry.path);
     if (!fs.existsSync(full)) throw new Error(`Agent '${id}' references missing file: ${full}`);
+    const stat = fs.statSync(full);
+    if (!stat.isFile())
+      throw new Error(`Agent '${id}' references a path that is not a file: ${full}`);
   }
   return reg;
 }
@@ -19,6 +22,9 @@ export function validateScriptRegistry(dir: string): ScriptRegistry {
   for (const [id, entry] of Object.entries(reg)) {
     const full = resolveRegistryPath(dir, entry.path);
     if (!fs.existsSync(full)) throw new Error(`Script '${id}' references missing file: ${full}`);
+    const stat = fs.statSync(full);
+    if (!stat.isFile())
+      throw new Error(`Script '${id}' references a path that is not a file: ${full}`);
   }
   return reg;
 }

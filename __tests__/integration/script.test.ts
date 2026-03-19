@@ -180,7 +180,7 @@ states:
     expect(commands).toContain("echo 'build starting'");
 
     // Output was stored
-    const outputFile = path.join(tmpDir, '.raili', 'outputs', 'build.md');
+    const outputFile = path.join(tmpDir, '.raili', 'main', 'outputs', 'build.md');
     expect(fs.existsSync(outputFile)).toBe(true);
     const content = fs.readFileSync(outputFile, 'utf8');
     expect(content).toContain('build output line 1');

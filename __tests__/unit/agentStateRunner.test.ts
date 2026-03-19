@@ -5,6 +5,9 @@ import { StateDef } from '../../src/types';
 
 jest.mock('../../src/handlers/agentHandler');
 jest.mock('../../src/outputStore');
+jest.mock('../../src/learningStore');
+
+import * as learningStore from '../../src/learningStore';
 
 const mockExecuteAgent = agentHandler.executeAgent as jest.MockedFunction<typeof agentHandler.executeAgent>;
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
@@ -25,6 +28,8 @@ beforeEach(() => {
   jest.resetAllMocks();
   mockExecuteAgent.mockResolvedValue({ success: true, stdout: 'agent output', stderr: '' });
   mockLoad.mockReturnValue(null);
+  (learningStore.readLearnings as jest.Mock).mockReturnValue('');
+  (learningStore.appendUniqueLearning as jest.Mock).mockReturnValue(true);
 });
 
 test('passes previous output path to executeAgent when available', async () => {
@@ -47,7 +52,7 @@ test('forwards state prompt to executeAgent', async () => {
 test('saves output when output config store is true', async () => {
   const outputConfig = { store: true };
   await runAgentState(makeState({ output: outputConfig, on: { PASSED: 'done', FAILED: 'code' } }), registry, cwd);
-  expect(mockSave).toHaveBeenCalledWith(cwd, 'code', 'agent output', outputConfig);
+  expect(mockSave).toHaveBeenCalledWith(cwd, 'code', 'agent output', outputConfig, undefined);
 });
 
 test('does not save output when output config is omitted', async () => {

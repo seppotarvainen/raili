@@ -11,10 +11,14 @@ const { Engine } = require('../../src/engine/Engine');
 
 describe('runCommand', () => {
   let tmpdir: string;
+  let railiDir: string;
+  let mainDir: string;
+
   beforeEach(() => {
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-test-'));
+    railiDir = path.join(tmpdir, '.raili');
+    mainDir = path.join(railiDir, 'main');
     jest.resetAllMocks();
-    // Default mock: Engine.run resolves immediately
     Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
   afterEach(() => {
@@ -26,16 +30,12 @@ describe('runCommand', () => {
   });
 
   test('fails if registries missing or invalid', async () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
-
-    // Need workflow.yaml to exist first
+    fs.mkdirSync(mainDir, { recursive: true });
     const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
-    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
 
     await expect(runCommand(tmpdir)).rejects.toThrow('agent-registry.json not found');
 
-    // simulate validator throwing on invalid JSON
     registryValidator.validateAgentRegistry.mockImplementation(() => { throw new Error('Agent registry JSON parse error'); });
     registryValidator.validateScriptRegistry.mockImplementation(() => { throw new Error('Script registry JSON parse error'); });
 
@@ -45,11 +45,9 @@ describe('runCommand', () => {
   });
 
   test('constructs Engine and calls run() when valid', async () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
-
+    fs.mkdirSync(mainDir, { recursive: true });
     const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
-    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({ a: { path: './x' } }));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({ s: { path: './y' } }));
 
@@ -67,60 +65,50 @@ describe('runCommand', () => {
   });
 
   test('clean mode deletes context.json before running', async () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
-
+    fs.mkdirSync(mainDir, { recursive: true });
     const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
-    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
 
-    // Write an existing context
     const existingContext = JSON.stringify({ stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }] });
-    fs.writeFileSync(path.join(railiDir, 'context.json'), existingContext);
+    fs.writeFileSync(path.join(mainDir, 'context.json'), existingContext);
 
     registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
     registryValidator.validateScriptRegistry.mockImplementation(() => ({}));
     registryValidator.validateWorkflowReferences.mockImplementation(() => {});
-
     Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
 
     await runCommand(tmpdir, 'clean');
 
-    expect(fs.existsSync(path.join(railiDir, 'context.json'))).toBe(false);
+    expect(fs.existsSync(path.join(mainDir, 'context.json'))).toBe(false);
   });
 
   test('continue mode preserves existing context.json', async () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
-
+    fs.mkdirSync(mainDir, { recursive: true });
     const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
-    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
 
-    // Write an existing context
     const existingContext = JSON.stringify({ stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }] });
-    fs.writeFileSync(path.join(railiDir, 'context.json'), existingContext);
+    fs.writeFileSync(path.join(mainDir, 'context.json'), existingContext);
 
     registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
     registryValidator.validateScriptRegistry.mockImplementation(() => ({}));
     registryValidator.validateWorkflowReferences.mockImplementation(() => {});
-
     Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
 
     await runCommand(tmpdir, 'continue');
 
-    expect(fs.existsSync(path.join(railiDir, 'context.json'))).toBe(true);
-    expect(fs.readFileSync(path.join(railiDir, 'context.json'), 'utf8')).toBe(existingContext);
+    expect(fs.existsSync(path.join(mainDir, 'context.json'))).toBe(true);
+    expect(fs.readFileSync(path.join(mainDir, 'context.json'), 'utf8')).toBe(existingContext);
   });
 
   test('vars are set on process.env as RAILI_VAR_* and stored in context', async () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
-
+    fs.mkdirSync(mainDir, { recursive: true });
     const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
-    fs.writeFileSync(path.join(railiDir, 'workflow.yaml'), minimalWorkflow);
+    fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
 
@@ -134,10 +122,8 @@ describe('runCommand', () => {
     expect(process.env.RAILI_VAR_TICKET_ID).toBe('PROJ-42');
     expect(process.env.RAILI_VAR_DESCRIPTION).toBe('Do the thing');
 
-    // Cleanup
     delete process.env.RAILI_VAR_TICKET_ID;
     delete process.env.RAILI_VAR_DESCRIPTION;
   });
 });
-
 

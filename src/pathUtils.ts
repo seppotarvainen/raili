@@ -1,4 +1,5 @@
 import os from 'os';
+import fs from 'fs';
 import path from 'path';
 
 /**
@@ -23,8 +24,43 @@ export function resolveRegistryPath(baseDir: string, p: string): string {
 }
 
 /**
- * Return the canonical path to the learnings file for an agent.
+ * Resolve the directory that should contain workflow-scoped files (workflow.yaml, vars.yaml, outputs/, learnings/).
+ * Rules:
+ * - If workflowArg is not provided: prefer .raili/main/ if it exists, otherwise throw error
+ * - If workflowArg is a bare name (no path separators): prefer .raili/<name>/ if it exists, otherwise throw error.
  */
-export function learningsFilePath(cwd: string, agentId: string): string {
-  return path.join(cwd, '.raili', 'learnings', `${agentId}.md`);
+export function resolveWorkflowDir(cwd: string, workflowArg?: string): string {
+  const railiRoot = path.join(cwd, '.raili');
+
+  if (!workflowArg) {
+    const mainCandidate = path.join(railiRoot, 'main');
+    if (fs.existsSync(mainCandidate)) {
+      return mainCandidate;
+    }
+    throw new Error('Unable to resolve workflow directory. No "main" directory found"');
+  }
+
+  // If bare name
+  if (
+    !workflowArg.includes(path.sep) &&
+    !workflowArg.startsWith('./') &&
+    !workflowArg.startsWith('../')
+  ) {
+    const candidate = path.join(railiRoot, workflowArg);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    'Unable to resolve workflow directory. Workflow argument must be a valid directory name inside .raili/',
+  );
+}
+
+/**
+ * Return the canonical path to the learnings file for an agent inside the workflow directory.
+ */
+export function learningsFilePath(cwd: string, agentId: string, workflowArg?: string): string {
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
+  return path.join(workflowDir, 'learnings', `${agentId}.md`);
 }

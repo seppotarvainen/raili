@@ -20,6 +20,7 @@ export interface EngineConfig {
   scriptRegistry: ScriptRegistry;
   context: WorkflowContext;
   cwd: string;
+  workflowArg?: string;
 }
 
 /**
@@ -46,6 +47,7 @@ export class Engine {
   private readonly scriptRegistry: ScriptRegistry;
   private context: WorkflowContext;
   private readonly cwd: string;
+  private readonly workflowArg?: string;
   private readonly visitCounts = new Map<string, number>();
 
   constructor(config: EngineConfig) {
@@ -58,6 +60,7 @@ export class Engine {
       this.context.stateHistory = [];
     }
     this.cwd = config.cwd;
+    this.workflowArg = config.workflowArg;
   }
 
   /**
@@ -70,7 +73,7 @@ export class Engine {
     if (this.context.stateHistory.length === 0) {
       const newCtx = addStateToHistory(this.context, currentStateId);
       if (newCtx) this.context = newCtx;
-      saveContext(this.cwd, this.context);
+      saveContext(this.cwd, this.context, this.workflowArg);
     }
 
     let stateId = currentStateId;
@@ -95,7 +98,7 @@ export class Engine {
 
         // On state entry: clear outputs and fire notify before anything else
         if (config.reset_outputs?.length) {
-          clearAgentOutputs(this.cwd, config.reset_outputs);
+          clearAgentOutputs(this.cwd, config.reset_outputs, this.workflowArg);
         }
 
         // Ensure the current state is present in history (append if not)
@@ -103,7 +106,7 @@ export class Engine {
         if (!lastState || lastState.state !== stateId) {
           const newCtx = addStateToHistory(this.context, stateId);
           if (newCtx) this.context = newCtx;
-          saveContext(this.cwd, this.context);
+          saveContext(this.cwd, this.context, this.workflowArg);
         }
 
         let notifyMeta: NotifyResult | undefined;
@@ -112,7 +115,7 @@ export class Engine {
           // Persist notify result into the last history entry's meta
           const newCtxNotify = addStateToHistory(this.context, stateId, { notify: notifyMeta });
           if (newCtxNotify) this.context = newCtxNotify;
-          saveContext(this.cwd, this.context);
+          saveContext(this.cwd, this.context, this.workflowArg);
         }
 
         // Terminal state: no routing defined, persist optional success flag and stop execution
@@ -120,7 +123,7 @@ export class Engine {
           const successValue = config.success === undefined ? null : !!config.success;
           const newCtxTerm = addStateToHistory(this.context, stateId, { success: successValue });
           if (newCtxTerm) this.context = newCtxTerm;
-          saveContext(this.cwd, this.context);
+          saveContext(this.cwd, this.context, this.workflowArg);
           console.log(`✓ Reached terminal state: ${stateId}`);
           break;
         }
@@ -136,6 +139,7 @@ export class Engine {
             this.agentRegistry,
             this.cwd,
             this.context?.vars,
+            this.workflowArg,
           );
         } else if (config.type === 'script') {
           stateResult = await runScriptState(
@@ -143,9 +147,15 @@ export class Engine {
             this.scriptRegistry,
             this.cwd,
             this.context?.vars,
+            this.workflowArg,
           );
         } else if (config.type === 'command') {
-          stateResult = await runCommandState(stateDef, this.cwd, this.context?.vars);
+          stateResult = await runCommandState(
+            stateDef,
+            this.cwd,
+            this.context?.vars,
+            this.workflowArg,
+          );
         } else {
           // type: engine — no side effects
           stateResult = { outcome: 'PASSED' };
@@ -165,14 +175,14 @@ export class Engine {
             }
             this.context.vars[name] = String(val);
           }
-          saveContext(this.cwd, this.context);
+          saveContext(this.cwd, this.context, this.workflowArg);
         } else if (stateResult.exports && Object.keys(stateResult.exports).length > 0) {
           // No explicit expose list — merge any ad-hoc exports without strict validation
           if (!this.context.vars) this.context.vars = {};
           for (const [k, v] of Object.entries(stateResult.exports)) {
             this.context.vars[k] = v;
           }
-          saveContext(this.cwd, this.context);
+          saveContext(this.cwd, this.context, this.workflowArg);
         }
 
         const outcome = stateResult.outcome;
@@ -218,7 +228,7 @@ export class Engine {
             this.context.vars[key] = approvalOutcome.reason;
           }
 
-          saveContext(this.cwd, this.context);
+          saveContext(this.cwd, this.context, this.workflowArg);
           stateId = nextStateId;
           continue;
         }
@@ -230,7 +240,7 @@ export class Engine {
         console.log(`  → ${nextStateId}`);
         const newCtxRoute = addStateToHistory(this.context, nextStateId);
         if (newCtxRoute) this.context = newCtxRoute;
-        saveContext(this.cwd, this.context);
+        saveContext(this.cwd, this.context, this.workflowArg);
         stateId = nextStateId;
       } catch (err) {
         // Unhandled exception during state execution/routing — route to error state if configured
@@ -245,7 +255,7 @@ export class Engine {
           // On entry: clear outputs and run notify for the error state (like normal entry)
           const errConfig = errDef.config;
           if (errConfig.reset_outputs?.length) {
-            clearAgentOutputs(this.cwd, errConfig.reset_outputs);
+            clearAgentOutputs(this.cwd, errConfig.reset_outputs, this.workflowArg);
           }
           if (errConfig.notify) {
             // best-effort notify before exiting
@@ -253,14 +263,14 @@ export class Engine {
               const n = await runNotify(errConfig.notify, this.cwd, this.context.vars ?? {});
               const newCtxErrNotify = addStateToHistory(this.context, errStateId, { notify: n });
               if (newCtxErrNotify) this.context = newCtxErrNotify;
-              saveContext(this.cwd, this.context);
+              saveContext(this.cwd, this.context, this.workflowArg);
             } catch {}
           }
 
           // Record error state and persist context, then stop (error state must be terminal)
           const newCtxErr = addStateToHistory(this.context, errStateId);
           if (newCtxErr) this.context = newCtxErr;
-          saveContext(this.cwd, this.context);
+          saveContext(this.cwd, this.context, this.workflowArg);
           console.log(`! Engine: unhandled error occurred — routed to error state: ${errStateId}`);
           return;
         }

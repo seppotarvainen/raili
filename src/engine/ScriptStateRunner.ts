@@ -13,7 +13,12 @@ import { parseExports } from '../variableExports';
 export class ScriptStateRunner implements IStateRunner {
   constructor(private registry: ScriptRegistry) {}
 
-  async run(state: StateDef, cwd: string, vars?: Record<string, string>): Promise<StateResult> {
+  async run(
+    state: StateDef,
+    cwd: string,
+    vars?: Record<string, string>,
+    workflowArg?: string,
+  ): Promise<StateResult> {
     const scriptId = state.config.script!;
     const args = state.config.args ?? [];
 
@@ -30,7 +35,13 @@ export class ScriptStateRunner implements IStateRunner {
     // Store output if configured
     if (state.config.output) {
       const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-      if (combined) saveOutput(cwd, state.id, combined, state.config.output);
+      if (combined) {
+        if (typeof workflowArg !== 'undefined') {
+          saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
+        } else {
+          saveOutput(cwd, state.id, combined, state.config.output);
+        }
+      }
     }
 
     // Parse exposes if configured (supports `name=value`, `export name=value`, case-insensitive key, and quoted values)
@@ -67,7 +78,8 @@ export async function runScriptState(
   registry: ScriptRegistry,
   cwd: string,
   vars?: Record<string, string>,
+  workflowArg?: string,
 ): Promise<StateResult> {
   const runner = new ScriptStateRunner(registry);
-  return runner.run(state, cwd, vars);
+  return runner.run(state, cwd, vars, workflowArg);
 }

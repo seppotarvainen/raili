@@ -20,7 +20,7 @@ describe('initCommand', () => {
     await initCommand(tmpdir);
     const railiDir = path.join(tmpdir, '.raili');
     expect(fs.existsSync(railiDir)).toBe(true);
-    expect(fs.existsSync(path.join(railiDir, 'workflow.yaml'))).toBe(true);
+    expect(fs.existsSync(path.join(railiDir, 'main', 'workflow.yaml'))).toBe(true);
     expect(fs.existsSync(path.join(railiDir, 'agent-registry.json'))).toBe(true);
     expect(fs.existsSync(path.join(railiDir, 'script-registry.json'))).toBe(true);
   });

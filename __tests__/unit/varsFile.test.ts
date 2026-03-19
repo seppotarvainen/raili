@@ -10,7 +10,7 @@ describe('loadVarsFile', () => {
   beforeEach(() => {
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-vars-test-'));
     railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+    fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
   });
 
   afterEach(() => {
@@ -24,7 +24,7 @@ describe('loadVarsFile', () => {
 
   test('loads declared keys from vars.yaml', () => {
     fs.writeFileSync(
-      path.join(railiDir, 'vars.yaml'),
+      path.join(railiDir, 'main', 'vars.yaml'),
       'ticket_id: PROJ-123\ndescription: Fix login bug\n'
     );
     const result = loadVarsFile(tmpdir, ['ticket_id', 'description']);
@@ -33,7 +33,7 @@ describe('loadVarsFile', () => {
 
   test('ignores keys not declared in inputs', () => {
     fs.writeFileSync(
-      path.join(railiDir, 'vars.yaml'),
+      path.join(railiDir, 'main', 'vars.yaml'),
       'ticket_id: PROJ-123\nundeclared_key: should_be_ignored\n'
     );
     const result = loadVarsFile(tmpdir, ['ticket_id']);
@@ -42,28 +42,27 @@ describe('loadVarsFile', () => {
   });
 
   test('returns empty object when vars.yaml is empty', () => {
-    fs.writeFileSync(path.join(railiDir, 'vars.yaml'), '');
+    fs.writeFileSync(path.join(railiDir, 'main', 'vars.yaml'), '');
     const result = loadVarsFile(tmpdir, ['ticket_id']);
     expect(result).toEqual({});
   });
 
   test('coerces numeric values to strings', () => {
-    fs.writeFileSync(path.join(railiDir, 'vars.yaml'), 'ticket_id: 42\n');
+    fs.writeFileSync(path.join(railiDir, 'main', 'vars.yaml'), 'ticket_id: 42\n');
     const result = loadVarsFile(tmpdir, ['ticket_id']);
     expect(result).toEqual({ ticket_id: '42' });
   });
 
   test('returns empty object when declared list is empty', () => {
-    fs.writeFileSync(path.join(railiDir, 'vars.yaml'), 'ticket_id: PROJ-123\n');
+    fs.writeFileSync(path.join(railiDir, 'main', 'vars.yaml'), 'ticket_id: PROJ-123\n');
     const result = loadVarsFile(tmpdir, []);
     expect(result).toEqual({});
   });
 
   test('only loads keys present in vars.yaml, skips missing declared keys', () => {
-    fs.writeFileSync(path.join(railiDir, 'vars.yaml'), 'ticket_id: PROJ-999\n');
+    fs.writeFileSync(path.join(railiDir, 'main', 'vars.yaml'), 'ticket_id: PROJ-999\n');
     const result = loadVarsFile(tmpdir, ['ticket_id', 'description']);
     expect(result).toEqual({ ticket_id: 'PROJ-999' });
     expect(result).not.toHaveProperty('description');
   });
 });
-

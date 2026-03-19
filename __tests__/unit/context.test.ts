@@ -20,7 +20,7 @@ describe('context', () => {
   beforeEach(() => {
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-ctx-test-'));
     railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+    fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
   });
 
   afterEach(() => {
@@ -42,7 +42,7 @@ describe('context', () => {
           { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z' },
         ],
       };
-      fs.writeFileSync(path.join(railiDir, 'context.json'), JSON.stringify(contextData));
+      fs.writeFileSync(path.join(railiDir, 'main', 'context.json'), JSON.stringify(contextData));
 
       const ctx = loadContext(tmpdir);
       expect(ctx.vars?.ticket_id).toBe('TICKET-123');
@@ -51,7 +51,7 @@ describe('context', () => {
     });
 
     test('throws if context.json has invalid structure', () => {
-      fs.writeFileSync(path.join(railiDir, 'context.json'), '{ "stateHistory": "not-an-array" }');
+      fs.writeFileSync(path.join(railiDir, 'main', 'context.json'), '{ "stateHistory": "not-an-array" }');
       expect(() => loadContext(tmpdir)).toThrow('stateHistory must be an array');
     });
   });
@@ -65,16 +65,16 @@ describe('context', () => {
 
       saveContext(tmpdir, ctx);
 
-      const saved = fs.readFileSync(path.join(railiDir, 'context.json'), 'utf8');
+      const saved = fs.readFileSync(path.join(railiDir, 'main', 'context.json'), 'utf8');
       const parsed = JSON.parse(saved);
       expect(parsed.vars.ticket_id).toBe('TICKET-456');
       expect(parsed.stateHistory).toHaveLength(1);
     });
 
     test('throws if .raili directory does not exist', () => {
-      fs.rmSync(railiDir, { recursive: true });
+      fs.rmSync(path.join(railiDir, 'main'), { recursive: true });
       const ctx = { stateHistory: [] };
-      expect(() => saveContext(tmpdir, ctx)).toThrow('.raili/ directory does not exist');
+      expect(() => saveContext(tmpdir, ctx)).toThrow('Unable to resolve workflow directory');
     });
   });
 
@@ -204,7 +204,7 @@ describe('context', () => {
     });
 
     test('deletes context.json', () => {
-      const contextPath = path.join(railiDir, 'context.json');
+      const contextPath = path.join(railiDir, 'main', 'context.json');
       fs.writeFileSync(contextPath, JSON.stringify({ stateHistory: [] }));
       expect(fs.existsSync(contextPath)).toBe(true);
 
@@ -215,23 +215,23 @@ describe('context', () => {
 
     test('calls clearAllOutputs', () => {
       clearContext(tmpdir);
-      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir);
+      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir, undefined);
     });
 
     test('is silent if context.json does not exist', () => {
       expect(() => clearContext(tmpdir)).not.toThrow();
-      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir);
+      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir, undefined);
     });
 
     test('clears both context.json and outputs when both exist', () => {
-      const contextPath = path.join(railiDir, 'context.json');
+      const contextPath = path.join(railiDir, 'main', 'context.json');
       fs.writeFileSync(contextPath, JSON.stringify({ stateHistory: [] }));
       expect(fs.existsSync(contextPath)).toBe(true);
 
       clearContext(tmpdir);
 
       expect(fs.existsSync(contextPath)).toBe(false);
-      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir);
+      expect(outputStore.clearAllOutputs).toHaveBeenCalledWith(tmpdir, undefined);
     });
   });
 });

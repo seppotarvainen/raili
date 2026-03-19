@@ -101,7 +101,7 @@ states:
     await runCommand(tmpDir, 'clean', {});
 
     // Output file created
-    const outputFile = path.join(tmpDir, '.raili', 'outputs', 'analyze.md');
+    const outputFile = path.join(tmpDir, '.raili', 'main', 'outputs', 'analyze.md');
     expect(fs.existsSync(outputFile)).toBe(true);
     const content = fs.readFileSync(outputFile, 'utf8');
     expect(content).toContain('analysis complete');

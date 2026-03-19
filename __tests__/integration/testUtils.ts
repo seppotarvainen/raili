@@ -6,13 +6,14 @@ import crypto from 'crypto';
 const INTEGRATION_DIR = path.resolve(__dirname);
 
 /**
- * Create a temporary workspace directory with .raili/ subfolder.
+ * Create a temporary workspace with .raili/ and default .raili/main/ scaffold.
  * Returns the absolute path to the workspace root.
  */
 export function createTmpWorkspace(): string {
   const id = crypto.randomBytes(4).toString('hex');
   const dir = path.join(INTEGRATION_DIR, `tmp_${id}`);
-  fs.mkdirSync(path.join(dir, '.raili'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.raili', 'main', 'outputs'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.raili', 'main', 'learnings'), { recursive: true });
   return dir;
 }
 
@@ -25,12 +26,20 @@ export function cleanupTmpWorkspace(dir: string): void {
   }
 }
 
-/** Write .raili/workflow.yaml */
+/** Write .raili/main/workflow.yaml */
 export function writeWorkflow(dir: string, yamlContent: string): void {
-  fs.writeFileSync(path.join(dir, '.raili', 'workflow.yaml'), yamlContent, 'utf8');
+  fs.writeFileSync(path.join(dir, '.raili', 'main', 'workflow.yaml'), yamlContent, 'utf8');
 }
 
-/** Write arbitrary .raili/<filename> workflow file (e.g., workflow-dev.yaml) */
+/** Write workflow.yaml for a named workflow directory (.raili/<name>/workflow.yaml) */
+export function writeNamedWorkflow(dir: string, name: string, yamlContent: string): void {
+  const wfDir = path.join(dir, '.raili', name);
+  fs.mkdirSync(path.join(wfDir, 'outputs'), { recursive: true });
+  fs.mkdirSync(path.join(wfDir, 'learnings'), { recursive: true });
+  fs.writeFileSync(path.join(wfDir, 'workflow.yaml'), yamlContent, 'utf8');
+}
+
+/** Write arbitrary .raili/<filename> (kept for compatibility) */
 export function writeWorkflowFile(dir: string, filename: string, yamlContent: string): void {
   fs.writeFileSync(path.join(dir, '.raili', filename), yamlContent, 'utf8');
 }
@@ -68,15 +77,19 @@ export function writeScriptFile(dir: string, relativePath: string, content: stri
   fs.chmodSync(fullPath, 0o755);
 }
 
+/** Load context.json from the main workflow directory. */
+export function loadContext(dir: string): any {
+  const ctxPath = path.join(dir, '.raili', 'main', 'context.json');
+  return JSON.parse(fs.readFileSync(ctxPath, 'utf8'));
+}
+
 /**
  * Creates a fake child process that emits stdout/stderr data then closes.
- * Reuses the pattern from __tests__/unit/agentHandler.test.ts.
  */
 export function fakeChild(stdoutData: string, stderrData: string, exitCode: number) {
   const child = new EventEmitter() as any;
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
-  // Emit asynchronously so listeners are attached first
   setImmediate(() => {
     if (stdoutData) child.stdout.emit('data', Buffer.from(stdoutData));
     if (stderrData) child.stderr.emit('data', Buffer.from(stderrData));
@@ -93,4 +106,3 @@ export function cleanupRailiEnvVars(): void {
     }
   }
 }
-
