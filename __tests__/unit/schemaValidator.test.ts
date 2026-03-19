@@ -464,6 +464,39 @@ describe('SchemaValidator', () => {
       expect(() => validateWorkflowConfig(config)).not.toThrow();
     });
 
+    it('should accept input objects with log boolean', () => {
+      const config = {
+        initial: 'start',
+        inputs: [
+          { name: 'ticket_id', log: true },
+          { name: 'branch', log: false }
+        ],
+        states: {
+          start: {
+            type: 'agent',
+            agent: 'copilot'
+          }
+        }
+      };
+      expect(() => validateWorkflowConfig(config)).not.toThrow();
+    });
+
+    it('should throw if inputs log is not boolean', () => {
+      const config = {
+        initial: 'start',
+        inputs: [
+          { name: 'ticket_id', log: 'yes' }
+        ],
+        states: {
+          start: {
+            type: 'agent',
+            agent: 'copilot'
+          }
+        }
+      };
+      expect(() => validateWorkflowConfig(config)).toThrow(/log.*boolean/i);
+    });
+
 
     it('should throw if required field "initial" is missing', () => {
       const config = {

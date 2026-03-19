@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
+//@ts-ignore
 import { createTmpWorkspace, cleanupTmpWorkspace, writeWorkflow, writeScriptRegistry, writeAgentRegistry, writeScriptFile, fakeChild } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -21,6 +22,13 @@ describe('run-log integration', () => {
   it('appends a run-log with loops and approval failures', async () => {
     writeWorkflow(tmpDir, `
 initial: start
+inputs:
+  - name: ticket_id
+    description: Ticket id
+    log: true
+  - name: secret
+    description: Sensitive value
+    log: false
 states:
   start:
     type: script
@@ -37,6 +45,8 @@ states:
   done:
     type: engine
 `);
+    // write workflow-scoped vars file to supply declared inputs without interactive prompt
+    fs.writeFileSync(path.join(tmpDir, '.raili', 'main', 'vars.yaml'), `ticket_id: T1\nsecret: X\n`, 'utf8');
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, { s1: { path: 'scripts/s1.sh' }, s2: { path: 'scripts/s2.sh' } });
     writeScriptFile(tmpDir, 'scripts/s1.sh', 'exit 0');
@@ -60,5 +70,7 @@ states:
     expect(last.loops).toBeGreaterThanOrEqual(1);
     expect(last.approvalFailures).toBe(0);
     expect(last.terminalState).toBe('done');
+    // Only ticket_id was marked log: true and should appear in vars
+    expect(last.vars).toEqual({ ticket_id: 'T1' });
   });
 });

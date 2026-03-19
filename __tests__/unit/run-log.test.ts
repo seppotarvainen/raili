@@ -26,7 +26,7 @@ describe('runLog.appendRunLog', () => {
 
     jest.spyOn(contextModule, 'loadContext').mockImplementation(() => fakeCtx as any);
 
-    const workflowConfig: any = { inputs: [{ name: 'ticket_id' }, { name: 'branch' }] };
+    const workflowConfig: any = { inputs: [{ name: 'ticket_id', log: true }, { name: 'branch', log: false }] };
 
     appendRunLog('/repo', 'main', '2026-01-01T10:00:00Z', workflowConfig);
 

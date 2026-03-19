@@ -85,13 +85,10 @@ export function appendRunLog(
   const durationMs = endTime.getTime() - runStart.getTime();
   output.duration = humanDuration(durationMs >= 0 ? durationMs : 0);
 
-  // Include only declared workflow inputs
-  if (workflowConfig && Array.isArray(workflowConfig.inputs)) {
-    for (const input of workflowConfig.inputs) {
-      const name = (input as any).name;
-      if (ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, name)) {
-        output.vars[name] = ctx.vars[name];
-      }
+  // Include only declared workflow inputs which are marked log: true
+  for (const input of workflowConfig.inputs || []) {
+    if (input.log) {
+      output.vars[input.name] = ctx.vars[input.name];
     }
   }
 
