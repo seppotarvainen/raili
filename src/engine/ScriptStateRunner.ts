@@ -10,7 +10,7 @@ import { parseExports } from '../variableExports';
  * ScriptStateRunner - class-based implementation conforming to IStateRunner.
  * Centralizes script-related plumbing (env preparation, output storage, expose parsing).
  */
-export class ScriptStateRunner implements IStateRunner {
+class ScriptStateRunner implements IStateRunner {
   constructor(private registry: ScriptRegistry) {}
 
   async run(

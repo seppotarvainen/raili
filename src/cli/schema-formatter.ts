@@ -92,4 +92,4 @@ export function generateSchemaOutput(): string {
   return output.join('\n');
 }
 
-export const SCHEMA_OUTPUT = generateSchemaOutput();
+const SCHEMA_OUTPUT = generateSchemaOutput();

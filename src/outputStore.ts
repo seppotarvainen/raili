@@ -14,7 +14,7 @@ function outputPath(cwd: string, stateId: string, workflowArg?: string): string 
  * Filter output based on OutputConfig settings.
  * Applies in order: search pattern (with after lines), then tail.
  */
-export function filterOutput(output: string, config: OutputConfig): string {
+function filterOutput(output: string, config: OutputConfig): string {
   let result = output;
 
   // Step 1: Apply include_search_pattern if specified

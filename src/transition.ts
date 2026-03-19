@@ -1,6 +1,6 @@
 import { StateMachine } from './types';
 
-export type TransitionOutcome = 'PASSED' | 'FAILED' | string;
+type TransitionOutcome = 'PASSED' | 'FAILED' | string;
 
 // Given a state's transition configuration and an outcome key, resolve the target state.
 // stateTransitions is an object where keys are outcome names or 'default' mapping to target state string.

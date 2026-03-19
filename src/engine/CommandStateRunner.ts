@@ -9,7 +9,7 @@ import { parseExports } from '../variableExports';
  * CommandStateRunner - class-based implementation conforming to IStateRunner.
  * Handles inline shell command execution plumbing.
  */
-export class CommandStateRunner implements IStateRunner {
+class CommandStateRunner implements IStateRunner {
   constructor() {}
 
   async run(

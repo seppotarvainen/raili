@@ -40,7 +40,7 @@ export function writeNamedWorkflow(dir: string, name: string, yamlContent: strin
 }
 
 /** Write arbitrary .raili/<filename> (kept for compatibility) */
-export function writeWorkflowFile(dir: string, filename: string, yamlContent: string): void {
+function writeWorkflowFile(dir: string, filename: string, yamlContent: string): void {
   fs.writeFileSync(path.join(dir, '.raili', filename), yamlContent, 'utf8');
 }
 
@@ -78,7 +78,7 @@ export function writeScriptFile(dir: string, relativePath: string, content: stri
 }
 
 /** Load context.json from the main workflow directory. */
-export function loadContext(dir: string): any {
+function loadContext(dir: string): any {
   const ctxPath = path.join(dir, '.raili', 'main', 'context.json');
   return JSON.parse(fs.readFileSync(ctxPath, 'utf8'));
 }

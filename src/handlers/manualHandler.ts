@@ -8,7 +8,7 @@ export type ManualTransitionConfig = {
 
 export type ManualResult = { chosen: string; target: string; reason: string };
 
-export type ManualOpts = { multiline: boolean | undefined };
+type ManualOpts = { multiline: boolean | undefined };
 
 /**
  * Prompts the user interactively:

@@ -5,7 +5,7 @@ import path from 'path';
 /**
  * Resolves a path that might contain a tilde (~) to an absolute path.
  */
-export function resolveHomePath(p: string): string {
+function resolveHomePath(p: string): string {
   if (p.startsWith('~/') || p === '~') {
     return path.join(os.homedir(), p.slice(1));
   }

@@ -7,7 +7,7 @@
  * - All other $ characters are left as-is.
  */
 
-export interface InterpolationOptions {
+interface InterpolationOptions {
   throwOnMissing?: boolean; // default: true (fail-fast)
   missingValue?: string; // when provided and throwOnMissing is false, use this for missing vars
 }

@@ -3,7 +3,7 @@ import fs from 'fs';
 import { ScriptRegistry } from '../scriptRegistry';
 import { resolveRegistryPath } from '../pathUtils';
 
-export type ScriptExecutionResult = { success: boolean; stdout: string; stderr: string };
+type ScriptExecutionResult = { success: boolean; stdout: string; stderr: string };
 
 export function executeScript(
   registry: ScriptRegistry,
@@ -49,4 +49,4 @@ export function executeScript(
 }
 
 // New handler alias to conform to a "handler" naming convention used by abstractions
-export const executeScriptHandler = executeScript;
+const executeScriptHandler = executeScript;

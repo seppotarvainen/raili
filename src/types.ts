@@ -73,14 +73,14 @@ export interface StateMachine {
 }
 
 // Execution context
-export interface NotifyMeta {
+interface NotifyMeta {
   command: string;
   success: boolean;
   exitCode?: number;
   stderr?: string;
 }
 
-export interface ApprovalMeta {
+interface ApprovalMeta {
   question: string;
   chosen: 'PASSED' | 'FAILED';
   reason?: string;

@@ -3,7 +3,7 @@ import fs from 'fs';
 import { AgentRegistry } from '../agentRegistry';
 import { resolveRegistryPath } from '../pathUtils';
 
-export type AgentExecutionResult = {
+type AgentExecutionResult = {
   success: boolean;
   stdout: string;
   stderr: string;
@@ -76,4 +76,4 @@ export function executeAgent(
 }
 
 // New handler alias to conform to a "handler" naming convention used by abstractions
-export const executeAgentHandler = executeAgent;
+const executeAgentHandler = executeAgent;

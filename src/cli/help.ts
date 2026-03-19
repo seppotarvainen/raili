@@ -3,7 +3,7 @@
 
 import { HELP_TOPICS, USAGE_HELP, AVAILABLE_TOPICS, AVAILABLE_USAGE } from './generated-docs';
 
-export const GLOBAL_USAGE = 'Usage: raili <command> [options]';
+const GLOBAL_USAGE = 'Usage: raili <command> [options]';
 
 const COMMAND_HELP: Record<string, string> = {
   init: 'Usage: raili init\n\nInitialize a new .raili/ directory with template files.',

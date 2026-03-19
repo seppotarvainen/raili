@@ -12,7 +12,7 @@ import { readLearnings, appendUniqueLearning } from '../learningStore';
  * Encapsulates agent-specific execution plumbing. Kept as a class to make
  * it easy to share helper methods and to demonstrate the abstraction.
  */
-export class AgentStateRunner implements IStateRunner {
+class AgentStateRunner implements IStateRunner {
   constructor(private registry: AgentRegistry) {}
 
   async run(

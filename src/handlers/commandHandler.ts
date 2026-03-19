@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 
-export type CommandExecutionResult = {
+type CommandExecutionResult = {
   success: boolean;
   stdout: string;
   stderr: string;
@@ -41,4 +41,4 @@ export function executeCommand(
 }
 
 // New handler alias to conform to a "handler" naming convention used by abstractions
-export const executeCommandHandler = executeCommand;
+const executeCommandHandler = executeCommand;

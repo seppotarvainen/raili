@@ -157,7 +157,7 @@ export function computeComparison(prev: Metrics | null, curr: Metrics) {
   return result;
 }
 
-export function printMetrics(metrics: Metrics) {
+function printMetrics(metrics: Metrics) {
   console.log(`Runs considered: ${metrics.count}`);
   console.log(`Average loops/run: ${metrics.avgLoops.toFixed(2)}`);
   console.log(`Average states/run: ${metrics.avgStates.toFixed(2)}`);
@@ -166,7 +166,7 @@ export function printMetrics(metrics: Metrics) {
   console.log(`Success rate: ${formatPct(metrics.successRate)}`);
 }
 
-export function printComparison(prev: Metrics | null, curr: Metrics) {
+function printComparison(prev: Metrics | null, curr: Metrics) {
   const cmp = computeComparison(prev, curr);
   console.log(`Runs considered (prev window): ${prev ? prev.count : 0}`);
   console.log(`Runs considered (current): ${curr.count}`);
