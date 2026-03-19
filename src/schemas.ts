@@ -160,6 +160,12 @@ export const StateConfigSchema: ObjectSchema = {
       'Optional success flag for terminal (engine) states; persisted to context.json when present',
     validForTypes: ['engine'],
   },
+  // Optional skip target: bypass this state and immediately route to the specified state id without running handlers
+  skip: {
+    required: false,
+    type: 'string',
+    description: 'Optional state id to immediately route to without executing this state',
+  },
   transitions: {
     required: false,
     type: 'record',

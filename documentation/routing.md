@@ -74,4 +74,5 @@ done:
 - A state may not have multiple routing options — exactly one required
 - Missing routing key in `transitions:` → workflow error
 - Variables can be used in approval questions with `${variable_name}` syntax
+- `skip` may be used to bypass a state and immediately route to another state without running handlers. Use with care to avoid hiding important checks.
 

@@ -136,6 +136,7 @@ All states support:
 - `output` — Storage configuration (agent, script, command states)
 - `reset_outputs` — Clear outputs from other states on entry
 - `max_visits` — Prevent infinite loops (throw on Nth entry)
+- `skip` — Optional state id to immediately route to without executing this state. Skipped states do not run notify, do not increment visit counters, and do not produce outputs.
 
 ## Persisted State History (context.json)
 

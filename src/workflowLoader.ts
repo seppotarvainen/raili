@@ -134,6 +134,12 @@ export function buildStateMachine(config: WorkflowConfig): StateMachine {
       }
     }
 
+    // If state defines a skip target, include it in the transition set so validation can verify the target exists
+    if ((stateConfig as any).skip) {
+      const s = (stateConfig as any).skip as string;
+      if (!transitions.includes(s)) transitions.push(s);
+    }
+
     states[stateId] = {
       id: stateId,
       config: stateConfig,
