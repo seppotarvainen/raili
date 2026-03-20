@@ -1,4 +1,5 @@
 import * as readline from 'readline';
+import { FeedbackConfig } from '../types';
 
 export type ManualTransitionConfig = {
   question: string;
@@ -78,4 +79,62 @@ export async function handleManualTransition(
   const chosen = reason === '' ? 'PASSED' : 'FAILED';
 
   return { chosen, target: config.options[chosen], reason };
+}
+
+/**
+ * Collect free-form feedback from the user according to FeedbackConfig.
+ * Respects RAILI_FEEDBACK_<UPPERCASE_NAME> env var to bypass stdin (CI).
+ * If `required` is true, re-prompts until a non-empty value is provided.
+ */
+export async function handleFeedbackPrompt(feedback: FeedbackConfig): Promise<string> {
+  const name = feedback.expose_var;
+  if (!name || name.trim() === '') throw new Error('Feedback: expose_var must be provided');
+
+  const envName = `RAILI_FEEDBACK_${name.toUpperCase()}`;
+  const forced = process.env[envName];
+  if (typeof forced !== 'undefined') {
+    return forced;
+  }
+
+  const question = feedback.question ?? `Enter feedback for '${name}':`;
+  const multiline = !!feedback.multiline;
+  const required = !!feedback.required;
+
+  // Helper to prompt single-line
+  const promptSingle = async (): Promise<string> => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const answer = await new Promise<string>((resolve) => {
+      rl.question(`\n${question}\n: `, resolve);
+    });
+    rl.close();
+    return answer.trim();
+  };
+
+  // Helper to prompt multiline
+  const promptMulti = async (): Promise<string> => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    console.log(`\n${question}\n[Enter multiple lines, finish with a single line containing '/q']`);
+    rl.setPrompt('> ');
+    rl.prompt();
+
+    return await new Promise<string>((resolve) => {
+      const lines: string[] = [];
+      const onLine = (line: string) => {
+        if (line === '/q') {
+          rl.close();
+          resolve(lines.join('\n'));
+        } else {
+          lines.push(line);
+          rl.prompt();
+        }
+      };
+      rl.on('line', onLine);
+    });
+  };
+
+  while (true) {
+    const val = multiline ? await promptMulti() : await promptSingle();
+    if (val !== '' || !required) return val;
+    console.log('This feedback is required and cannot be empty. Please provide a value.');
+  }
 }

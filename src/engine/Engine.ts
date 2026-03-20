@@ -10,6 +10,7 @@ import { runNotify, NotifyResult } from '../handlers/notifyHandler';
 import { clearAgentOutputs } from '../outputStore';
 import { resolveTransition } from '../transition';
 import colors from 'colors/safe';
+import { handleFeedbackPrompt } from '../handlers/manualHandler';
 
 /** Result returned by every state runner: outcome and optional exports */
 export type StateResult = { outcome: string; exports?: Record<string, string> };
@@ -248,8 +249,48 @@ export class Engine {
           }
 
           saveContext(this.cwd, this.context, this.workflowArg);
+
+          // After approval, optionally collect feedback if configured on the state
+          if ((config as any).feedback) {
+            const fb = (config as any).feedback as any;
+            const val = await handleFeedbackPrompt(fb);
+            if (!this.context.vars) this.context.vars = {};
+            this.context.vars[fb.expose_var] = val;
+            saveContext(this.cwd, this.context, this.workflowArg);
+            const newCtxFb = addStateToHistory(this.context, stateId, {
+              feedback: { name: fb.expose_var, value: val },
+            });
+            if (newCtxFb) this.context = newCtxFb;
+          }
+
           stateId = nextStateId;
           continue;
+        }
+
+        // If no approval present but feedback configured, collect feedback after state execution
+        if ((config as any).feedback) {
+          const fb = (config as any).feedback as any;
+          const val = await handleFeedbackPrompt(fb);
+          if (!this.context.vars) this.context.vars = {};
+          this.context.vars[fb.expose_var] = val;
+          saveContext(this.cwd, this.context, this.workflowArg);
+          const newCtxFb = addStateToHistory(this.context, stateId, {
+            feedback: { name: fb.expose_var, value: val },
+          });
+          if (newCtxFb) this.context = newCtxFb;
+
+          // If feedback is present and transitions include a 'next' mapping, route directly to it.
+          // This allows simple feedback states to declare 'transitions:\n  next: <state>'
+          // and have the engine continue to that state after collecting feedback.
+          if (config.transitions && (config.transitions as any).next) {
+            const next = (config.transitions as any).next;
+            console.log(`  → ${next}`);
+            const newCtxRoute2 = addStateToHistory(this.context, next);
+            if (newCtxRoute2) this.context = newCtxRoute2;
+            saveContext(this.cwd, this.context, this.workflowArg);
+            stateId = next;
+            continue;
+          }
         }
 
         // Route via `on:` or `transitions:`

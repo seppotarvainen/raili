@@ -20,6 +20,18 @@ export interface ApprovalConfig {
   multiline?: boolean; // Optional: allow multiline reason input when prompting (terminator: /q)
 }
 
+export interface FeedbackConfig {
+  // The workflow variable name that will be set with the collected text
+  // Optional at the type level; missing expose_var is validated at startup (fail-fast)
+  expose_var?: string;
+  // Optional question shown to the user. If omitted, a generic prompt is shown.
+  question?: string;
+  // If true, an empty answer is not allowed and the prompt will repeat until non-empty
+  required?: boolean;
+  // If true, collect multiple lines until a single line containing '/q' is entered
+  multiline?: boolean;
+}
+
 export type LearnSource = { output: string } | { var: string };
 
 export interface StateConfig {
@@ -35,6 +47,8 @@ export interface StateConfig {
   prompt?: string; // Optional prompt for agent
   args?: string[]; // For type: script — ordered list of arguments forwarded to the script process
   approval?: ApprovalConfig;
+  // Feedback block: capture free-form user input and expose as a workflow variable
+  feedback?: FeedbackConfig;
   // Optional success flag for terminal (engine) states. When present it will be persisted
   // to .raili/context.json for the state's run. If omitted, context should record null.
   success?: boolean | null;
