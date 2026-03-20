@@ -112,3 +112,11 @@ export interface WorkflowContext {
   approvals?: Record<string, string>; // Approval reasons keyed by <STATE>_<OUTCOME> uppercase
   stateHistory: StateHistoryEntry[];
 }
+
+// Parsed CLI/run arguments
+export interface RailiRunArgs {
+  workflow?: string;
+  mode?: 'clean' | 'continue';
+  vars: Record<string, string>;
+  help?: boolean;
+}
