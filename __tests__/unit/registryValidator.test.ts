@@ -1,10 +1,11 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from '../../src/registryValidator';
 import { WorkflowConfig } from '../../src/types';
 
-const TMP = path.resolve(__dirname, 'tmp_registry');
-beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });
+let TMP: string;
+beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-regval-')); });
 afterAll(() => { if (fs.existsSync(TMP)) fs.rmSync(TMP, { recursive: true }); });
 
 test('validates agent registry and files exist', () => {

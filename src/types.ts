@@ -98,6 +98,7 @@ interface ApprovalMeta {
   question: string;
   chosen: 'PASSED' | 'FAILED';
   reason?: string;
+  waitMs?: number;
 }
 
 export interface StateHistoryEntry {

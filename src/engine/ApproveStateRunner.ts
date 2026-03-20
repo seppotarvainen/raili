@@ -19,6 +19,7 @@ export interface ApprovalOutcome {
   reason: string;
   question: string;
   notify?: NotifyResult;
+  waitMs?: number;
 }
 
 /**
@@ -60,5 +61,6 @@ export async function runApprovalStep(
     reason: result.reason,
     question: interpolatedQuestion,
     notify: notifyRes,
+    waitMs: result.waitMs,
   };
 }

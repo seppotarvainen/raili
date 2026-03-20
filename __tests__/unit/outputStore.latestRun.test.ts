@@ -1,13 +1,15 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { readLatestRun } from '../../src/outputStore';
 
 describe('readLatestRun', () => {
-  const cwd = path.join(__dirname, 'tmp_project');
-  const outputsDir = path.join(cwd, '.raili', 'main', 'outputs');
+  let cwd: string;
+  let outputsDir: string;
 
   beforeEach(() => {
-    if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });
+    cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-output-test-'));
+    outputsDir = path.join(cwd, '.raili', 'main', 'outputs');
     fs.mkdirSync(outputsDir, { recursive: true });
   });
 

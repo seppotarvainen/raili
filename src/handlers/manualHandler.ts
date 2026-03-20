@@ -7,27 +7,15 @@ export type ManualTransitionConfig = {
   multiline?: boolean;
 };
 
-export type ManualResult = { chosen: string; target: string; reason: string };
+export type ManualResult = { chosen: string; target: string; reason: string; waitMs?: number };
 
 type ManualOpts = { multiline: boolean | undefined };
 
 /**
- * Prompts the user interactively:
+ * Prompts the user interactively and measures idle wait time spent waiting for user input.
+ * Returns the chosen outcome, target state, the reason (if any) and optional waitMs in milliseconds.
  *
- * Single-line mode (default):
- *   - Press Enter (empty input) → PASSED
- *   - Type anything → FAILED (the text is stored as reason for future use)
- *
- * Multiline mode: collect lines until a line containing only `/q` is entered.
- * The terminating `/q` line is not included in the assembled reason.
- * If the assembled reason is empty, treat as PASSED, otherwise FAILED.
- *
- * For deterministic tests, RAILI_MANUAL_CHOICE env var can be set to a key from options.
- *
- * Backwards-compatible calling:
- *  - handleManualTransition(config)
- *  - handleManualTransition(config, {multiline: true})
- *  - handleManualTransition({multiline: true}) // deprecated but tolerated in tests
+ * For deterministic tests, RAILI_MANUAL_CHOICE env var can be set to a key from options (waitMs = 0).
  */
 export async function handleManualTransition(
   config: ManualTransitionConfig,
@@ -38,18 +26,19 @@ export async function handleManualTransition(
   // Test escape hatch — skip prompt entirely
   const forced = process.env.RAILI_MANUAL_CHOICE;
   if (forced && keys.includes(forced)) {
-    return { chosen: forced, target: config.options[forced], reason: '' };
+    return { chosen: forced, target: config.options[forced], reason: '', waitMs: 0 };
   }
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-
+  // Create readline interface when ready to prompt. Measure wait starting immediately before attaching listeners.
   if (config.multiline) {
-    // Inform the user about the terminator and start collecting lines
     console.log(
       `\n${config.question}\n[Enter multiple lines, finish with a single line containing '/q']`,
     );
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     rl.setPrompt('> ');
     rl.prompt();
+
+    const waitStart = Date.now();
 
     return await new Promise<ManualResult>((resolve) => {
       const lines: string[] = [];
@@ -59,7 +48,8 @@ export async function handleManualTransition(
           rl.close();
           const reason = lines.join('\n');
           const chosen = reason === '' ? 'PASSED' : 'FAILED';
-          resolve({ chosen, target: config.options[chosen], reason });
+          const waitMs = Date.now() - waitStart;
+          resolve({ chosen, target: config.options[chosen], reason, waitMs });
         } else {
           lines.push(line);
           rl.prompt();
@@ -69,6 +59,9 @@ export async function handleManualTransition(
     });
   }
 
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const waitStart = Date.now();
+
   const answer = await new Promise<string>((resolve) => {
     rl.question(`\n${config.question}\n[Enter = PASSED, type reason = FAILED]: `, resolve);
   });
@@ -77,14 +70,18 @@ export async function handleManualTransition(
 
   const reason = answer.trim();
   const chosen = reason === '' ? 'PASSED' : 'FAILED';
+  const waitMs = Date.now() - waitStart;
 
-  return { chosen, target: config.options[chosen], reason };
+  return { chosen, target: config.options[chosen], reason, waitMs };
 }
 
 /**
  * Collect free-form feedback from the user according to FeedbackConfig.
  * Respects RAILI_FEEDBACK_<UPPERCASE_NAME> env var to bypass stdin (CI).
  * If `required` is true, re-prompts until a non-empty value is provided.
+ *
+ * NOTE: This function preserves its existing API and returns the feedback text only. The caller (Engine)
+ * is responsible for measuring and persisting wait durations for feedback prompts if desired.
  */
 export async function handleFeedbackPrompt(feedback: FeedbackConfig): Promise<string> {
   const name = feedback.expose_var;

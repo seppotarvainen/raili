@@ -99,12 +99,21 @@ export function addStateToHistory(
     for (let i = context.stateHistory.length - 1; i >= 0; i--) {
       const entry = context.stateHistory[i];
       if (entry.state === state) {
+        // Merge metadata into existing entry. If both existing and new meta contain numeric
+        // waitMs values, accumulate them to preserve total idle wait time across multiple prompts.
+        const existingMeta = entry.meta ?? {};
+        const mergedMeta: any = { ...existingMeta };
+        for (const [k, v] of Object.entries(meta)) {
+          if (k === 'waitMs' && typeof existingMeta.waitMs === 'number' && typeof v === 'number') {
+            mergedMeta.waitMs = (existingMeta.waitMs as number) + (v as number);
+          } else {
+            mergedMeta[k] = v;
+          }
+        }
+
         const merged: StateHistoryEntry = {
           ...entry,
-          meta: {
-            ...(entry.meta ?? {}),
-            ...meta,
-          },
+          meta: mergedMeta,
         };
         const newHistory = [
           ...context.stateHistory.slice(0, i),

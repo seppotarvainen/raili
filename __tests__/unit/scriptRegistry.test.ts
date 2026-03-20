@@ -1,9 +1,10 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { loadScriptRegistry } from '../../src/scriptRegistry';
 
-const TMP = path.resolve(__dirname, 'tmp_script');
-beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });
+let TMP: string;
+beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-sreg-')); });
 afterAll(() => { if (fs.existsSync(TMP)) fs.rmSync(TMP, { recursive: true }); });
 
 test('loads valid script registry', () => {

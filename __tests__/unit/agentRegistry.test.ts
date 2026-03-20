@@ -1,9 +1,10 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { loadAgentRegistry } from '../../src/agentRegistry';
 
-const TMP = path.resolve(__dirname, 'tmp');
-beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });
+let TMP: string;
+beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-areg-')); });
 afterAll(() => { if (fs.existsSync(TMP)) fs.rmSync(TMP, { recursive: true }); });
 
 test('loads valid registry', () => {
