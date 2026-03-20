@@ -11,6 +11,7 @@ import { loadContext, clearContext, initializeContext } from './context';
 import { Engine } from './engine/Engine';
 import { appendRunLog } from './runLog';
 import { loadVarsFile } from './varsLoader';
+import { handleManualTransition } from './handlers/manualHandler';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -35,6 +36,35 @@ export async function runCommand(
 
   // Load workflow configuration from YAML (allow override via --workflow flag)
   const workflowConfig = loadWorkflowConfig(cwd, workflowPath);
+
+  // Detect states with `skip` configured from the raw workflow config and prompt the user to confirm skipping them.
+  // Use the raw workflowConfig here instead of the built state machine so unit tests that mock buildStateMachine
+  // (but not loadWorkflowConfig) continue to work.
+  const skipped = Object.entries(workflowConfig.states)
+    .filter(([_, def]) => (def as any).skip)
+    .map(([id]) => id);
+
+  if (skipped.length > 0) {
+    const list = skipped.join(', ');
+    const question = `You have 'skip' enabled in the following states: [${list}]. Are you sure you want to skip these steps?`;
+
+    // If running in non-interactive environment (no TTY) and no RAILI_MANUAL_CHOICE provided,
+    // default to accepting the skip so tests and CI won't hang on a prompt.
+    const hasTTY = !!(process.stdin && (process.stdin as any).isTTY);
+    if (!hasTTY && !process.env.RAILI_MANUAL_CHOICE) {
+      // Default to accept in non-interactive contexts
+    } else {
+      const result = await handleManualTransition({
+        question,
+        options: { PASSED: 'PROCEED', FAILED: 'CANCEL' },
+      });
+      if (result.chosen === 'FAILED') {
+        console.log('Run cancelled: skip confirmation declined. No states executed.');
+        process.exit(1);
+        return;
+      }
+    }
+  }
 
   // Build state machine from workflow config
   const stateMachine = buildStateMachine(workflowConfig);

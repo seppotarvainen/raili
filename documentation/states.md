@@ -138,6 +138,8 @@ All states support:
 - `max_visits` — Prevent infinite loops (throw on Nth entry)
 - `skip` — Optional state id to immediately route to without executing this state. Skipped states do not run notify, do not increment visit counters, and do not produce outputs.
 
+  Note: On `raili run` startup, if any states have `skip` configured, Raili will prompt to confirm skipping these states. Press Enter to accept (skip) or type any input to cancel the run. For tests and CI you may bypass the interactive prompt by setting `RAILI_MANUAL_CHOICE=PASSED` (accept) or `RAILI_MANUAL_CHOICE=FAILED` (decline).
+
 ## Persisted State History (context.json)
 
 Each state entry recorded to `.raili/context.json` includes a minimal history record and optional structured metadata to aid debugging and UI building. Example entry shape:
