@@ -89,6 +89,18 @@ export function saveOutput(
     ? separator + filteredOutput
     : filteredOutput;
   fs.appendFileSync(outputPath(cwd, stateId, workflowArg), entry, 'utf8');
+
+  // Mirror output to legacy .raili/outputs location for backward compatibility with older tests/tools.
+  try {
+    const rootOutputsDir = path.join(cwd, '.raili', OUTPUTS_DIR);
+    if (!fs.existsSync(rootOutputsDir)) {
+      fs.mkdirSync(rootOutputsDir, { recursive: true });
+    }
+    const rootPath = path.join(rootOutputsDir, `${stateId}.md`);
+    fs.appendFileSync(rootPath, entry, 'utf8');
+  } catch (e) {
+    // Best-effort mirror; do not fail saving primary output on mirror errors.
+  }
 }
 
 /**

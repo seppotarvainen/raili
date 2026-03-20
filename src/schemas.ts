@@ -70,6 +70,30 @@ export const ApprovalConfigSchema: ObjectSchema = {
   },
 };
 
+// FeedbackConfig schema
+export const FeedbackConfigSchema: ObjectSchema = {
+  expose_var: {
+    required: true,
+    type: 'string',
+    description: 'The workflow variable name that will store the collected feedback',
+  },
+  question: {
+    required: false,
+    type: 'string',
+    description: 'Optional question shown to the user; defaults to a generic prompt when omitted',
+  },
+  required: {
+    required: false,
+    type: 'boolean',
+    description: 'When true, empty input is rejected and the prompt repeats until non-empty',
+  },
+  multiline: {
+    required: false,
+    type: 'boolean',
+    description: "When true, accept multiline input terminated by a line containing only '/q'",
+  },
+};
+
 // StateConfig schema
 export const StateConfigSchema: ObjectSchema = {
   type: {
@@ -152,6 +176,11 @@ export const StateConfigSchema: ObjectSchema = {
     required: false,
     type: 'object',
     description: 'Approval configuration',
+  },
+  feedback: {
+    required: false,
+    type: 'object',
+    description: 'Feedback configuration (collect free-form user input and expose as a variable)',
   },
   success: {
     required: false,

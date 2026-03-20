@@ -3,6 +3,7 @@ import {
   StateConfigSchema,
   ApprovalConfigSchema,
   WorkflowConfigSchema,
+  FeedbackConfigSchema,
   FieldSchema,
   ObjectSchema,
 } from './schemas';
@@ -197,6 +198,19 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
     } catch (error) {
       if (error instanceof SchemaValidationError) {
         throw new SchemaValidationError(`Field 'approval': ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  // Validate feedback config if present
+  if (config.feedback) {
+    try {
+      // Validate feedback shape against the schema
+      validateObject(config.feedback, FeedbackConfigSchema as any, `feedback`, config.type);
+    } catch (error) {
+      if (error instanceof SchemaValidationError) {
+        throw new SchemaValidationError(`Field 'feedback': ${error.message}`);
       }
       throw error;
     }

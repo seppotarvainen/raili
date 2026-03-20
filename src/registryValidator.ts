@@ -42,6 +42,9 @@ export function validateWorkflowReferences(
   const missingAgents: string[] = [];
   const missingScripts: string[] = [];
 
+  // Collect declared workflow input names for collision detection
+  const declaredInputs = new Set((workflow.inputs || []).map((i) => i.name));
+
   for (const [stateName, stateConfig] of Object.entries(workflow.states)) {
     // Check agent states
     if (stateConfig.type === 'agent' && stateConfig.agent) {
@@ -57,6 +60,19 @@ export function validateWorkflowReferences(
       if (!(stateConfig.script in scripts)) {
         missingScripts.push(
           `State '${stateName}' references script '${stateConfig.script}' which is not defined in script-registry.json`,
+        );
+      }
+    }
+
+    // Validate feedback block if present
+    const fb: any = (stateConfig as any).feedback;
+    if (fb) {
+      if (!fb.expose_var || String(fb.expose_var).trim() === '') {
+        throw new Error(`State '${stateName}': feedback.expose_var must be provided and non-empty`);
+      }
+      if (declaredInputs.has(fb.expose_var)) {
+        throw new Error(
+          `State '${stateName}': feedback.expose_var '${fb.expose_var}' conflicts with declared workflow input of the same name`,
         );
       }
     }
