@@ -86,6 +86,9 @@ Each workflow directory keeps its own isolated artifacts:
    - Execute handler (agent, script, command, or engine)
    - Route based on outcome
    - Save context to `<workflow>/context.json`
+
+Startup confirmation: If any states in the selected workflow have `skip` configured, Raili will display a confirmation listing those states and prompt the user: pressing Enter accepts the skips and proceeds; typing any non-empty input cancels the run. In tests or CI you can bypass the interactive prompt by setting the environment variable `RAILI_MANUAL_CHOICE=PASSED` (accept) or `RAILI_MANUAL_CHOICE=FAILED` (decline).
+
 5. **Stop** → Terminal state reached or error occurred
 
 ## Input Variables
