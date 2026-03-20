@@ -23,6 +23,8 @@ export function appendUniqueLearning(
   content: string,
   workflowArg?: string,
 ): boolean {
+  if (!content || !content.trim()) return false;
+
   const p = learningsFilePath(cwd, agentId, workflowArg);
   const normalizedNew = normalizeForCompare(content);
 

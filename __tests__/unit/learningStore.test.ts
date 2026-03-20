@@ -25,4 +25,13 @@ describe('learningStore appendUniqueLearning', () => {
     const content = readLearnings(cwd, agentId);
     expect(content).toContain('Something happened');
   });
+
+  test('does not add empty lesson', () => {
+    const agentId = 'my-agent';
+    const appended = appendUniqueLearning(cwd, agentId, 'output:test', ' ');
+    expect(appended).toBe(false);
+    const content = readLearnings(cwd, agentId);
+    expect(content).not.toContain(' ');
+  });
+
 });
