@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { EventEmitter } from 'events';
 import { loadAgentRegistry } from '../../src/agentRegistry';
@@ -7,8 +8,8 @@ import { executeAgent } from '../../src/handlers/agentHandler';
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');
 
-const TMP = path.resolve(__dirname, 'tmp_handler');
-beforeAll(() => { if (!fs.existsSync(TMP)) fs.mkdirSync(TMP); });
+let TMP: string;
+beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-handler-')); });
 afterAll(() => { if (fs.existsSync(TMP)) fs.rmSync(TMP, { recursive: true }); });
 
 /** Creates a fake child process that emits stdout/stderr data then closes */

@@ -224,14 +224,18 @@ export class Engine {
 
           console.log(`  approval: ${approvalOutcome.chosen} → ${nextStateId}`);
           // Persist approval decision on the current state's history entry (approval asked/executed here)
-          const newCtxApproval = addStateToHistory(this.context, stateId, {
+          const approvalMeta: any = {
             approval: {
               question: approvalOutcome.question,
               chosen: approvalOutcome.chosen,
               reason: approvalOutcome.reason,
               notify: approvalOutcome.notify ?? undefined,
             },
-          });
+          };
+          if (typeof approvalOutcome.waitMs === 'number')
+            approvalMeta.waitMs = approvalOutcome.waitMs;
+
+          const newCtxApproval = addStateToHistory(this.context, stateId, approvalMeta);
           if (newCtxApproval) this.context = newCtxApproval;
 
           // Persist approval reason into dedicated approvals map and mirror into vars for env exposure
@@ -253,12 +257,15 @@ export class Engine {
           // After approval, optionally collect feedback if configured on the state
           if ((config as any).feedback) {
             const fb = (config as any).feedback as any;
+            const fbStart = Date.now();
             const val = await handleFeedbackPrompt(fb);
+            const fbWait = Date.now() - fbStart;
             if (!this.context.vars) this.context.vars = {};
             this.context.vars[fb.expose_var] = val;
             saveContext(this.cwd, this.context, this.workflowArg);
             const newCtxFb = addStateToHistory(this.context, stateId, {
               feedback: { name: fb.expose_var, value: val },
+              waitMs: fbWait,
             });
             if (newCtxFb) this.context = newCtxFb;
           }

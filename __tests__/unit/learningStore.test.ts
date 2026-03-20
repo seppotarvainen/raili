@@ -1,14 +1,15 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { readLearnings, appendUniqueLearning } from '../../src/learningStore';
 
 describe('learningStore appendUniqueLearning', () => {
-  const cwd = path.join(__dirname, 'tmp_project_ls');
-  const railiDir = path.join(cwd, '.raili');
-  const learningsDir = path.join(railiDir, 'main', 'learnings');
+  let cwd: string;
+  let learningsDir: string;
 
   beforeEach(() => {
-    if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });
+    cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-ls-test-'));
+    learningsDir = path.join(cwd, '.raili', 'main', 'learnings');
     fs.mkdirSync(learningsDir, { recursive: true });
   });
 

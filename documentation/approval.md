@@ -91,7 +91,7 @@ Missing variables → immediate error (fail-fast).
 
 ## Approval Response Tracking
 
-Approval questions, answers, and any notify metadata are recorded in `context.json` as part of the originating state's history entry under a `meta` object. This ensures the metadata is discoverable on the state where the prompt or notify actually occurred.
+Approval questions, answers, and any notify metadata are recorded in `context.json` as part of the originating state's history entry under a `meta` object. When manual prompts or feedback incur idle wait time, Raili records `meta.waitMs` (milliseconds) for that state — this represents the total time spent waiting for human input and is persisted to make runs auditable.
 
 Example:
 
@@ -104,12 +104,15 @@ Example:
       "enteredAt": "2026-03-13T08:16:30Z",
       "meta": {
         "approval": { "question": "Does this look good?", "chosen": "PASSED", "reason": "" },
+        "waitMs": 120000,
         "notify": { "command": "msg.sh 'Review needed'", "success": true }
       }
     }
   ]
 }
 ```
+
+Raili's run-log computation (`.raili/<workflow>/run-log.jsonl`) now subtracts accumulated `meta.waitMs` across the run from the total recorded duration. This produces a `duration` value representing active processing time (total run wall-clock time minus human idle waits). The run-log line also includes `waitMs` so both active and idle times are available for analysis.
 
 ## Key Differences from transitions:
 

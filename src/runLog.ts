@@ -79,11 +79,24 @@ export function appendRunLog(
     output.success = !!terminalEntry.meta.success;
   }
 
-  // Duration: from runStart to terminalEntry.enteredAt (or now)
+  // Duration: from the first state entered in this run to terminalEntry.enteredAt (or now).
+  // Using the first entry's enteredAt makes the run-log duration calculation consistent with
+  // how tests compute rawMs (terminal - firstEntered). If no entries exist, fall back to runStart.
   const endTime =
     terminalEntry && terminalEntry.enteredAt ? new Date(terminalEntry.enteredAt) : new Date();
-  const durationMs = endTime.getTime() - runStart.getTime();
-  output.duration = durationMs >= 0 ? durationMs : 0;
+  const startTime = entries.length > 0 ? new Date(entries[0].enteredAt) : new Date(runStartISO);
+  const durationMs = endTime.getTime() - startTime.getTime();
+
+  // Subtract accumulated idle wait time (e.g. manual approvals/feedback) when present.
+  // Backwards-compatible: if no waitMs metadata exists, subtraction is zero.
+  const totalWaitMs = entries.reduce((acc: number, e: StateHistoryEntry) => {
+    const wm = e?.meta?.waitMs;
+    return acc + (typeof wm === 'number' && wm > 0 ? wm : 0);
+  }, 0);
+
+  const adjusted = Math.max(0, durationMs - totalWaitMs);
+  output.waitMs = totalWaitMs;
+  output.duration = adjusted;
 
   // Include only declared workflow inputs which are marked log: true
   for (const input of workflowConfig.inputs || []) {

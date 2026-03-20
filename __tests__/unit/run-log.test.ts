@@ -44,4 +44,25 @@ describe('runLog.appendRunLog', () => {
     expect(typeof obj.duration).toBe('number');
     expect(Number.isInteger(obj.duration)).toBe(true);
   });
+
+  it('subtracts waitMs from duration when present', () => {
+    const fakeCtx: any = {
+      vars: {},
+      stateHistory: [
+        { state: 'start', enteredAt: '2026-01-01T10:00:00Z', meta: {} },
+        { state: 'review', enteredAt: '2026-01-01T10:01:00Z', meta: { approval: { chosen: 'PASSED' }, waitMs: 30000 } },
+        { state: 'done', enteredAt: '2026-01-01T10:02:00Z', meta: { success: true } },
+      ],
+    };
+
+    jest.spyOn(contextModule, 'loadContext').mockImplementation(() => fakeCtx as any);
+
+    appendRunLog('/repo', 'main', '2026-01-01T10:00:00Z', { inputs: [] } as any);
+
+    const calledArgs = mockedAppend.mock.calls[0];
+    const obj = JSON.parse(calledArgs[1] as string);
+    // run wall time would be 2 minutes (120000ms) from start -> done, minus 30000 wait = 90000
+    expect(obj.waitMs).toBe(30000);
+    expect(obj.duration).toBe(90000);
+  });
 });

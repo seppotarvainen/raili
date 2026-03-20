@@ -1,17 +1,17 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { EventEmitter } from 'events';
 import crypto from 'crypto';
 
-const INTEGRATION_DIR = path.resolve(__dirname);
-
 /**
  * Create a temporary workspace with .raili/ and default .raili/main/ scaffold.
+ * Uses os.tmpdir() so temp dirs are created outside the source tree.
  * Returns the absolute path to the workspace root.
  */
 export function createTmpWorkspace(): string {
   const id = crypto.randomBytes(4).toString('hex');
-  const dir = path.join(INTEGRATION_DIR, `tmp_${id}`);
+  const dir = path.join(os.tmpdir(), `raili-test-${id}`);
   fs.mkdirSync(path.join(dir, '.raili', 'main', 'outputs'), { recursive: true });
   fs.mkdirSync(path.join(dir, '.raili', 'main', 'learnings'), { recursive: true });
   return dir;
