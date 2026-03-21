@@ -1,41 +1,41 @@
-import { Engine, EngineConfig } from '../../src/engine/Engine';
-import * as outputStore from '../../src/outputStore';
+import {Runner, RunnerConfig} from '../../src/runner/Runner';
+import * as outputStore from '../../src/context/outputStore';
 import * as notifyHandler from '../../src/handlers/notifyHandler';
-import * as agentStateRunner from '../../src/engine/AgentStateRunner';
-import * as scriptStateRunner from '../../src/engine/ScriptStateRunner';
-import * as commandStateRunner from '../../src/engine/CommandStateRunner';
-import { StateMachine, WorkflowContext } from '../../src/types';
+import * as agentStateRunner from '../../src/runner/AgentStateRunner';
+import * as scriptStateRunner from '../../src/runner/ScriptStateRunner';
+import * as commandStateRunner from '../../src/runner/CommandStateRunner';
+import {StateMachine, WorkflowContext} from '../../src/types';
 
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 jest.mock('../../src/handlers/notifyHandler');
-jest.mock('../../src/engine/AgentStateRunner');
-jest.mock('../../src/engine/ScriptStateRunner');
-jest.mock('../../src/engine/CommandStateRunner');
+jest.mock('../../src/runner/AgentStateRunner');
+jest.mock('../../src/runner/ScriptStateRunner');
+jest.mock('../../src/runner/CommandStateRunner');
 
-jest.mock('../../src/context', () => ({
+jest.mock('../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx) => ctx),
   saveContext: jest.fn(),
 }));
 
 // Access mocks after module resolution
-const contextModule = require('../../src/context');
+const contextModule = require('../../src/context/context');
 
 const mockClear = outputStore.clearAgentOutputs as jest.MockedFunction<typeof outputStore.clearAgentOutputs>;
 const mockRunAgent = agentStateRunner.runAgentState as jest.MockedFunction<typeof agentStateRunner.runAgentState>;
 const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<typeof scriptStateRunner.runScriptState>;
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
 
-function makeEngine(states: StateMachine['states'], initial = 'start'): Engine {
+function makeEngine(states: StateMachine['states'], initial = 'start'): Runner {
   const stateMachine: StateMachine = { initial, states };
   const context: WorkflowContext = { stateHistory: [] };
-  return new Engine({
+  return new Runner({
     stateMachine,
     agentRegistry: {},
     scriptRegistry: {},
     context,
     cwd: '/tmp',
-  } as EngineConfig);
+  } as RunnerConfig);
 }
 
 beforeEach(() => {

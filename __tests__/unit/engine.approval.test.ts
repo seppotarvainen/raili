@@ -1,7 +1,7 @@
-import { Engine } from '../../src/engine/Engine';
-import { StateMachine } from '../../src/types';
-import * as approveRunner from '../../src/engine/ApproveStateRunner';
-import * as contextModule from '../../src/context';
+import {Runner} from '../../src/runner/Runner';
+import {StateMachine} from '../../src/types';
+import * as approveRunner from '../../src/runner/ApproveStateRunner';
+import * as contextModule from '../../src/context/context';
 
 describe('Engine approval persistence', () => {
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('Engine approval persistence', () => {
       } as any,
     } as any;
 
-    const engine = new Engine({
+    const engine = new Runner({
       stateMachine: sm,
       agentRegistry: {} as any,
       scriptRegistry: {} as any,

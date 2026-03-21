@@ -1,20 +1,18 @@
 #!/usr/bin/env node
 import * as readline from 'readline';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as yaml from 'js-yaml';
-import { initCommand } from './init';
-import { runCommand, RunMode } from './run';
-import { loadContext, getCurrentState } from './context';
-import { loadWorkflowConfig } from './workflowLoader';
-import colors from 'colors/safe';
-import { printHelp } from './cli/help';
-import { printDocs } from './cli/docs';
-import { printSchema } from './cli/schema';
+import {initCommand} from './init';
+import {runCommand, RunMode} from './run';
+import {getCurrentState, loadContext} from './context/context';
+import {loadWorkflowConfig} from './workflow/workflowLoader';
+import {printHelp} from './cli/help';
+import {printDocs} from './cli/docs';
+import {printSchema} from './cli/schema';
 import commandLineArgs from 'command-line-args';
-import { RailiRunArgs } from './types';
-import { statsCommand } from './cli/stats';
-import { RailiCommand } from './RailiCommand';
+import {RailiRunArgs} from './types';
+import {statsCommand} from './cli/stats';
+import {RailiCommand} from './cli/RailiCommand';
+/** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
+import {loadVarsFile} from './variables/varsLoader';
 
 const args = process.argv.slice(2);
 const command = new RailiCommand(args[0]);
@@ -44,8 +42,6 @@ function promptLine(rl: readline.Interface, question: string): Promise<string> {
   return new Promise((resolve) => rl.question(question, resolve));
 }
 
-/** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
-import { loadVarsFile } from './varsLoader';
 export { loadVarsFile };
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */

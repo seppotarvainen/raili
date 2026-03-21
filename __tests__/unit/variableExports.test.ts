@@ -1,4 +1,4 @@
-import { parseExports } from '../../src/variableExports';
+import {parseExports} from '../../src/variables/variableExports';
 
 describe('parseExports', () => {
   test('parses simple name=value', () => {

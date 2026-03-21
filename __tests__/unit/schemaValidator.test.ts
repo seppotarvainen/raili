@@ -1,9 +1,9 @@
 import {
-  validateWorkflowConfig,
-  validateStateConfig,
+  SchemaValidationError,
   validateApprovalConfig,
-  SchemaValidationError
-} from '../../src/schemaValidator';
+  validateStateConfig,
+  validateWorkflowConfig
+} from '../../src/workflow/schemaValidator';
 
 describe('SchemaValidator', () => {
   describe('validateApprovalConfig', () => {

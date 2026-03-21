@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { readLearnings, appendUniqueLearning, extractLessons } from '../../src/learningStore';
+import {appendUniqueLearning, extractLessons, readLearnings} from '../../src/context/learningStore';
 
 describe('learningStore extractLessons', () => {
   test('single marker extracts following section preserving newlines', () => {

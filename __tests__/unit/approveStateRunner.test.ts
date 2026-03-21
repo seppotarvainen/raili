@@ -1,4 +1,4 @@
-import { runApprovalStep } from '../../src/engine/ApproveStateRunner';
+import {runApprovalStep} from '../../src/runner/ApproveStateRunner';
 import * as notifyHandler from '../../src/handlers/notifyHandler';
 import * as manualHandler from '../../src/handlers/manualHandler';
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { loadScriptRegistry } from '../../src/scriptRegistry';
+import {loadScriptRegistry} from '../../src/registry/scriptRegistry';
 
 let TMP: string;
 beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-sreg-')); });

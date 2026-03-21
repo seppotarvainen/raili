@@ -1,8 +1,8 @@
 import fs from 'fs';
-import { loadAgentRegistry, AgentRegistry } from './agentRegistry';
-import { loadScriptRegistry, ScriptRegistry } from './scriptRegistry';
-import { WorkflowConfig } from './types';
-import { resolveRegistryPath } from './pathUtils';
+import {AgentRegistry, loadAgentRegistry} from './agentRegistry';
+import {loadScriptRegistry, ScriptRegistry} from './scriptRegistry';
+import {WorkflowConfig} from '../types';
+import {resolveRegistryPath} from '../context/pathUtils';
 
 export function validateAgentRegistry(dir: string): AgentRegistry {
   const reg = loadAgentRegistry(dir);

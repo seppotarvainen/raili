@@ -1,8 +1,8 @@
-import { runScriptState } from '../../src/engine/ScriptStateRunner';
-import * as outputStore from '../../src/outputStore';
-import { StateDef } from '../../src/types';
+import {runScriptState} from '../../src/runner/ScriptStateRunner';
+import * as outputStore from '../../src/context/outputStore';
+import {StateDef} from '../../src/types';
 
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 jest.mock('../../src/handlers/scriptHandler');
 
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
@@ -25,14 +25,14 @@ describe('output', () => {
   test('saves stdout when output store is true', async () => {
     const outputConfig = { store: true };
     await runScriptState(makeState({ output: outputConfig }), {}, '/cwd');
-    expect(mockSave).toHaveBeenCalledWith('/cwd', 'hello', 'script output', outputConfig);
+    expect(mockSave).toHaveBeenCalledWith('/cwd', 'hello', 'script output', outputConfig, undefined);
   });
 
   test('saves stderr when only stderr has content', async () => {
     executeScript.mockResolvedValue({ success: false, stdout: '', stderr: 'script error' });
     const outputConfig = { store: true };
     await runScriptState(makeState({ output: outputConfig }), {}, '/cwd');
-    expect(mockSave).toHaveBeenCalledWith('/cwd', 'hello', 'script error', outputConfig);
+    expect(mockSave).toHaveBeenCalledWith('/cwd', 'hello', 'script error', outputConfig, undefined);
   });
 
   test('saves combined stdout and stderr when both have content', async () => {

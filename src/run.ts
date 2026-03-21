@@ -1,17 +1,13 @@
 /// <reference types="node" />
 import * as fs from 'fs';
 import * as path from 'path';
-import { loadWorkflowConfig, buildStateMachine, validateStateMachine } from './workflowLoader';
-import {
-  validateAgentRegistry,
-  validateScriptRegistry,
-  validateWorkflowReferences,
-} from './registryValidator';
-import { loadContext, clearContext, initializeContext } from './context';
-import { Engine } from './engine/Engine';
-import { appendRunLog } from './runLog';
-import { loadVarsFile } from './varsLoader';
-import { handleManualTransition } from './handlers/manualHandler';
+import {buildStateMachine, loadWorkflowConfig, validateStateMachine} from './workflow/workflowLoader';
+import {validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences,} from './registry/registryValidator';
+import {clearContext, initializeContext, loadContext} from './context/context';
+import {Runner} from './runner/Runner';
+import {appendRunLog} from './context/runLog';
+import {loadVarsFile} from './variables/varsLoader';
+import {handleManualTransition} from './handlers/manualHandler';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -123,7 +119,7 @@ export async function runCommand(
 
   const runStart = new Date().toISOString();
 
-  const engine = new Engine({
+  const engine = new Runner({
     stateMachine,
     agentRegistry: agents,
     scriptRegistry: scripts,

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { loadAgentRegistry } from '../../src/agentRegistry';
+import {loadAgentRegistry} from '../../src/registry/agentRegistry';
 
 let TMP: string;
 beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-areg-')); });

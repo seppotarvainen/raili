@@ -1,8 +1,8 @@
-import { WorkflowConfig } from '../../src/types';
-import { validateWorkflowReferences } from '../../src/registryValidator';
+import {WorkflowConfig} from '../../src/types';
+import {validateWorkflowReferences} from '../../src/registry/registryValidator';
 
-jest.mock('../../src/agentRegistry');
-jest.mock('../../src/scriptRegistry');
+jest.mock('../../src/registry/agentRegistry');
+jest.mock('../../src/registry/scriptRegistry');
 
 describe('Feedback feature validation', () => {
   test('missing expose_var causes validation error', () => {

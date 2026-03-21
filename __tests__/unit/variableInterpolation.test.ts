@@ -1,4 +1,4 @@
-import { interpolateString, interpolateObject } from '../../src/variableInterpolation';
+import {interpolateObject, interpolateString} from '../../src/variables/variableInterpolation';
 
 describe('variableInterpolation', () => {
   describe('interpolateString', () => {

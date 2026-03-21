@@ -28,8 +28,8 @@ describe('runCommand skip confirmation', () => {
     jest.resetModules();
     process.env.RAILI_MANUAL_CHOICE = 'FAILED';
 
-    jest.doMock('../../src/workflowLoader', () => {
-      const actual = jest.requireActual('../../src/workflowLoader');
+    jest.doMock('../../src/workflow/workflowLoader', () => {
+      const actual = jest.requireActual('../../src/workflow/workflowLoader');
       return {
         loadWorkflowConfig: () => ({
           initial: 'start',
@@ -48,8 +48,8 @@ describe('runCommand skip confirmation', () => {
     }) as any);
 
     const { runCommand } = require('../../src/run');
-    const { Engine } = require('../../src/engine/Engine');
-    const runSpy = jest.spyOn(Engine.prototype, 'run').mockImplementation(async () => {});
+    const { Runner } = require('../../src/runner/Runner');
+    const runSpy = jest.spyOn(Runner.prototype, 'run').mockImplementation(async () => {});
 
     // Act
     await runCommand(tmp, 'clean', {}, undefined);
@@ -67,8 +67,8 @@ describe('runCommand skip confirmation', () => {
     jest.resetModules();
     process.env.RAILI_MANUAL_CHOICE = 'PASSED';
 
-    jest.doMock('../../src/workflowLoader', () => {
-      const actual = jest.requireActual('../../src/workflowLoader');
+    jest.doMock('../../src/workflow/workflowLoader', () => {
+      const actual = jest.requireActual('../../src/workflow/workflowLoader');
       return {
         loadWorkflowConfig: () => ({
           initial: 'start',
@@ -83,8 +83,8 @@ describe('runCommand skip confirmation', () => {
     });
 
     const { runCommand } = require('../../src/run');
-    const { Engine } = require('../../src/engine/Engine');
-    const runSpy = jest.spyOn(Engine.prototype, 'run').mockImplementation(async () => {});
+    const { Runner } = require('../../src/runner/Runner');
+    const runSpy = jest.spyOn(Runner.prototype, 'run').mockImplementation(async () => {});
 
     await runCommand(tmp, 'clean', {}, undefined);
 

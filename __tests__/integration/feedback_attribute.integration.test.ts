@@ -1,11 +1,16 @@
-import path from 'path';
-import fs from 'fs';
-import { createTmpWorkspace, writeWorkflow, writeAgentRegistry, writeAgentFile, writeScriptRegistry, fakeChild, cleanupRailiEnvVars } from './testUtils';
-import { runCommand } from '../../src/run';
-import { loadContext } from '../../src/context';
+import {
+    createTmpWorkspace,
+    fakeChild,
+    writeAgentFile,
+    writeAgentRegistry,
+    writeScriptRegistry,
+    writeWorkflow
+} from './testUtils';
+import {runCommand} from '../../src/run';
+import {loadContext} from '../../src/context/context';
+import {spawn} from 'child_process';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
-import { spawn } from 'child_process';
 
 describe('feedback attribute integration', () => {
   beforeEach(() => {

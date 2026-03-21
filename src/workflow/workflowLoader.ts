@@ -1,8 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { WorkflowConfig, StateMachine, StateDef } from './types';
-import { validateWorkflowConfig } from './schemaValidator';
+import {StateDef, StateMachine, WorkflowConfig} from '../types';
+import {validateWorkflowConfig} from './schemaValidator';
+/**
+ * Load and parse workflow.yaml from .raili/ directory.
+ * Merges any sub-workflow files listed under 'include:'.
+ */
+import {resolveWorkflowDir} from '../context/pathUtils';
 
 /**
  * Parse a single YAML file into a raw object, with basic structural checks.
@@ -30,12 +35,6 @@ function loadYamlFile(filePath: string, isSubWorkflow: boolean): any {
 
   return parsed;
 }
-
-/**
- * Load and parse workflow.yaml from .raili/ directory.
- * Merges any sub-workflow files listed under 'include:'.
- */
-import { resolveWorkflowDir } from './pathUtils';
 
 export function loadWorkflowConfig(cwd: string, workflowPath?: string): WorkflowConfig {
   const railiDir = path.join(cwd, '.raili');

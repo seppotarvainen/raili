@@ -1,5 +1,5 @@
-import { StateDef } from '../types';
-import type { StateResult } from './Engine';
+import {StateDef} from '../types';
+import type {StateResult} from './Runner';
 
 /**
  * Minimal StateRunner interface for prototype refactor.

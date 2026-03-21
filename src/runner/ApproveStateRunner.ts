@@ -1,12 +1,7 @@
-import { ApprovalConfig } from '../types';
-import {
-  handleManualTransition,
-  ManualResult,
-  ManualTransitionConfig,
-} from '../handlers/manualHandler';
-import { runNotify, NotifyResult } from '../handlers/notifyHandler';
-import { interpolateString } from '../variableInterpolation';
-import { WorkflowContext } from '../types';
+import {ApprovalConfig, WorkflowContext} from '../types';
+import {handleManualTransition, ManualResult, ManualTransitionConfig,} from '../handlers/manualHandler';
+import {NotifyResult, runNotify} from '../handlers/notifyHandler';
+import {interpolateString} from '../variables/variableInterpolation';
 
 export interface ApprovalStepOptions {
   cwd: string;

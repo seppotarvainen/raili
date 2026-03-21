@@ -1,8 +1,8 @@
-import { runCommandState } from '../../src/engine/CommandStateRunner';
-import { StateDef } from '../../src/types';
-import * as outputStore from '../../src/outputStore';
+import {runCommandState} from '../../src/runner/CommandStateRunner';
+import {StateDef} from '../../src/types';
+import * as outputStore from '../../src/context/outputStore';
 
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 jest.mock('../../src/handlers/commandHandler');
 
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
@@ -24,14 +24,14 @@ describe('runCommandState', () => {
       executeCommand.mockResolvedValue({ success: true, stdout: 'test results', stderr: '' });
       const outputConfig = { store: true };
       await runCommandState(makeState({ output: outputConfig, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
-      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test results', outputConfig);
+      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test results', outputConfig, undefined);
     });
 
     test('saves stderr when output store is true and stderr has content', async () => {
       executeCommand.mockResolvedValue({ success: false, stdout: '', stderr: 'test summary' });
       const outputConfig = { store: true };
       await runCommandState(makeState({ output: outputConfig, on: { PASSED: 'next', FAILED: 'retry' } }), '/cwd');
-      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test summary', outputConfig);
+      expect(mockSave).toHaveBeenCalledWith('/cwd', 'test-state', 'test summary', outputConfig, undefined);
     });
 
     test('saves combined stdout and stderr when both have content', async () => {

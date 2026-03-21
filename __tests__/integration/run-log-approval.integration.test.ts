@@ -1,15 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 // Import runCommand after mocking where necessary
-import { runCommand } from '../../src/run';
-import { loadContext } from '../../src/context';
+import {runCommand} from '../../src/run';
+import {loadContext} from '../../src/context/context';
 import {
-  createTmpWorkspace,
-  cleanupTmpWorkspace,
-  writeWorkflow,
-  writeAgentRegistry,
-  writeScriptRegistry,
-  cleanupRailiEnvVars,
+    cleanupRailiEnvVars,
+    cleanupTmpWorkspace,
+    createTmpWorkspace,
+    writeAgentRegistry,
+    writeScriptRegistry,
+    writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));

@@ -1,21 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import { initCommand } from '../../src/init';
-import { runCommand } from '../../src/run';
-import { loadContext } from '../../src/context';
-import { formatHelp } from '../../src/cli/help';
-import { formatDocs } from '../../src/cli/docs';
-import { formatSchema } from '../../src/cli/schema';
-import { loadVarsFile } from '../../src/cli';
+import {initCommand} from '../../src/init';
+import {runCommand} from '../../src/run';
+import {loadContext} from '../../src/context/context';
+import {formatHelp} from '../../src/cli/help';
+import {formatDocs} from '../../src/cli/docs';
+import {formatSchema} from '../../src/cli/schema';
+import {loadVarsFile} from '../../src/cli';
 import {
-  createTmpWorkspace,
-  cleanupTmpWorkspace,
-  writeWorkflow,
-  writeAgentRegistry,
-  writeScriptRegistry,
-  fakeChild,
-  cleanupRailiEnvVars,
-    // @ts-ignore
+    cleanupRailiEnvVars,
+    cleanupTmpWorkspace,
+    createTmpWorkspace,
+    fakeChild,
+    writeAgentRegistry,
+    writeScriptRegistry,
+    writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));

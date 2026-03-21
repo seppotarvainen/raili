@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { OutputConfig } from './types';
-import { resolveWorkflowDir } from './pathUtils';
+import {OutputConfig} from '../types';
+import {resolveWorkflowDir} from './pathUtils';
 
 const OUTPUTS_DIR = 'outputs';
 

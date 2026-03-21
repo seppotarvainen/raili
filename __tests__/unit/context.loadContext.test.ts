@@ -1,8 +1,8 @@
-import { loadContext } from '../../src/context';
-import * as pathUtils from '../../src/pathUtils';
+import {loadContext} from '../../src/context/context';
+import * as pathUtils from '../../src/context/pathUtils';
 import fs from 'fs';
 
-jest.mock('../../src/pathUtils');
+jest.mock('../../src/context/pathUtils');
 jest.mock('fs');
 
 const mockedResolve = pathUtils.resolveWorkflowDir as unknown as jest.Mock;

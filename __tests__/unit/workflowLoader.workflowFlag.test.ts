@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { loadWorkflowConfig } from '../../src/workflowLoader';
+import {loadWorkflowConfig} from '../../src/workflow/workflowLoader';
 
 describe('loadWorkflowConfig with workflow path', () => {
   let tmpdir: string;

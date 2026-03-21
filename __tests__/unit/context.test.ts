@@ -2,16 +2,17 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import {
-  loadContext,
-  saveContext,
+  addStateToHistory,
+  clearContext,
   getCurrentState,
   getPreviousState,
-  addStateToHistory,
-  initializeContext, clearContext,
-} from '../../src/context';
-import * as outputStore from '../../src/outputStore';
+  initializeContext,
+  loadContext,
+  saveContext,
+} from '../../src/context/context';
+import * as outputStore from '../../src/context/outputStore';
 
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 
 describe('context', () => {
   let tmpdir: string;

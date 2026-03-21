@@ -1,7 +1,7 @@
-import { runApprovalStep } from '../../src/engine/ApproveStateRunner';
+import {runApprovalStep} from '../../src/runner/ApproveStateRunner';
 import * as manualHandler from '../../src/handlers/manualHandler';
 import * as notifyHandler from '../../src/handlers/notifyHandler';
-import { WorkflowContext } from '../../src/types';
+import {WorkflowContext} from '../../src/types';
 
 jest.mock('../../src/handlers/manualHandler');
 jest.mock('../../src/handlers/notifyHandler');

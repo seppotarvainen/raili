@@ -1,7 +1,7 @@
-import { promptRunMode } from '../../src/cli';
-import * as contextModule from '../../src/context';
+import {promptRunMode} from '../../src/cli';
+import * as contextModule from '../../src/context/context';
 
-jest.mock('../../src/context');
+jest.mock('../../src/context/context');
 
 const mockedLoadContext = contextModule.loadContext as unknown as jest.Mock;
 const mockedGetCurrentState = contextModule.getCurrentState as unknown as jest.Mock;

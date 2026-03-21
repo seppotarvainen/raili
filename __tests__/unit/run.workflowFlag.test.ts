@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { runCommand } from '../../src/run';
+import {runCommand} from '../../src/run';
 
-jest.mock('../../src/registryValidator');
-jest.mock('../../src/engine/Engine');
+jest.mock('../../src/registry/registryValidator');
+jest.mock('../../src/runner/Runner');
 
-const registryValidator = require('../../src/registryValidator');
-const { Engine } = require('../../src/engine/Engine');
+const registryValidator = require('../../src/registry/registryValidator');
+const { Runner } = require('../../src/runner/Runner');
 
 describe('runCommand with workflow path', () => {
   let tmpdir: string;
@@ -17,7 +17,7 @@ describe('runCommand with workflow path', () => {
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-run-'));
     railiDir = path.join(tmpdir, '.raili');
     jest.resetAllMocks();
-    Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
+    Runner.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
 
   afterEach(() => {
@@ -38,11 +38,11 @@ describe('runCommand with workflow path', () => {
     registryValidator.validateWorkflowReferences.mockImplementation(() => {});
 
     const mockRun = jest.fn().mockResolvedValue(undefined);
-    Engine.mockImplementation(() => ({ run: mockRun }));
+    Runner.mockImplementation(() => ({ run: mockRun }));
 
     await runCommand(tmpdir, 'clean', {}, 'dev');
 
-    expect(Engine).toHaveBeenCalledTimes(1);
+    expect(Runner).toHaveBeenCalledTimes(1);
     expect(mockRun).toHaveBeenCalledTimes(1);
   });
 
@@ -62,7 +62,7 @@ describe('runCommand with workflow path', () => {
     registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
     registryValidator.validateScriptRegistry.mockImplementation(() => ({}));
     registryValidator.validateWorkflowReferences.mockImplementation(() => {});
-    Engine.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
+    Runner.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
 
     await runCommand(tmpdir, 'continue', {}, 'dev');
 

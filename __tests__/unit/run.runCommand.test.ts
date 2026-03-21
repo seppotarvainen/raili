@@ -1,15 +1,19 @@
-import { runCommand } from '../../src/run';
-import { loadWorkflowConfig } from '../../src/workflowLoader';
+import {runCommand} from '../../src/run';
+import {loadWorkflowConfig} from '../../src/workflow/workflowLoader';
 import * as fs from 'fs';
-import { validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences } from '../../src/registryValidator';
-import { loadContext, clearContext, initializeContext } from '../../src/context';
-import { Engine } from '../../src/engine/Engine';
+import {
+  validateAgentRegistry,
+  validateScriptRegistry,
+  validateWorkflowReferences
+} from '../../src/registry/registryValidator';
+import {clearContext, initializeContext, loadContext} from '../../src/context/context';
+import {Runner} from '../../src/runner/Runner';
 
-jest.mock('../../src/workflowLoader');
+jest.mock('../../src/workflow/workflowLoader');
 jest.mock('fs');
-jest.mock('../../src/registryValidator');
-jest.mock('../../src/context');
-jest.mock('../../src/engine/Engine');
+jest.mock('../../src/registry/registryValidator');
+jest.mock('../../src/context/context');
+jest.mock('../../src/runner/Runner');
 
 describe('runCommand', () => {
   beforeEach(() => {
@@ -23,7 +27,7 @@ describe('runCommand', () => {
     (loadContext as jest.Mock).mockReturnValue({ stateHistory: [], vars: {} });
     (initializeContext as jest.Mock).mockReturnValue({ stateHistory: [], vars: {} });
     (clearContext as jest.Mock).mockReturnValue(undefined);
-    (Engine as unknown as jest.Mock).mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
+    (Runner as unknown as jest.Mock).mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
 
   test('passes workflowPath to loadWorkflowConfig', async () => {

@@ -1,4 +1,4 @@
-import { validateStateConfig, SchemaValidationError } from '../../src/schemaValidator';
+import {validateStateConfig} from '../../src/workflow/schemaValidator';
 
 describe('SchemaValidator - success field', () => {
   it('accepts engine state with success boolean', () => {

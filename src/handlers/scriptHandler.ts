@@ -1,7 +1,7 @@
-import { spawn } from 'child_process';
+import {spawn} from 'child_process';
 import fs from 'fs';
-import { ScriptRegistry } from '../scriptRegistry';
-import { resolveRegistryPath } from '../pathUtils';
+import {ScriptRegistry} from '../registry/scriptRegistry';
+import {resolveRegistryPath} from '../context/pathUtils';
 
 type ScriptExecutionResult = { success: boolean; stdout: string; stderr: string };
 

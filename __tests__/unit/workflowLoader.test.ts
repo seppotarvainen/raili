@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { loadWorkflowConfig, buildStateMachine, validateStateMachine } from '../../src/workflowLoader';
+import {buildStateMachine, loadWorkflowConfig, validateStateMachine} from '../../src/workflow/workflowLoader';
 
 describe('workflowLoader', () => {
   let tmpdir: string;

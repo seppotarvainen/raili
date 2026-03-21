@@ -1,11 +1,11 @@
-jest.mock('../../src/engine/ScriptStateRunner');
-jest.mock('../../src/context');
+jest.mock('../../src/runner/ScriptStateRunner');
+jest.mock('../../src/context/context');
 jest.mock('../../src/handlers/notifyHandler');
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 
-import { Engine } from '../../src/engine/Engine';
-import { runScriptState } from '../../src/engine/ScriptStateRunner';
-import { addStateToHistory, saveContext, getCurrentState } from '../../src/context';
+import {Runner} from '../../src/runner/Runner';
+import {runScriptState} from '../../src/runner/ScriptStateRunner';
+import {addStateToHistory, getCurrentState, saveContext} from '../../src/context/context';
 
 const mockRunScript = runScriptState as jest.MockedFunction<any>;
 const mockAddState = addStateToHistory as jest.MockedFunction<any>;
@@ -36,7 +36,7 @@ test('Engine routes to error state when expose missing', async () => {
   mockAddState.mockImplementation((ctx: { stateHistory: any; }, stateId: any) => ({ ...ctx, stateHistory: [...(ctx.stateHistory||[]), { state: stateId, enteredAt: new Date().toISOString() }] }));
   mockSave.mockImplementation(() => {});
 
-  const engine = new Engine({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: process.cwd() });
+  const engine = new Runner({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: process.cwd() });
 
   await engine.run();
 

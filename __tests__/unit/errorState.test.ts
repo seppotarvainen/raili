@@ -1,15 +1,15 @@
-import {Engine, EngineConfig} from '../../src/engine/Engine';
-import * as outputStore from '../../src/outputStore';
+import {Runner, RunnerConfig} from '../../src/runner/Runner';
+import * as outputStore from '../../src/context/outputStore';
 import * as notifyHandler from '../../src/handlers/notifyHandler';
-import * as commandStateRunner from '../../src/engine/CommandStateRunner';
+import * as commandStateRunner from '../../src/runner/CommandStateRunner';
 import {WorkflowContext} from '../../src/types';
 
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 jest.mock('../../src/handlers/notifyHandler');
-jest.mock('../../src/engine/CommandStateRunner');
+jest.mock('../../src/runner/CommandStateRunner');
 
 // mock context helpers so we can assert they were called correctly
-jest.mock('../../src/context', () => ({
+jest.mock('../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx, state) => ctx),
   saveContext: jest.fn(),
@@ -18,7 +18,7 @@ jest.mock('../../src/context', () => ({
 const mockClear = outputStore.clearAgentOutputs as jest.MockedFunction<typeof outputStore.clearAgentOutputs>;
 const mockNotify = notifyHandler.runNotify as jest.MockedFunction<typeof notifyHandler.runNotify>;
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
-const { addStateToHistory } = require('../../src/context');
+const { addStateToHistory } = require('../../src/context/context');
 
 test('routes to declared error state on unhandled exception and runs entry actions', async () => {
   // Arrange: command runner throws
@@ -39,7 +39,7 @@ test('routes to declared error state on unhandled exception and runs entry actio
 
   const machine = { initial: 'start', error: 'error_state', states } as any;
   const context: WorkflowContext = { stateHistory: [] };
-  const engine = new Engine({ stateMachine: machine, agentRegistry: {}, scriptRegistry: {}, context, cwd: '/tmp' } as EngineConfig);
+  const engine = new Runner({ stateMachine: machine, agentRegistry: {}, scriptRegistry: {}, context, cwd: '/tmp' } as RunnerConfig);
 
   // Act
   await expect(engine.run()).resolves.not.toThrow();

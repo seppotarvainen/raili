@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import {saveOutput, loadAgentOutputPath, clearAgentOutputs, clearAllOutputs} from '../../src/outputStore';
+import {clearAgentOutputs, clearAllOutputs, loadAgentOutputPath, saveOutput} from '../../src/context/outputStore';
 
 let tmpdir: string;
 

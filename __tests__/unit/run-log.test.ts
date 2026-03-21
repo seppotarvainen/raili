@@ -1,6 +1,6 @@
 import fs from 'fs';
-import { appendRunLog } from '../../src/runLog';
-import * as contextModule from '../../src/context';
+import {appendRunLog} from '../../src/context/runLog';
+import * as contextModule from '../../src/context/context';
 
 jest.mock('fs');
 

@@ -1,17 +1,17 @@
-import { Engine, EngineConfig } from '../../src/engine/Engine';
-import * as outputStore from '../../src/outputStore';
+import {Runner, RunnerConfig} from '../../src/runner/Runner';
+import * as outputStore from '../../src/context/outputStore';
 import * as notifyHandler from '../../src/handlers/notifyHandler';
-import * as agentStateRunner from '../../src/engine/AgentStateRunner';
-import * as scriptStateRunner from '../../src/engine/ScriptStateRunner';
-import * as commandStateRunner from '../../src/engine/CommandStateRunner';
-import { StateMachine, WorkflowContext } from '../../src/types';
+import * as agentStateRunner from '../../src/runner/AgentStateRunner';
+import * as scriptStateRunner from '../../src/runner/ScriptStateRunner';
+import * as commandStateRunner from '../../src/runner/CommandStateRunner';
+import {StateMachine, WorkflowContext} from '../../src/types';
 
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 jest.mock('../../src/handlers/notifyHandler');
-jest.mock('../../src/engine/AgentStateRunner');
-jest.mock('../../src/engine/ScriptStateRunner');
-jest.mock('../../src/engine/CommandStateRunner');
-jest.mock('../../src/context', () => ({
+jest.mock('../../src/runner/AgentStateRunner');
+jest.mock('../../src/runner/ScriptStateRunner');
+jest.mock('../../src/runner/CommandStateRunner');
+jest.mock('../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx) => ctx),
   saveContext: jest.fn(),
@@ -22,16 +22,16 @@ const mockRunAgent = agentStateRunner.runAgentState as jest.MockedFunction<typeo
 const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<typeof scriptStateRunner.runScriptState>;
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
 
-function makeEngine(states: StateMachine['states'], initial = 'start'): Engine {
+function makeRunner(states: StateMachine['states'], initial = 'start'): Runner {
   const stateMachine: StateMachine = { initial, states };
   const context: WorkflowContext = { stateHistory: [] };
-  return new Engine({
+  return new Runner({
     stateMachine,
     agentRegistry: {},
     scriptRegistry: {},
     context,
     cwd: '/tmp',
-  } as EngineConfig);
+  } as RunnerConfig);
 }
 
 beforeEach(() => {
@@ -43,7 +43,7 @@ beforeEach(() => {
 });
 
 test('clears reset_outputs on entry for agent state', async () => {
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'agent', agent: 'a', reset_outputs: ['code', 'analyze'], on: { PASSED: 'done' } },
@@ -58,7 +58,7 @@ test('clears reset_outputs on entry for agent state', async () => {
 });
 
 test('clears reset_outputs on entry for engine state', async () => {
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'engine', reset_outputs: ['code'], on: { PASSED: 'done' } },
@@ -73,7 +73,7 @@ test('clears reset_outputs on entry for engine state', async () => {
 });
 
 test('clears reset_outputs on entry for script state', async () => {
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'script', script: 's', reset_outputs: ['code'], on: { PASSED: 'done' } },
@@ -88,7 +88,7 @@ test('clears reset_outputs on entry for script state', async () => {
 });
 
 test('clears reset_outputs on entry for command state', async () => {
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'command', command: 'echo hi', reset_outputs: ['code'], on: { PASSED: 'done' } },
@@ -103,7 +103,7 @@ test('clears reset_outputs on entry for command state', async () => {
 });
 
 test('clears reset_outputs on entry for terminal engine state', async () => {
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'engine', reset_outputs: ['code'] },
@@ -117,7 +117,7 @@ test('clears reset_outputs on entry for terminal engine state', async () => {
 });
 
 test('does not call clearAgentOutputs when reset_outputs is not set', async () => {
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'engine', on: { PASSED: 'done' } },
@@ -137,7 +137,7 @@ test('clears reset_outputs before notify and handler run', async () => {
   (notifyHandler.runNotify as jest.Mock).mockImplementation(async () => { callOrder.push('notify'); });
   mockRunAgent.mockImplementation(async () => { callOrder.push('agent'); return { outcome: 'PASSED' }; });
 
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'agent', agent: 'a', reset_outputs: ['code'], notify: 'echo hi', on: { PASSED: 'done' } },
@@ -153,7 +153,7 @@ test('clears reset_outputs before notify and handler run', async () => {
 
 test('throws when state exceeds max_visits', async () => {
   mockRunCommand.mockResolvedValue({ outcome: 'FAILED' });
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'command', command: 'echo hi', max_visits: 3, on: { PASSED: 'done', FAILED: 'start' } },
@@ -168,7 +168,7 @@ test('throws when state exceeds max_visits', async () => {
 
 test('does not throw when visits are within max_visits', async () => {
   mockRunCommand.mockResolvedValue({ outcome: 'PASSED' });
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'command', command: 'echo hi', max_visits: 3, on: { PASSED: 'done', FAILED: 'start' } },
@@ -187,7 +187,7 @@ test('max_visits counter resets independently per state', async () => {
     return { outcome: callCount <= 2 ? 'RETRY' : 'PASSED' };
   });
 
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: {
       id: 'start',
       config: { type: 'command', command: 'echo hi', max_visits: 5, transitions: { RETRY: 'start', PASSED: 'done' } },
@@ -202,8 +202,8 @@ test('max_visits counter resets independently per state', async () => {
 
 test('uses default transition for agent state with unexpected outcome', async () => {
   (mockRunAgent as jest.Mock).mockResolvedValue({ outcome: 'UNKNOWN_OUTCOME' });
-  const ctx = require('../../src/context');
-  const engine = makeEngine({
+  const ctx = require('../../src/context/context');
+  const engine = makeRunner({
     start: { id: 'start', config: { type: 'agent', agent: 'a', transitions: { OK: 'ok', default: 'fallback' } }, transitions: ['ok', 'fallback'] },
     fallback: { id: 'fallback', config: { type: 'engine' }, transitions: [] },
   });
@@ -213,8 +213,8 @@ test('uses default transition for agent state with unexpected outcome', async ()
 
 test('uses default transition for script/command state with unexpected outcome', async () => {
   (mockRunScript as jest.Mock).mockResolvedValue({ outcome: 'WEIRD' });
-  const ctx = require('../../src/context');
-  const engine = makeEngine({
+  const ctx = require('../../src/context/context');
+  const engine = makeRunner({
     start: { id: 'start', config: { type: 'script', script: 's', transitions: { PASSED: 'ok', default: 'rework' } }, transitions: ['ok', 'rework'] },
     rework: { id: 'rework', config: { type: 'engine' }, transitions: [] },
   });
@@ -224,7 +224,7 @@ test('uses default transition for script/command state with unexpected outcome',
 
 test('throws when outcome not mapped and no default provided', async () => {
   (mockRunCommand as jest.Mock).mockResolvedValue({ outcome: 'STRANGE' });
-  const engine = makeEngine({
+  const engine = makeRunner({
     start: { id: 'start', config: { type: 'command', command: 'echo hi', transitions: { PASSED: 'done' } }, transitions: ['done'] },
     done: { id: 'done', config: { type: 'engine' }, transitions: [] },
   });

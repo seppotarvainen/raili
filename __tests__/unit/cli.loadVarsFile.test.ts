@@ -1,11 +1,11 @@
-import { loadVarsFile } from '../../src/cli';
+import {loadVarsFile} from '../../src/cli';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import * as pathUtils from '../../src/pathUtils';
+import * as pathUtils from '../../src/context/pathUtils';
 
 jest.mock('fs');
 jest.mock('js-yaml');
-jest.mock('../../src/pathUtils');
+jest.mock('../../src/context/pathUtils');
 
 const mockedResolve = pathUtils.resolveWorkflowDir as jest.Mock;
 

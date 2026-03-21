@@ -1,11 +1,11 @@
-import { StateType, StateConfig, ApprovalConfig, WorkflowConfig } from './types';
+import {ApprovalConfig, StateConfig, StateType, WorkflowConfig} from '../types';
 import {
-  StateConfigSchema,
   ApprovalConfigSchema,
-  WorkflowConfigSchema,
   FeedbackConfigSchema,
   FieldSchema,
   ObjectSchema,
+  StateConfigSchema,
+  WorkflowConfigSchema,
 } from './schemas';
 
 export class SchemaValidationError extends Error {

@@ -1,8 +1,8 @@
 // Schema formatter: Convert ObjectSchema definitions to readable text
 // This reads src/schemas.ts exports and formats them for `raili schema` command
 
-import * as schemasModule from '../schemas';
-import { ObjectSchema, FieldSchema } from '../schemas';
+import * as schemasModule from '../workflow/schemas';
+import {FieldSchema, ObjectSchema} from '../workflow/schemas';
 
 /**
  * Format a single field for display

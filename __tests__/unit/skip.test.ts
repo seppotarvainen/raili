@@ -1,18 +1,18 @@
-import { loadWorkflowConfig, buildStateMachine, validateStateMachine } from '../../src/workflowLoader';
-import { Engine } from '../../src/engine/Engine';
-import * as outputStore from '../../src/outputStore';
+import {buildStateMachine, validateStateMachine} from '../../src/workflow/workflowLoader';
+import {Runner} from '../../src/runner/Runner';
+import * as outputStore from '../../src/context/outputStore';
 import * as notifyHandler from '../../src/handlers/notifyHandler';
-import * as agentStateRunner from '../../src/engine/AgentStateRunner';
-import * as scriptStateRunner from '../../src/engine/ScriptStateRunner';
-import * as commandStateRunner from '../../src/engine/CommandStateRunner';
-import { StateMachine, WorkflowContext } from '../../src/types';
+import * as agentStateRunner from '../../src/runner/AgentStateRunner';
+import * as scriptStateRunner from '../../src/runner/ScriptStateRunner';
+import * as commandStateRunner from '../../src/runner/CommandStateRunner';
+import {StateMachine, WorkflowContext} from '../../src/types';
 
-jest.mock('../../src/outputStore');
+jest.mock('../../src/context/outputStore');
 jest.mock('../../src/handlers/notifyHandler');
-jest.mock('../../src/engine/AgentStateRunner');
-jest.mock('../../src/engine/ScriptStateRunner');
-jest.mock('../../src/engine/CommandStateRunner');
-jest.mock('../../src/context', () => ({
+jest.mock('../../src/runner/AgentStateRunner');
+jest.mock('../../src/runner/ScriptStateRunner');
+jest.mock('../../src/runner/CommandStateRunner');
+jest.mock('../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx) => ctx),
   saveContext: jest.fn(),
@@ -23,10 +23,10 @@ const mockRunAgent = agentStateRunner.runAgentState as jest.MockedFunction<typeo
 const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<typeof scriptStateRunner.runScriptState>;
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
 
-function makeEngine(states: StateMachine['states'], initial = 'start'): Engine {
+function makeEngine(states: StateMachine['states'], initial = 'start'): Runner {
   const stateMachine: StateMachine = { initial, states };
   const context: WorkflowContext = { stateHistory: [] };
-  return new Engine({
+  return new Runner({
     stateMachine,
     agentRegistry: {},
     scriptRegistry: {},
@@ -94,7 +94,7 @@ describe('skip feature', () => {
   });
 
   test('engine records skip action in state history meta', async () => {
-    const ctx = require('../../src/context');
+    const ctx = require('../../src/context/context');
     const engine = makeEngine({
       start: {
         id: 'start',

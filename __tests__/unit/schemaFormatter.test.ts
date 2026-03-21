@@ -1,6 +1,5 @@
-import { generateSchemaOutput } from '../../src/cli/schema-formatter';
-import * as schemasModule from '../../src/schemas';
-import { ObjectSchema, FieldSchema } from '../../src/schemas';
+import {generateSchemaOutput} from '../../src/cli/schema-formatter';
+import * as schemasModule from '../../src/workflow/schemas';
 
 describe('schema-formatter', () => {
   describe('generateSchemaOutput', () => {

@@ -1,13 +1,12 @@
-import { runAgentState } from '../../src/engine/AgentStateRunner';
+import {runAgentState} from '../../src/runner/AgentStateRunner';
 import * as agentHandler from '../../src/handlers/agentHandler';
-import * as outputStore from '../../src/outputStore';
-import { StateDef } from '../../src/types';
+import * as outputStore from '../../src/context/outputStore';
+import {StateDef} from '../../src/types';
+import * as learningStore from '../../src/context/learningStore';
 
 jest.mock('../../src/handlers/agentHandler');
-jest.mock('../../src/outputStore');
-jest.mock('../../src/learningStore');
-
-import * as learningStore from '../../src/learningStore';
+jest.mock('../../src/context/outputStore');
+jest.mock('../../src/context/learningStore');
 
 const mockExecuteAgent = agentHandler.executeAgent as jest.MockedFunction<typeof agentHandler.executeAgent>;
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;

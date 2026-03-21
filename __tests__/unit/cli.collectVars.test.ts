@@ -2,11 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import readline from 'readline';
+import {collectVars} from '../../src/cli';
+import * as workflowLoader from '../../src/workflow/workflowLoader';
 
 jest.mock('readline');
-
-import { collectVars, loadVarsFile } from '../../src/cli';
-import * as workflowLoader from '../../src/workflowLoader';
 
 describe('collectVars', () => {
   let tmpdir: string;

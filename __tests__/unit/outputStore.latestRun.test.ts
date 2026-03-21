@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { readLatestRun } from '../../src/outputStore';
+import {readLatestRun} from '../../src/context/outputStore';
 
 describe('readLatestRun', () => {
   let cwd: string;

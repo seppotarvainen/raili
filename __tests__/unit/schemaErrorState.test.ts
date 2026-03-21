@@ -1,4 +1,4 @@
-import { validateWorkflowConfig, SchemaValidationError } from '../../src/schemaValidator';
+import {validateWorkflowConfig} from '../../src/workflow/schemaValidator';
 
 describe('schema: error state validation', () => {
   test('throws when declared error state does not exist', () => {

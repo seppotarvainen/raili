@@ -1,14 +1,14 @@
-import { runCommandState } from '../../src/engine/CommandStateRunner';
-import { runScriptState } from '../../src/engine/ScriptStateRunner';
-import { validateStateConfig } from '../../src/schemaValidator';
-import { Engine } from '../../src/engine/Engine';
+import {runCommandState} from '../../src/runner/CommandStateRunner';
+import {runScriptState} from '../../src/runner/ScriptStateRunner';
+import {validateStateConfig} from '../../src/workflow/schemaValidator';
+import {Runner} from '../../src/runner/Runner';
 
 jest.mock('../../src/handlers/commandHandler');
 jest.mock('../../src/handlers/scriptHandler');
 
 // Prevent the Engine (and any other caller of saveContext / addStateToHistory)
 // from writing real files to the project root or any disk location.
-jest.mock('../../src/context', () => ({
+jest.mock('../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx: any) => ctx),
   saveContext: jest.fn(),
@@ -23,7 +23,7 @@ describe('expose variables feature', () => {
     // jest.resetAllMocks() clears implementations set in jest.mock() factories too.
     // Re-initialise the context mocks so addStateToHistory returns a valid context
     // (otherwise this.context becomes undefined inside Engine.run and crashes).
-    const ctxMock = require('../../src/context');
+    const ctxMock = require('../../src/context/context');
     (ctxMock.getCurrentState as jest.Mock).mockReturnValue(null);
     (ctxMock.addStateToHistory as jest.Mock).mockImplementation((ctx: any) => ctx);
   });
@@ -75,7 +75,7 @@ describe('expose variables feature', () => {
 
   test('engine throws when declared expose not produced', async () => {
     // Mock runScriptState to return no exports
-    const mockRunScript = jest.spyOn(require('../../src/engine/ScriptStateRunner'), 'runScriptState')
+    const mockRunScript = jest.spyOn(require('../../src/runner/ScriptStateRunner'), 'runScriptState')
       .mockResolvedValue({ outcome: 'PASSED', exports: {} });
 
     const stateMachine = {
@@ -86,7 +86,7 @@ describe('expose variables feature', () => {
       }
     } as any;
 
-    const engine = new Engine({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: '/tmp' });
+    const engine = new Runner({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: '/tmp' });
 
     await expect(engine.run()).rejects.toThrow(/exposed variable 'id'/);
 
