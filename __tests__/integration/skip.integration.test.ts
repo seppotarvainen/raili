@@ -19,6 +19,8 @@ let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  // Auto-accept the skip-confirmation prompt so tests don't block on stdin
+  process.env.RAILI_MANUAL_CHOICE = 'PASSED';
   // default: noop child
   spawn.mockImplementation(() => fakeChild('', '', 0));
 });

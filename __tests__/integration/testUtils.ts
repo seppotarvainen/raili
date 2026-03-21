@@ -98,11 +98,12 @@ export function fakeChild(stdoutData: string, stderrData: string, exitCode: numb
   return child;
 }
 
-/** Remove all RAILI_VAR_* environment variables (cleanup helper). */
+/** Remove all RAILI_VAR_* and RAILI_MANUAL_CHOICE environment variables (cleanup helper). */
 export function cleanupRailiEnvVars(): void {
   for (const key of Object.keys(process.env)) {
     if (key.startsWith('RAILI_VAR_')) {
       delete process.env[key];
     }
   }
+  delete process.env.RAILI_MANUAL_CHOICE;
 }
