@@ -43,7 +43,7 @@ class AgentStateRunner implements IStateRunner {
             const fromState = (src as any).output as string;
             const latest = readLatestRun(cwd, fromState, workflowArg);
             if (latest && latest.trim()) {
-              // Compress to single-line summary
+              // Let appendUniqueLearning extract LESSON: markers and preserve multiline content
               const oneLine = latest.replace(/\s+/g, ' ').trim();
               appendUniqueLearning(cwd, agentId, `output:${fromState}`, oneLine, workflowArg);
             }
