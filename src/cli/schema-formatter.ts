@@ -2,7 +2,7 @@
 // This reads src/schemas.ts exports and formats them for `raili schema` command
 
 import * as schemasModule from '../workflow/schemas';
-import {FieldSchema, ObjectSchema} from '../workflow/schemas';
+import { FieldSchema, ObjectSchema } from '../workflow/schemas';
 
 /**
  * Format a single field for display

@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {StateHistoryEntry, WorkflowContext} from '../types';
-import {clearAllOutputs} from './outputStore';
-import {resolveWorkflowDir} from './pathUtils';
+import { StateHistoryEntry, WorkflowContext } from '../types';
+import { clearAllOutputs } from './outputStore';
+import { resolveWorkflowDir } from './pathUtils';
 
 /**
  * Load workflow context from workflowDir/context.json.

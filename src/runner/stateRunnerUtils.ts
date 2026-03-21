@@ -1,10 +1,10 @@
-import {StateDef} from '../types';
-import {saveOutput} from '../context/outputStore';
-import {parseExports} from '../variables/variableExports';
-import type {StateResult} from './Runner';
+import { StateDef } from '../types';
+import { saveOutput } from '../context/outputStore';
+import { parseExports } from '../variables/variableExports';
+import type { StateResult } from './Runner';
 
 /** Execution result shape shared by script and command handlers. */
-export interface HandlerResult {
+interface HandlerResult {
   success: boolean;
   stdout: string;
   stderr: string;
@@ -26,7 +26,7 @@ export function buildEnvOverrides(vars?: Record<string, string>): Record<string,
 /**
  * Store combined stdout+stderr output if the state has an output config.
  */
-export function storeOutput(
+function storeOutput(
   cwd: string,
   state: StateDef,
   result: HandlerResult,
@@ -41,7 +41,7 @@ export function storeOutput(
 /**
  * Parse exposed variables from stdout if the state declares `expose`.
  */
-export function parseExposedVars(state: StateDef, stdout: string): Record<string, string> {
+function parseExposedVars(state: StateDef, stdout: string): Record<string, string> {
   const exports: Record<string, string> = {};
   if (state.config.expose && state.config.expose.length) {
     const parsed = parseExports(stdout, state.config.expose);
@@ -58,7 +58,7 @@ export function parseExposedVars(state: StateDef, stdout: string): Record<string
  * - `transitions:` routing → last line of stdout as outcome key
  * - fallback → binary PASSED/FAILED
  */
-export function resolveOutcome(
+function resolveOutcome(
   state: StateDef,
   result: HandlerResult,
   handlerType: 'script' | 'command',
@@ -94,4 +94,3 @@ export function processStateResult(
   const outcome = resolveOutcome(state, result, handlerType);
   return { outcome, exports };
 }
-

@@ -431,3 +431,14 @@ intent: |
     - Empty/missing sources must be skipped silently — never throw on missing learning data.
     - The learn_from field is optional. States without it behave exactly as before.
 ```
+
+
++------------------------------------+
+|  🤖 #1 CODING                      |
++------------------------------------+
+|     Entered: 2026-03-18T10:32:00Z. |
+|     Visit: 1                       |
+|  ✅ Learnings applied              |
+|     No earlier run output          |
+|.    Approx. context 
++------------------------------------+

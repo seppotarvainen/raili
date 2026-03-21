@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 import * as readline from 'readline';
-import {initCommand} from './init';
-import {runCommand, RunMode} from './run';
-import {getCurrentState, loadContext} from './context/context';
-import {loadWorkflowConfig} from './workflow/workflowLoader';
-import {printHelp} from './cli/help';
-import {printDocs} from './cli/docs';
-import {printSchema} from './cli/schema';
+import { initCommand } from './init';
+import { runCommand, RunMode } from './run';
+import { getCurrentState, loadContext } from './context/context';
+import { loadWorkflowConfig } from './workflow/workflowLoader';
+import { printHelp } from './cli/help';
+import { printDocs } from './cli/docs';
+import { printSchema } from './cli/schema';
 import commandLineArgs from 'command-line-args';
-import {RailiRunArgs} from './types';
-import {statsCommand} from './cli/stats';
-import {RailiCommand} from './cli/RailiCommand';
+import { RailiRunArgs } from './types';
+import { statsCommand } from './cli/stats';
+import { RailiCommand } from './cli/RailiCommand';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
-import {loadVarsFile} from './variables/varsLoader';
+import { loadVarsFile } from './variables/varsLoader';
 
 const args = process.argv.slice(2);
 const command = new RailiCommand(args[0]);

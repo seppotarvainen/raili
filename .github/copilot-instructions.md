@@ -3,7 +3,7 @@
 ## 1. Separation of Concerns (Strict)
 
 - **State machine** defines workflow structure only.
-- **Engine** controls transitions only.
+- **Runner** controls transitions only.
 - **Handlers** perform side effects (agent, script, prompt).
 - **Registries** map names → implementations.
 - No business logic inside state definitions.
@@ -30,26 +30,25 @@
 
 ## 4. No Hardcoding
 
-- No agent names or script paths inside engine.
+- No agent names or script paths inside runner.
 - Everything must resolve via registries.
 - Workflow config is read-only during execution.
 
 ---
 
-## 5. Thin Engine
+## 5. Thin Runner
 
 - Keep core small and simple.
 - Move complexity to handlers.
-- Do not implement a dynamic DSL engine in MVP.
 
 ---
 
 ## 6. Testing Policy (Important)
 
-- The **core engine must have unit tests**.
+- The **core runner must have unit tests**.
 - Test transitions, illegal transitions, and loopbacks.
 - Test registry validation and fail-fast behavior.
 - Mock all external side effects (LLM, shell, prompts).
 - Do not test real shell execution or real agent calls.
 
-> Raili is a deterministic workflow engine with pluggable side effects — not a distributed orchestration platform.
+> Raili is a deterministic workflow engine with pluggable side effects

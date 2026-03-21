@@ -1,4 +1,4 @@
-import {ApprovalConfig, StateConfig, StateType, WorkflowConfig} from '../types';
+import { ApprovalConfig, StateConfig, StateType, WorkflowConfig } from '../types';
 import {
   ApprovalConfigSchema,
   FeedbackConfigSchema,
