@@ -1,7 +1,7 @@
-import {spawn} from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
-import {AgentRegistry} from '../registry/agentRegistry';
-import {resolveRegistryPath} from '../context/pathUtils';
+import { AgentRegistry } from '../registry/agentRegistry';
+import { resolveRegistryPath } from '../context/pathUtils';
 
 type AgentExecutionResult = {
   success: boolean;

@@ -7,7 +7,7 @@ Raili is a **deterministic CLI workflow orchestrator** for AI-assisted developme
 **Three-tier separation:**
 1. **Workflow Config** (`workflow.yaml`) — Declares states, transitions, inputs, registries
 2. **Registries** — Map names to implementations: `agent-registry.json` and `script-registry.json`
-3. **Engine** (`Engine.ts`) — Controls state transitions deterministically; all routing is explicit
+3. **Runner** (`Runner.ts`) — Controls state transitions deterministically; all routing is explicit
 
 **Key constraint:** No business logic in state definitions. Handlers perform all side effects (agent calls, shell scripts, notifications).
 
@@ -17,31 +17,62 @@ Raili is a **deterministic CLI workflow orchestrator** for AI-assisted developme
 
 ```
 src/
-  cli.ts                      # Entry point: init, run, help commands
-  engine/
-    Engine.ts                 # Core state machine executor
-    AgentStateRunner.ts       # Runs agent states with prompt interpolation
+  cli.ts                      # Entry point: init, run, help, docs, schema, stats commands
+  run.ts                      # Orchestrates load → validate → build → run → log
+  init.ts                     # Creates .raili/ scaffold
+  types.ts                    # Shared types (StateConfig, WorkflowConfig, etc.)
+  cli/
+    RailiCommand.ts           # CLI command parser (init, run, docs, schema, stats, help)
+    help.ts                   # Help text printer (topic-aware)
+    docs.ts                   # Built-in docs command
+    generated-docs.ts         # Auto-generated documentation content
+    schema.ts                 # Prints workflow YAML schema reference
+    schema-formatter.ts       # Formats schema definitions for display
+    stats.ts                  # Run statistics (avg loops, success rate, etc.)
+  runner/
+    Runner.ts                 # Core state machine executor (was Engine.ts)
+    StateRunner.ts            # IStateRunner interface
+    AgentStateRunner.ts       # Runs agent states with prompt interpolation + learnings
     ScriptStateRunner.ts      # Runs shell scripts
     CommandStateRunner.ts     # Runs inline shell commands
     ApproveStateRunner.ts     # Manual approval prompts
+    stateRunnerUtils.ts       # Shared: env overrides, output storage, expose parsing, outcome resolution
+    transition.ts             # Transition resolution (case-insensitive, default key)
   handlers/
     agentHandler.ts           # Spawns copilot CLI agents
     scriptHandler.ts          # Executes registered scripts
     commandHandler.ts         # Executes inline commands
-    manualHandler.ts          # User approval logic
+    manualHandler.ts          # User approval + feedback prompt logic
     notifyHandler.ts          # Pre-state notifications (shell commands)
-  registryValidator.ts        # Fail-fast: validates registries & references
-  workflowLoader.ts           # Loads & merges workflow.yaml + sub-workflows
-  context.ts                  # Persists execution state to context.json
-  outputStore.ts              # Saves agent/script outputs
-  variableInterpolation.ts    # Interpolates ${VAR_NAME} in prompts & commands
+  registry/
+    agentRegistry.ts          # Loads & validates agent-registry.json
+    scriptRegistry.ts         # Loads & validates script-registry.json
+    registryValidator.ts      # Fail-fast: validates registries & workflow references
+  workflow/
+    workflowLoader.ts         # Loads & merges workflow.yaml + sub-workflows
+    schemaValidator.ts        # Runtime schema validation for workflow config
+    schemas.ts                # Schema definitions (mirrors types.ts, enumerable at runtime)
+  context/
+    context.ts                # Persists execution state to context.json
+    outputStore.ts            # Saves agent/script outputs per run
+    learningStore.ts          # Extracts & persists agent learnings (LESSON: markers)
+    pathUtils.ts              # resolveWorkflowDir, resolveRegistryPath, learningsFilePath
+    runLog.ts                 # Appends per-run summary to run-log.json
+  variables/
+    variableInterpolation.ts  # Interpolates ${VAR_NAME} in prompts & commands
+    variableExports.ts        # Parses KEY=VALUE exports from stdout
+    varsLoader.ts             # Loads .raili/<workflow>/vars.yaml
 
 .raili/
-  workflow.yaml               # State machine definition (lives in project)
   agent-registry.json         # {agent_id: {path, model?}}
   script-registry.json        # {script_id: {path}}
-  context.json                # Runtime state (stateHistory, vars) — persisted
-  outputs/                    # Saved agent/script outputs
+  main/                       # Default workflow directory
+    workflow.yaml             # State machine definition
+    vars.yaml                 # Workflow-specific variables
+    context.json              # Runtime state (stateHistory, vars) — persisted
+    outputs/                  # Saved agent/script outputs per state
+    learnings/                # Persistent agent learnings (<agentId>.md)
+  <workflow-name>/            # Additional named workflows (same structure as main/)
 ```
 
 ---
@@ -51,14 +82,17 @@ src/
 1. **Init** (`raili init`) → Creates `.raili/` with template files
 2. **Load & Validate** → Reads workflow.yaml, registries, checks all references exist (fail-fast)
 3. **Build State Machine** → Converts workflow config to explicit state DAG with typed transitions
-4. **Run Loop** → Engine:
-   - On state entry: run `reset_outputs` (clear prior state outputs), run `notify` (pre-state hook)
-   - Enforce `max_visits` limit
-   - Route to state runner (agent/script/command/engine type)
-   - State returns outcome: `"PASSED"`, `"FAILED"`, or named key from `transitions`
-   - Resolve next state via `on` (binary) or `transitions` (named) routing
-   - If no routing defined → terminal state (stop)
-5. **Persist** → Context saved to `.raili/context.json` after each state entry
+4. **Run Loop** → Runner (`Runner.ts`) executes phases per state:
+   - **Phase 1 – Skip:** If `skip` is set, bypass state and jump to target
+   - **Phase 2 – Enter:** Enforce `max_visits`, run `reset_outputs`, record in history, fire `notify`
+   - **Phase 3 – Terminal check:** If no routing defined → terminal state (persist `success` flag, stop)
+   - **Phase 4 – Execute:** Route to state runner (agent/script/command/engine type)
+   - **Phase 5 – Exports:** Merge `expose` variables from stdout into context
+   - **Phase 6 – Approval:** If `approval` configured, prompt user and route
+   - **Phase 7 – Feedback:** If `feedback` configured, collect user input and expose as variable
+   - **Phase 8 – Route:** Resolve next state via `on` (binary) or `transitions` (named)
+5. **Persist** → Context saved to `.raili/<workflow>/context.json` after each state entry
+6. **Run Log** → `runLog.ts` appends per-run summary (duration, loops, terminal state) to `run-log.json`
 
 **Resume behavior:** On next `raili run`, loads context.json and resumes from last entered state.
 
@@ -72,7 +106,7 @@ All references **must be explicit and validated before execution starts:**
   - Path resolved relative to project root (e.g., `.github/agents/analyzer.md`)
   - Model in frontmatter or registry can be overridden per state
 - `script-registry.json`: Maps script IDs → `{path}`
-- **Validation:** `registryValidator.ts` checks every referenced file exists
+- **Validation:** `registry/registryValidator.ts` checks every referenced file exists
 - **Missing file?** → Throws immediately, no silent fallbacks
 
 Example:
@@ -154,8 +188,8 @@ states:
 - All vars exported as `RAILI_VAR_<UPPERCASE>` for shell scripts & notifications
 - Access in commands: `$RAILI_VAR_TICKET_ID`
 
-- **Fail-fast (default):** The interpolation utility (`src/variableInterpolation.ts`) throws on missing variables by default.
-- **YAML-style exceptions for prompts/questions:** Agent prompts and approval questions intentionally use YAML-style interpolation — missing variables are substituted with an empty string instead of throwing. This behavior is implemented in `src/engine/AgentStateRunner.ts` and `src/engine/ApproveStateRunner.ts` (they call the interpolator with `{ throwOnMissing: false, missingValue: '' }`).
+- **Fail-fast (default):** The interpolation utility (`src/variables/variableInterpolation.ts`) throws on missing variables by default.
+- **YAML-style exceptions for prompts/questions:** Agent prompts and approval questions intentionally use YAML-style interpolation — missing variables are substituted with an empty string instead of throwing. This behavior is implemented in `src/runner/AgentStateRunner.ts` and `src/runner/ApproveStateRunner.ts` (they call the interpolator with `{ throwOnMissing: false, missingValue: '' }`).
 
 ---
 
@@ -189,7 +223,7 @@ export async function executeAgent(
 **Output configuration** (optional on any state):
 ```yaml
 output:
-  store: true            # Save to .raili/outputs/<stateId>.md
+  store: true            # Save to .raili/<workflow>/outputs/<stateId>.md
   tail: 100             # Keep last 100 lines
   include_search_pattern: "Error|WARNING"  # Regex filter
   include_after: 5      # Include 5 lines after matches
@@ -204,11 +238,12 @@ output:
 
 ## Testing Policy (Strict)
 
-- **Unit tests only** for core engine (`engine.test.ts`)
+- **Unit tests** for core runner (`engine.test.ts`) and all state runners/handlers
   - Test all transition types (binary, named, terminal, error routing)
   - Test illegal transitions (throw error immediately)
   - Test `max_visits` enforcement
   - Test `reset_outputs`, `notify` entry actions
+  - Test `skip`, `expose`, `feedback`, `success` flag, `learn_from` behaviors
 - **Mock all external side effects** (`jest.mock()`)
   - Never call real copilot CLI
   - Never spawn real shell processes
@@ -227,7 +262,9 @@ Run tests: `npm test` (uses `--runInBand` to avoid race conditions)
   - Integration tests still DO NOT spawn real external programs — they stub `spawn` to return controlled outputs. This keeps tests deterministic and fast while verifying interactions (commands invoked, env vars exported, notify commands executed).
   - To assert notify/command execution, tests inspect `spawn.mock.calls` and check for `sh -c <command>` or `copilot` invocations.
   - Approval prompts are automated in tests by setting `process.env.RAILI_MANUAL_CHOICE` to `PASSED` or `FAILED` before `runCommand` so the approval flow can be exercised without human input.
-  - Integration tests may assert on on-disk artifacts inside the temp workspace (for example `.raili/outputs/<stateId>.md` and `.raili/context.json`) to ensure output storage and context persistence work as expected.
+  - Feedback prompts are automated by setting `process.env.RAILI_FEEDBACK_<UPPERCASE_NAME>` to the desired value.
+  - Integration tests may assert on on-disk artifacts inside the temp workspace (for example `.raili/main/outputs/<stateId>.md` and `.raili/main/context.json`) to ensure output storage and context persistence work as expected.
+  - Use `cleanupRailiEnvVars()` from `testUtils.ts` in `afterEach` to remove `RAILI_VAR_*` and `RAILI_MANUAL_CHOICE` env vars.
 
 Examples (patterns to copy):
 
@@ -252,13 +289,20 @@ Keep integration tests focused on control-flow and I/O boundaries (context, outp
 ## CLI Commands & Dev Workflow
 
 ```bash
-npm run build           # Compile TypeScript → dist/
+npm run build           # Compile TypeScript → dist/ (also runs build:docs)
 npm test               # Run Jest (mocked tests only)
 npm run lint           # Echo (no linter configured yet)
+npm run format         # Prettier format src/**/*.ts
+npm run format:check   # Prettier check (CI-safe)
 
 # Dev mode (TypeScript direct)
 npx ts-node src/cli.ts init
 npx ts-node src/cli.ts run --var ticket_id=TICKET-123
+npx ts-node src/cli.ts run --workflow my-workflow --clean
+npx ts-node src/cli.ts docs [section]
+npx ts-node src/cli.ts schema
+npx ts-node src/cli.ts stats [workflow] [--latest N]
+npx ts-node src/cli.ts help [topic]
 
 # Production
 npm run build
@@ -286,13 +330,17 @@ raili run --var ticket_id=TICKET-456
 
 | Task | Key Files |
 |------|-----------|
-| Add new state type | `types.ts` (StateType union), `workflowLoader.ts` (build routing), `Engine.ts` (add runner), new `*StateRunner.ts` |
-| Add new registry type | `registryValidator.ts`, new registry loader/validator |
-| Change variable interpolation | `variableInterpolation.ts`, test: `variableInterpolation.test.ts` |
-| Modify agent model override | `AgentStateRunner.ts`, `agentHandler.ts` (frontmatter parsing) |
-| Add error recovery | `Engine.ts` (error state routing already supported), add error state handling |
-| Change approval flow | `ApproveStateRunner.ts`, `manualHandler.ts` |
-| Modify output filtering | `outputStore.ts` (tail/regex logic) |
+| Add new state type | `types.ts` (StateType union), `workflow/workflowLoader.ts` (build routing), `runner/Runner.ts` (add runner), new `runner/*StateRunner.ts` |
+| Add new registry type | `registry/registryValidator.ts`, new registry loader/validator |
+| Change variable interpolation | `variables/variableInterpolation.ts`, test: `variableInterpolation.test.ts` |
+| Modify agent model override | `runner/AgentStateRunner.ts`, `handlers/agentHandler.ts` (frontmatter parsing) |
+| Add error recovery | `runner/Runner.ts` (error state routing already supported), add error state handling |
+| Change approval flow | `runner/ApproveStateRunner.ts`, `handlers/manualHandler.ts` |
+| Modify output filtering | `context/outputStore.ts` (tail/regex logic) |
+| Change feedback collection | `handlers/manualHandler.ts` (handleFeedbackPrompt), `runner/Runner.ts` (handleFeedback phase) |
+| Add/modify agent learnings | `context/learningStore.ts`, `runner/AgentStateRunner.ts` (learn_from processing) |
+| Change run statistics | `cli/stats.ts` (computeMetrics), `context/runLog.ts` (appendRunLog) |
+| Change variable export parsing | `variables/variableExports.ts` (parseExports), `runner/stateRunnerUtils.ts` (parseExposedVars) |
 
 ---
 

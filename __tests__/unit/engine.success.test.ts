@@ -49,11 +49,11 @@ beforeEach(() => {
 });
 
 test('persists success:true for terminal engine state', async () => {
-  const engine = makeEngine({
+  const runner = makeEngine({
     start: { id: 'start', config: { type: 'engine', success: true }, transitions: [] },
   });
 
-  await engine.run();
+  await runner.run();
 
   const calls = contextModule.addStateToHistory.mock.calls;
   expect(calls.some((c: any[]) => c[1] === 'start' && c[2] && c[2].success === true)).toBe(true);
@@ -61,11 +61,11 @@ test('persists success:true for terminal engine state', async () => {
 });
 
 test('persists success:null when success omitted for terminal engine state', async () => {
-  const engine = makeEngine({
+  const runner = makeEngine({
     start: { id: 'start', config: { type: 'engine' }, transitions: [] },
   });
 
-  await engine.run();
+  await runner.run();
 
   const calls = contextModule.addStateToHistory.mock.calls;
   expect(calls.some((c: any[]) => c[1] === 'start' && c[2] && c[2].success === null)).toBe(true);

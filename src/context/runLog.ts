@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {StateHistoryEntry, WorkflowConfig} from '../types';
-import {loadContext} from './context';
+import { StateHistoryEntry, WorkflowConfig } from '../types';
+import { loadContext } from './context';
 
 function humanDuration(ms: number): string {
   const s = Math.floor(ms / 1000);

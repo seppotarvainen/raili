@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {learningsFilePath} from './pathUtils';
+import { learningsFilePath } from './pathUtils';
 
 function normalizeForCompare(s: string): string {
   return s.replace(/\s+/g, ' ').trim().toLowerCase();

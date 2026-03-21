@@ -1,8 +1,8 @@
-import {StateDef} from '../types';
-import {executeCommand} from '../handlers/commandHandler';
-import type {StateResult} from './Runner';
-import {IStateRunner} from './StateRunner';
-import {buildEnvOverrides, processStateResult} from './stateRunnerUtils';
+import { StateDef } from '../types';
+import { executeCommand } from '../handlers/commandHandler';
+import type { StateResult } from './Runner';
+import { IStateRunner } from './StateRunner';
+import { buildEnvOverrides, processStateResult } from './stateRunnerUtils';
 
 /**
  * CommandStateRunner - executes inline shell commands.

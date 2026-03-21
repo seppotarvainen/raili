@@ -44,7 +44,7 @@ describe('Engine approval persistence', () => {
       } as any,
     } as any;
 
-    const engine = new Runner({
+    const runner = new Runner({
       stateMachine: sm,
       agentRegistry: {} as any,
       scriptRegistry: {} as any,
@@ -52,7 +52,7 @@ describe('Engine approval persistence', () => {
       cwd: '/tmp',
     });
 
-    await engine.run();
+    await runner.run();
 
     const lastCtx = savedContexts[savedContexts.length - 1];
     expect(lastCtx).toBeDefined();

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import colors from 'colors/safe';
-import {resolveWorkflowDir} from '../context/pathUtils';
+import { resolveWorkflowDir } from '../context/pathUtils';
 
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs are used. */
 export function loadVarsFile(

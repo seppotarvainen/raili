@@ -1,16 +1,16 @@
-import {StateDef, StateMachine, WorkflowContext} from '../types';
-import {AgentRegistry} from '../registry/agentRegistry';
-import {ScriptRegistry} from '../registry/scriptRegistry';
-import {addStateToHistory, getCurrentState, saveContext} from '../context/context';
-import {runAgentState} from './AgentStateRunner';
-import {runScriptState} from './ScriptStateRunner';
-import {runCommandState} from './CommandStateRunner';
-import {ApprovalOutcome, runApprovalStep} from './ApproveStateRunner';
-import {runNotify} from '../handlers/notifyHandler';
-import {clearAgentOutputs} from '../context/outputStore';
-import {resolveTransition} from './transition';
+import { StateDef, StateMachine, WorkflowContext } from '../types';
+import { AgentRegistry } from '../registry/agentRegistry';
+import { ScriptRegistry } from '../registry/scriptRegistry';
+import { addStateToHistory, getCurrentState, saveContext } from '../context/context';
+import { runAgentState } from './AgentStateRunner';
+import { runScriptState } from './ScriptStateRunner';
+import { runCommandState } from './CommandStateRunner';
+import { ApprovalOutcome, runApprovalStep } from './ApproveStateRunner';
+import { runNotify } from '../handlers/notifyHandler';
+import { clearAgentOutputs } from '../context/outputStore';
+import { resolveTransition } from './transition';
 import colors from 'colors/safe';
-import {handleFeedbackPrompt} from '../handlers/manualHandler';
+import { handleFeedbackPrompt } from '../handlers/manualHandler';
 
 /** Result returned by every state runner: outcome and optional exports */
 export type StateResult = { outcome: string; exports?: Record<string, string> };
@@ -89,9 +89,7 @@ export class Runner {
 
     const target = skip as string;
     if (!(target in this.stateMachine.states)) {
-      throw new Error(
-        `State '${stateId}': skip target '${target}' not found in state machine`,
-      );
+      throw new Error(`State '${stateId}': skip target '${target}' not found in state machine`);
     }
 
     this.record(stateId, { skipped: { target } });
@@ -154,12 +152,7 @@ export class Runner {
         this.workflowArg,
       );
     } else if (config.type === 'command') {
-      return runCommandState(
-        stateDef,
-        this.cwd,
-        this.context?.vars,
-        this.workflowArg,
-      );
+      return runCommandState(stateDef, this.cwd, this.context?.vars, this.workflowArg);
     }
     return { outcome: 'PASSED' };
   }
@@ -345,7 +338,10 @@ export class Runner {
 
         // Phase 1: Skip
         const skipTarget = this.handleSkip(stateId, stateDef);
-        if (skipTarget) { stateId = skipTarget; continue; }
+        if (skipTarget) {
+          stateId = skipTarget;
+          continue;
+        }
 
         // Phase 2: Enter state (max_visits, reset_outputs, history, notify)
         await this.enterState(stateId, stateDef);
@@ -375,7 +371,10 @@ export class Runner {
 
         // Phase 7: Feedback flow (if configured, no approval)
         const feedbackNext = await this.handleFeedback(stateId, stateDef);
-        if (feedbackNext) { stateId = feedbackNext; continue; }
+        if (feedbackNext) {
+          stateId = feedbackNext;
+          continue;
+        }
 
         // Phase 8: Route to next state
         stateId = this.routeToNext(stateId, stateDef, stateResult.outcome);

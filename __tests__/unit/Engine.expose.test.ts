@@ -36,9 +36,9 @@ test('Engine routes to error state when expose missing', async () => {
   mockAddState.mockImplementation((ctx: { stateHistory: any; }, stateId: any) => ({ ...ctx, stateHistory: [...(ctx.stateHistory||[]), { state: stateId, enteredAt: new Date().toISOString() }] }));
   mockSave.mockImplementation(() => {});
 
-  const engine = new Runner({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: process.cwd() });
+  const runner = new Runner({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: process.cwd() });
 
-  await engine.run();
+  await runner.run();
 
   // Expect that the engine recorded the error state into context via addStateToHistory
   expect(mockAddState).toHaveBeenCalled();
