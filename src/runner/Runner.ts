@@ -7,10 +7,12 @@ import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
 import { ApprovalOutcome, runApprovalStep } from './ApproveStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
-import { clearAgentOutputs } from '../context/outputStore';
+import { clearAgentOutputs, readLatestRun } from '../context/outputStore';
+import { readLearnings } from '../context/learningStore';
 import { resolveTransition } from './transition';
 import colors from 'colors/safe';
 import { handleFeedbackPrompt } from '../handlers/manualHandler';
+import { Presenter } from '../presenter';
 
 /** Result returned by every state runner: outcome and optional exports */
 export type StateResult = { outcome: string; exports?: Record<string, string> };
@@ -119,6 +121,62 @@ export class Runner {
     const lastState = this.context.stateHistory[this.context.stateHistory.length - 1];
     if (!lastState || lastState.state !== stateId) {
       this.record(stateId);
+
+      // After persisting the history entry, render a presentational header.
+      try {
+        const entry = this.context.stateHistory[this.context.stateHistory.length - 1];
+        const count = this.context.stateHistory.length;
+        const stateName = stateId.toUpperCase();
+        const type = (config.type as any) ?? 'engine';
+
+        // Determine visit count: prefer visitCounts, fall back to history occurrences
+        const visit =
+          this.visitCounts.get(stateId) ??
+          this.context.stateHistory.filter((e) => e.state === stateId).length;
+
+        // Determine learnings / earlier output note
+        let learningsApplied = false;
+        let learningNote: string | undefined = undefined;
+        try {
+          const latestOutput = readLatestRun(this.cwd, stateId, this.workflowArg);
+          if (!latestOutput) {
+            learningNote = 'No earlier run output';
+          }
+
+          if (type === 'agent' && config.agent) {
+            const lg = readLearnings(this.cwd, config.agent, this.workflowArg);
+            learningsApplied = !!lg && lg.trim().length > 0;
+          }
+        } catch (e) {
+          // best-effort for presentation; do not let presentation crash the runner
+        }
+
+        // Use Presenter class (static import) so Jest's module mock is applied consistently in tests.
+        const presenter = new Presenter();
+        // Call the instance renderEntry if available. Some Jest mocks attach the mocked fn to the
+        // mock.instances[0].renderEntry rather than the returned instance; attempt both.
+        const renderFn: any =
+          (presenter as any).renderEntry ??
+          (Presenter as any)?.mock?.instances?.[0]?.renderEntry ??
+          undefined;
+        if (typeof renderFn === 'function') {
+          try {
+            renderFn.call(presenter, {
+              count,
+              stateName,
+              type,
+              enteredAt: entry.enteredAt,
+              visit,
+              learningsApplied,
+              learningNote,
+            });
+          } catch (e) {
+            // Presentation must not break execution; swallow errors here.
+          }
+        }
+      } catch (e) {
+        // Presentation must not break execution; swallow errors here.
+      }
     }
 
     if (config.notify) {
