@@ -98,6 +98,11 @@ build:
 
 ## Type: engine
 
+### Console presentation (Presenter)
+
+When a state is entered the Runner uses a Presenter to render a boxed, emoji-enhanced header to stdout. The Presenter API is exposed at src/presenter/Presenter.ts and receives: global entry count, uppercase state name, state type, ISO enteredAt timestamp, visit count, and whether learnings were applied (or a "No earlier run output" note). This keeps presentation separate from the Runner's workflow logic.
+
+
 No-op state — performs no side effects. Useful as branching point, entry state, or terminal state.
 
 ```yaml
