@@ -1,8 +1,16 @@
 import fs from 'fs';
 import path from 'path';
-import { runCommand } from '../../src/run';
-//@ts-ignore
-import { createTmpWorkspace, cleanupTmpWorkspace, writeWorkflow, writeScriptRegistry, writeAgentRegistry, writeScriptFile, fakeChild } from './testUtils';
+import {runCommand} from '../../src/run';
+import {
+    cleanupRailiEnvVars,
+    cleanupTmpWorkspace,
+    createTmpWorkspace,
+    fakeChild,
+    writeAgentRegistry,
+    writeScriptFile,
+    writeScriptRegistry,
+    writeWorkflow,
+} from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');
@@ -12,11 +20,13 @@ describe('run-log integration', () => {
 
   beforeEach(() => {
     tmpDir = createTmpWorkspace();
-    spawn.mockReset();
+    spawn.mockImplementation(() => fakeChild('', '', 0));
   });
 
   afterEach(() => {
     cleanupTmpWorkspace(tmpDir);
+    cleanupRailiEnvVars();
+    spawn.mockReset();
   });
 
   it('appends a run-log with loops and approval failures', async () => {

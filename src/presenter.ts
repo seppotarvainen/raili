@@ -1,5 +1,5 @@
-import {StateDef} from './types';
-import colors from "colors/safe";
+import { StateDef } from './types';
+import colors from 'colors/safe';
 
 export interface PresenterEntry {
   count: number;
@@ -25,17 +25,17 @@ class Lines {
     return this._entries;
   }
 
-  private _entries: {content: string; emojiCount: number}[] = []
+  private _entries: { content: string; emojiCount: number }[] = [];
 
   push(content: string, emojiCount = 0): void {
-    this._entries.push({content, emojiCount});
+    this._entries.push({ content, emojiCount });
   }
 
   maxLength() {
     let currentMax = 0;
 
-    this._entries.forEach(l => {
-      currentMax = Math.max(currentMax, (l.emojiCount * 2) + l.content.length);
+    this._entries.forEach((l) => {
+      currentMax = Math.max(currentMax, l.emojiCount * 2 + l.content.length);
     });
     return currentMax;
   }
@@ -98,7 +98,7 @@ export class Presenter {
 
     console.log(colors.cyan(border));
     for (const l of lines.entries) {
-      console.log(`${l.content + ' '.repeat((totalWidth - l.content.length) + l.emojiCount)}`);
+      console.log(`${l.content + ' '.repeat(totalWidth - l.content.length + l.emojiCount)}`);
     }
     console.log(colors.cyan(border));
     console.log('');

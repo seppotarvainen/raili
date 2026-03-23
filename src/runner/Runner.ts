@@ -1,17 +1,17 @@
-import {StateDef, StateMachine, WorkflowContext} from '../types';
-import {AgentRegistry} from '../registry/agentRegistry';
-import {ScriptRegistry} from '../registry/scriptRegistry';
-import {addStateToHistory, getCurrentState, saveContext} from '../context/context';
-import {runAgentState} from './AgentStateRunner';
-import {runScriptState} from './ScriptStateRunner';
-import {runCommandState} from './CommandStateRunner';
-import {ApprovalOutcome, runApprovalStep} from './ApproveStateRunner';
-import {runNotify} from '../handlers/notifyHandler';
-import {clearAgentOutputs, readLatestRun} from '../context/outputStore';
-import {readLearnings} from '../context/learningStore';
-import {resolveTransition} from './transition';
-import {handleFeedbackPrompt} from '../handlers/manualHandler';
-import {Presenter} from '../presenter';
+import { StateDef, StateMachine, WorkflowContext } from '../types';
+import { AgentRegistry } from '../registry/agentRegistry';
+import { ScriptRegistry } from '../registry/scriptRegistry';
+import { addStateToHistory, getCurrentState, saveContext } from '../context/context';
+import { runAgentState } from './AgentStateRunner';
+import { runScriptState } from './ScriptStateRunner';
+import { runCommandState } from './CommandStateRunner';
+import { ApprovalOutcome, runApprovalStep } from './ApproveStateRunner';
+import { runNotify } from '../handlers/notifyHandler';
+import { clearAgentOutputs, readLatestRun } from '../context/outputStore';
+import { readLearnings } from '../context/learningStore';
+import { resolveTransition } from './transition';
+import { handleFeedbackPrompt } from '../handlers/manualHandler';
+import { Presenter } from '../presenter';
 
 /** Result returned by every state runner: outcome and optional exports */
 export type StateResult = { outcome: string; exports?: Record<string, string> };
@@ -117,7 +117,6 @@ export class Runner {
     if (config.reset_outputs?.length) {
       clearAgentOutputs(this.cwd, config.reset_outputs, this.workflowArg);
     }
-
 
     const entry = this.context.stateHistory[this.context.stateHistory.length - 1];
     const count = this.context.stateHistory.length;

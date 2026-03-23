@@ -7,6 +7,7 @@ import {
     cleanupRailiEnvVars,
     cleanupTmpWorkspace,
     createTmpWorkspace,
+    fakeChild,
     writeAgentRegistry,
     writeScriptRegistry,
     writeWorkflow,
@@ -20,7 +21,7 @@ describe('run-log integration with approval wait exclusion', () => {
 
   beforeEach(() => {
     tmpDir = createTmpWorkspace();
-    spawn.mockImplementation(() => ({ stdout: { on: () => {} }, stderr: { on: () => {} }, on: () => {}, kill: () => {} }));
+    spawn.mockImplementation(() => fakeChild('', '', 0));
   });
 
   afterEach(() => {

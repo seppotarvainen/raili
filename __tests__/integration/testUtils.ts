@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { EventEmitter } from 'events';
+import {EventEmitter} from 'events';
 import crypto from 'crypto';
 
 /**
@@ -77,11 +77,6 @@ export function writeScriptFile(dir: string, relativePath: string, content: stri
   fs.chmodSync(fullPath, 0o755);
 }
 
-/** Load context.json from the main workflow directory. */
-function loadContext(dir: string): any {
-  const ctxPath = path.join(dir, '.raili', 'main', 'context.json');
-  return JSON.parse(fs.readFileSync(ctxPath, 'utf8'));
-}
 
 /**
  * Creates a fake child process that emits stdout/stderr data then closes.
@@ -98,10 +93,10 @@ export function fakeChild(stdoutData: string, stderrData: string, exitCode: numb
   return child;
 }
 
-/** Remove all RAILI_VAR_* and RAILI_MANUAL_CHOICE environment variables (cleanup helper). */
+/** Remove all RAILI_VAR_*, RAILI_FEEDBACK_*, and RAILI_MANUAL_CHOICE environment variables (cleanup helper). */
 export function cleanupRailiEnvVars(): void {
   for (const key of Object.keys(process.env)) {
-    if (key.startsWith('RAILI_VAR_')) {
+    if (key.startsWith('RAILI_VAR_') || key.startsWith('RAILI_FEEDBACK_')) {
       delete process.env[key];
     }
   }

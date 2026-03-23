@@ -24,7 +24,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanupTmpWorkspace(tmpDir);
   cleanupRailiEnvVars();
-  delete process.env.RAILI_FEEDBACK_NOTE;
   spawn.mockReset();
 });
 

@@ -10,7 +10,6 @@ import {
     writeNamedWorkflow,
     writeScriptRegistry,
     writeWorkflow,
-    //@ts-ignore
 } from './testUtils';
 
 // Mock child_process globally — alternate workflow uses engine states so spawn is still used for notify
