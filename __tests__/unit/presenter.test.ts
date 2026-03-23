@@ -57,4 +57,25 @@ describe('Presenter.render', () => {
     p.render();
     expect(logs).toHaveLength(0);
   });
+
+  test('formats PASSED binary outcome with elapsed time', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('test', 'agent', { agent: 'a' }), 1, 1, '2026-03-19T10:00:00Z');
+    p.appendStateExit(makeStateDef('test', 'agent'), 'PASSED', 'nextState', 148000);
+    p.render();
+    const combined = logs.join('\n');
+    expect(combined).toContain('PASSED');
+    expect(combined).toContain('-> nextState');
+    expect(combined).toContain('Elapsed time');
+  });
+
+  test('formats named transition outcome with arrow', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('test', 'script'), 1, 1, '2026-03-19T10:00:00Z');
+    p.appendStateExit(makeStateDef('test', 'script'), 'approve', 'done', 5000);
+    p.render();
+    const combined = logs.join('\n');
+    expect(combined).toContain('approve');
+    expect(combined).toContain('-> done');
+  });
 });
