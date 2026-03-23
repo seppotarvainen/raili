@@ -10,22 +10,9 @@ intent: |
 ```
 
 ```yaml
-title: 'Add ability to set LESSON-marker by user'
+title: 'Remove timestamps from learnings when injecting into prompt'
 intent: |
-    Currently 'LESSON'-marker is hardcoded by the system. It would be great if user could set it by themselves. The default value would still be 'LESSON'. This will be set like this:
-
-    ```yaml
-    code:
-      type: agent
-      agent: raili-coding
-      prompt: "work according to your rules."
-      learn:
-        marker: 'Learn this:' # optional, defaults to "LESSON:"
-        from:
-          - var: ${CHECK_DONE_FAILED}
-      on:
-        PASSED: format
-      lesson_marker: "RAILI_LESSON"  
+    Currently agents get the full learnings file content injected into their prompt, including timestamps. This adds noise and takes up valuable token space. The agent doesn't need to know exactly when a learning was recorded, just the content of the feedback.
 ```
 
 ```yaml

@@ -27,7 +27,7 @@ beforeEach(() => {
   jest.resetAllMocks();
   mockExecuteAgent.mockResolvedValue({ success: true, stdout: 'agent output', stderr: '' });
   mockLoad.mockReturnValue(null);
-  (learningStore.readLearnings as jest.Mock).mockReturnValue('');
+  (learningStore.readLearningsForPrompt as jest.Mock).mockReturnValue('');
   (learningStore.appendUniqueLearning as jest.Mock).mockReturnValue(true);
 });
 

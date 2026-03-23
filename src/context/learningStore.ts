@@ -33,6 +33,46 @@ export function extractLessons(content: string): string[] {
 }
 
 /**
+ * Strip ISO timestamps from a learnings file content and return an array of cleaned entry strings.
+ * Each returned entry will optionally start with a compact source tag (e.g. "[output:state]") on its own
+ * line followed by the lesson body. Internal newlines of lessons are preserved.
+ */
+export function stripTimestampsFromLearnings(content: string): string[] {
+  if (!content || !content.trim()) return [];
+
+  // Match blocks that start with: - [TIMESTAMP] [OPTIONAL_SOURCE]
+  // followed by one or more blank lines and then the lesson body until next - [ or EOF.
+  const re = /- \[([^\]]+)\](?: \[([^\]]+)\])?\s*\n\s*\n([\s\S]*?)(?=(?:\n- \[)|$)/g;
+  const results: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(content))) {
+    const source = m[2];
+    let lesson = m[3] || '';
+    // Trim surrounding blank lines but preserve internal newlines
+    lesson = lesson.replace(/^\s+/, '');
+    lesson = lesson.replace(/\s+$/, '');
+    if (source) {
+      results.push(`[${source}]\n${lesson}`);
+    } else {
+      results.push(lesson);
+    }
+  }
+  return results;
+}
+
+/**
+ * Read learnings from disk and return a concatenated, timestamp-stripped string suitable for
+ * injecting into agent prompts. This preserves lesson bodies and optional source tags while
+ * removing noisy ISO timestamps to save tokens.
+ */
+export function readLearningsForPrompt(cwd: string, agentId: string, workflowArg?: string): string {
+  const raw = readLearnings(cwd, agentId, workflowArg);
+  const entries = stripTimestampsFromLearnings(raw);
+  if (!entries.length) return '';
+  return entries.join('\n\n');
+}
+
+/**
  * Append one or more lessons extracted from `content` if they are not already present.
  * Returns true if any new lesson was appended, false otherwise.
  * Unmarked content is ignored (not persisted).
