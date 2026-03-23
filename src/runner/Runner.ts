@@ -10,7 +10,6 @@ import {runNotify} from '../handlers/notifyHandler';
 import {clearAgentOutputs, readLatestRun} from '../context/outputStore';
 import {readLearnings} from '../context/learningStore';
 import {resolveTransition} from './transition';
-import colors from 'colors/safe';
 import {handleFeedbackPrompt} from '../handlers/manualHandler';
 import {Presenter} from '../presenter';
 
@@ -380,8 +379,6 @@ export class Runner {
           console.log(`✓ Reached terminal state: ${stateId}`);
           break;
         }
-
-        console.log(colors.cyan(`→ Executing state: ${stateId} (type: ${config.type})`));
 
         // Phase 4: Execute state handler
         const stateResult = await this.executeState(stateDef);

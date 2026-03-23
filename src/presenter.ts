@@ -1,4 +1,5 @@
 import {StateDef} from './types';
+import colors from "colors/safe";
 
 export interface PresenterEntry {
   count: number;
@@ -87,20 +88,19 @@ export class Presenter {
     const { lines, applyFrame } = this.entry;
 
     if (!applyFrame) {
-      for (const l of lines.entries) console.log(l);
+      for (const l of lines.entries) console.log(l.content);
       console.log('');
       return;
     }
 
+    const totalWidth = lines.maxLength() + 2;
+    const border = '='.repeat(totalWidth);
 
-    const totalWidth = lines.maxLength();
-    const border = '+' + '-'.repeat(totalWidth) + '+';
-
-    console.log(border);
+    console.log(colors.cyan(border));
     for (const l of lines.entries) {
-      console.log(`|${l.content + ' '.repeat((totalWidth - l.content.length) + l.emojiCount)}|`);
+      console.log(`${l.content + ' '.repeat((totalWidth - l.content.length) + l.emojiCount)}`);
     }
-    console.log(border);
+    console.log(colors.cyan(border));
     console.log('');
   }
 }
