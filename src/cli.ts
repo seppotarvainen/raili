@@ -11,6 +11,7 @@ import commandLineArgs from 'command-line-args';
 import { RailiRunArgs } from './types';
 import { statsCommand } from './cli/stats';
 import { RailiCommand } from './cli/RailiCommand';
+import { teachCommand } from './cli/teach';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
 import { loadVarsFile } from './variables/varsLoader';
 
@@ -172,6 +173,17 @@ async function main() {
         latestIndex !== -1 && runArgs[latestIndex + 1] ? Number(runArgs[latestIndex + 1]) : 10;
       try {
         await Promise.resolve(statsCommand(process.cwd(), workflowArg, latest));
+        process.exit(0);
+      } catch (err: any) {
+        console.error(err.message || String(err));
+        process.exit(1);
+      }
+    } else if (command.teach) {
+      try {
+        const parsed = parseRunArgs(runArgs);
+        const workflowPath = parsed.workflow ? parsed.workflow : undefined;
+        const agentId = runArgs[0];
+        await teachCommand(process.cwd(), agentId, workflowPath);
         process.exit(0);
       } catch (err: any) {
         console.error(err.message || String(err));

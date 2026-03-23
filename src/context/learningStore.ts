@@ -117,3 +117,31 @@ export function appendUniqueLearning(
 
   return appendedAny;
 }
+
+export function appendManualLearning(
+  cwd: string,
+  agentId: string,
+  content: string,
+  workflowArg?: string,
+): boolean {
+  if (!content || !content.trim()) return false;
+
+  const p = learningsFilePath(cwd, agentId, workflowArg);
+  let existing = '';
+  if (fs.existsSync(p)) {
+    existing = fs.readFileSync(p, 'utf8');
+  }
+
+  const normalizedExisting = normalizeForCompare(existing);
+  const normalizedNew = normalizeForCompare(content);
+  if (normalizedNew.length === 0) return false;
+  if (normalizedExisting.includes(normalizedNew)) return false;
+
+  const dir = path.dirname(p);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const timestamp = new Date().toISOString();
+  const entry = `- [${timestamp}] [manual]\n\n${content.trim()}\n\n`;
+  fs.appendFileSync(p, entry, 'utf8');
+  return true;
+}
