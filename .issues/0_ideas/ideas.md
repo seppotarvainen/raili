@@ -435,35 +435,21 @@ intent: |
 
 +----------------------------------------------------------------------------------------------+
 |  🤖 #1 CODING                                                                                |
-+----------------------------------------------------------------------------------------------+
-|  ⏱️ Entered: 2026-03-18T10:32:00Z.                                                           |
-|  🔁 Visit: 1                                                                                 |
-|  ✅ Learnings applied                                                                        |
-|     No earlier run output                                                                    |
-+----------------------------------------------------------------------------------------------+
-Reading the current open ticket(s) and recent test/build outputs to determine required changes. 
-Running parallel file reads for the issue directory and outputs (reporting intent first).
++---------------------------------------------------------------------------------------------+
 
-✗ Read test.md
-│ .raili/main/outputs/test.md
-└ Path does not exist
+```yaml
+title: Print state end summary after each state execution
+intent: |
+   For example I'd like to see {suitable emoji} + PASSED/FAILED if it uses type "on". 
+   For transitions it could just use {arrow emoji} + transition key -> next state.
+   
+   Use presenter to handle this. You should have a separate method where you put this stuff.
+   After things are there, call presenter's render method.
+   
+   This is an example of what I want to see after state execution:
+   
+   -----------------------------------------
+   ✅ PASSED -> test | ⏱️Elapsed time: 2:28
+```
 
-✗ Read build.md
-│ .raili/main/outputs/build.md
-└ Path does not exist
-
-● List directory .issues/2_doing
-└ 1 file found
-+----------------------------------------------------------------------------------------------+
-| ✅ PASSED -> test  | Elapsed time: 2:28                                                      |
-+----------------------------------------------------------------------------------------------+
-
-+----------------------------------------------------------------------------------------------+
-|  📜 #2 TEST                                                                                  |
-+----------------------------------------------------------------------------------------------+
-|  ⏱️ Entered: 2026-03-18T10:32:00Z.                                                           |
-|  🔁 Visit: 1                                                                                 |
-+----------------------------------------------------------------------------------------------+
-
-📢 Command
-📜 Script
+   

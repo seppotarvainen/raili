@@ -135,6 +135,7 @@ export class Runner {
     }
 
     const presenter = new Presenter();
+    this.currentPresenter = presenter;
     presenter.appendStateEnter(
       stateDef,
       visits,
@@ -230,8 +231,6 @@ export class Runner {
       approvalOutcome.chosen,
     );
 
-    console.log(`  approval: ${approvalOutcome.chosen} → ${nextStateId}`);
-
     const approvalMeta: any = {
       approval: {
         question: approvalOutcome.question,
@@ -241,6 +240,19 @@ export class Runner {
       },
     };
     if (typeof approvalOutcome.waitMs === 'number') approvalMeta.waitMs = approvalOutcome.waitMs;
+    // Present approval exit summary with resolved next
+    try {
+      const enteredAt = this.currentPresenter?.entry?.enteredAt;
+      const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
+      this.currentPresenter?.appendStateExit(
+        stateDef,
+        approvalOutcome.chosen,
+        nextStateId,
+        elapsedMs,
+      );
+      this.currentPresenter?.render();
+    } catch {}
+
     this.record(stateId, approvalMeta);
 
     if (!this.context.approvals) this.context.approvals = {};
@@ -286,7 +298,12 @@ export class Runner {
 
     if (stateDef.config.transitions && (stateDef.config.transitions as any).next) {
       const next = (stateDef.config.transitions as any).next;
-      console.log(`  → ${next}`);
+      try {
+        const enteredAt = this.currentPresenter?.entry?.enteredAt;
+        const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
+        this.currentPresenter?.appendStateExit(stateDef, 'FEEDBACK', next, elapsedMs);
+        this.currentPresenter?.render();
+      } catch {}
       this.record(next);
       return next;
     }
@@ -302,7 +319,15 @@ export class Runner {
   private routeToNext(stateId: string, stateDef: StateDef, outcome: string): string {
     const routing = stateDef.config.on ?? stateDef.config.transitions!;
     const nextStateId = resolveNextState(stateId, routing, outcome);
-    console.log(`  → ${nextStateId}`);
+
+    // Present transition summary
+    try {
+      const enteredAt = this.currentPresenter?.entry?.enteredAt;
+      const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
+      this.currentPresenter?.appendStateExit(stateDef, outcome, nextStateId, elapsedMs);
+      this.currentPresenter?.render();
+    } catch {}
+
     this.record(nextStateId);
     return nextStateId;
   }
@@ -340,6 +365,7 @@ export class Runner {
   }
 
   // ── Main Loop ───────────────────────────────────────────────────────
+  private currentPresenter?: Presenter | null;
 
   /**
    * Run the workflow from the current (or initial) state until a terminal state is reached.
@@ -375,7 +401,15 @@ export class Runner {
         if (!config.on && !config.transitions && !config.approval) {
           const successValue = config.success === undefined ? null : !!config.success;
           this.record(stateId, { success: successValue });
-          console.log(`✓ Reached terminal state: ${stateId}`);
+
+          // Present terminal exit summary
+          try {
+            const enteredAt = this.currentPresenter?.entry?.enteredAt;
+            const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
+            this.currentPresenter?.appendStateExit(stateDef, 'TERMINAL', undefined, elapsedMs);
+            this.currentPresenter?.render();
+          } catch {}
+
           break;
         }
 
