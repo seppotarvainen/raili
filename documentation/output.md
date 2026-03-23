@@ -14,19 +14,17 @@ output:
 
 Output saved to `.raili/<workflow>/outputs/<stateId>.md` with run separators.
 
-## Filtering by Pattern
+## Marker-based Extraction
 
-Keep only lines matching a regex:
+Use a marker string to capture the section of output to persist. The first case-insensitive occurrence of the marker is used and everything after it is stored. If the marker is not found, the entire stdout is persisted.
 
 ```yaml
 output:
   store: true
-  include_search_pattern: "ERROR|FAIL"
-  include_after: 5
+  marker: "OUTPUT:"
 ```
 
-This keeps lines matching the regex plus 5 lines of context after each match. Useful for capturing errors without
-storing massive logs.
+This is useful for agent outputs that include a clear delimiter (e.g. `SUMMARY:`) followed by the structured content to keep.
 
 ## Tail (Keep Last N Lines)
 
@@ -40,17 +38,16 @@ output:
 
 ## Combined Filtering
 
-Filter AND tail work together:
+Marker extraction and tail work together:
 
 ```yaml
 output:
   store: true
-  include_search_pattern: "ERROR|WARNING"
-  include_after: 3
+  marker: "SUMMARY:"
   tail: 200
 ```
 
-Process: match pattern → include context → keep last 200 lines
+Process: extract content after the first marker occurrence → keep last 200 lines
 
 ## Agent Memory Strategy
 
@@ -71,8 +68,8 @@ test:
   script: npm-test
   output:
     store: true
-    include_search_pattern: "FAIL|PASSED"
-    include_after: 5
+    marker: "FAILURE_SUMMARY:"
+    tail: 200
 ```
 
 ### Build state — bounded logs
@@ -104,8 +101,7 @@ analyze:
   agent: analyzer
   output:
     store: true
-    include_search_pattern: "ERROR|ISSUE|RECOMMENDATION"
-    include_after: 3
+    marker: "SUMMARY:"
     tail: 150
 ```
 

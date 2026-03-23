@@ -8,8 +8,7 @@ export type StateType = 'agent' | 'script' | 'command' | 'engine';
 export interface OutputConfig {
   store: boolean; // Save output to .raili/outputs/<stateId>.md
   tail?: number; // Keep only the last N lines of output
-  include_search_pattern?: string; // Regex pattern to search for matching lines
-  include_after?: number; // Include N lines after each matched line
+  marker?: string; // Optional marker string to locate the start of the stored output; default: "OUTPUT:"
 }
 
 export interface ApprovalConfig {
