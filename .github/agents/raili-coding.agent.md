@@ -107,6 +107,24 @@ When implementing a feature, read the relevant doc to understand current behavio
 - Test coverage: happy path, error paths, edge cases, transitions
 - Test illegal transitions and max_visits enforcement
 
+### Before Writing Tests (Important)
+
+**Always read these files first** before writing any test:
+1. `__tests__/integration/testUtils.ts` — contains `fakeChild`, `createTmpWorkspace`, `writeWorkflow`, `writeAgentRegistry`, `writeScriptRegistry`, `writeAgentFile`, `writeScriptFile`, `cleanupRailiEnvVars` and other helpers
+2. At least one existing integration test (e.g. `__tests__/integration/agent.test.ts` or `__tests__/integration/command.test.ts`) to see the established patterns
+
+**Mandatory integration test patterns** (do not deviate):
+- Mock child_process: `jest.mock('child_process', () => ({ spawn: jest.fn() }));` then `const { spawn } = require('child_process');`
+- Never use `import { spawn } from 'child_process'` with `(spawn as jest.Mock)` — always use the `require` pattern above
+- Default mock in `beforeEach`: `spawn.mockImplementation(() => fakeChild('', '', 0));`
+- Cleanup in `afterEach`: call `cleanupTmpWorkspace(tmpDir)`, `cleanupRailiEnvVars()`, and `spawn.mockReset()`
+- Use `fakeChild(stdout, stderr, exitCode)` for all spawn mocks — never create manual EventEmitter mocks
+- Load context via: `import { loadContext } from '../../src/context/context';`
+- For approvals: `process.env.RAILI_MANUAL_CHOICE = 'PASSED'` or `'FAILED'`
+- For feedback: `process.env.RAILI_FEEDBACK_<UPPERCASE_NAME> = 'value'`
+
+Copy patterns from existing tests rather than inventing new ones. The ticket's Test Plan section will include code sketches — follow them.
+
 ## Your Workflow
 
 1. Read ticket info & acceptance criteria status from `.issues/2_doing/` and results from `.raili/main/outputs/test.md` and `.raili/main/outputs/build.md`.

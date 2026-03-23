@@ -264,7 +264,7 @@ Run tests: `npm test` (uses `--runInBand` to avoid race conditions)
   - Approval prompts are automated in tests by setting `process.env.RAILI_MANUAL_CHOICE` to `PASSED` or `FAILED` before `runCommand` so the approval flow can be exercised without human input.
   - Feedback prompts are automated by setting `process.env.RAILI_FEEDBACK_<UPPERCASE_NAME>` to the desired value.
   - Integration tests may assert on on-disk artifacts inside the temp workspace (for example `.raili/main/outputs/<stateId>.md` and `.raili/main/context.json`) to ensure output storage and context persistence work as expected.
-  - Use `cleanupRailiEnvVars()` from `testUtils.ts` in `afterEach` to remove `RAILI_VAR_*` and `RAILI_MANUAL_CHOICE` env vars.
+  - Use `cleanupRailiEnvVars()` from `testUtils.ts` in `afterEach` to remove `RAILI_VAR_*`, `RAILI_FEEDBACK_*`, and `RAILI_MANUAL_CHOICE` env vars.
 
 Examples (patterns to copy):
 
