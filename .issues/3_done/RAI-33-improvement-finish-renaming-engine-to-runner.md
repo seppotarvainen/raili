@@ -20,7 +20,7 @@ The core component that executes workflows was renamed to `Runner` (class in src
 - __tests__/unit/Engine.expose.test.ts
 - __tests__/unit/engine.approval.test.ts
 - __tests__/unit/engine.success.test.ts
-- __tests__/unit/engine.test.ts
+- __tests__/unit/runner.test.ts
 - __tests__/unit/* (search and update any tests using a variable named `engine` to `runner` and filenames containing `engine` where appropriate)
 
 Note: The above list is intentionally conservative. A repo-wide check for the literal token "Engine" (case-insensitive) must be run and each match assessed: if it refers to the core execution component, update to "Runner"; if it refers to the `engine` state type (YAML examples, `type: engine`), leave unchanged.

@@ -238,7 +238,7 @@ output:
 
 ## Testing Policy (Strict)
 
-- **Unit tests** for core runner (`engine.test.ts`) and all state runners/handlers
+- **Unit tests** for core runner (`runner.test.ts`) and all state runners/handlers
   - Test all transition types (binary, named, terminal, error routing)
   - Test illegal transitions (throw error immediately)
   - Test `max_visits` enforcement

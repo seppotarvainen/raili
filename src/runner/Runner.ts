@@ -1,18 +1,18 @@
-import { StateDef, StateMachine, WorkflowContext } from '../types';
-import { AgentRegistry } from '../registry/agentRegistry';
-import { ScriptRegistry } from '../registry/scriptRegistry';
-import { addStateToHistory, getCurrentState, saveContext } from '../context/context';
-import { runAgentState } from './AgentStateRunner';
-import { runScriptState } from './ScriptStateRunner';
-import { runCommandState } from './CommandStateRunner';
-import { ApprovalOutcome, runApprovalStep } from './ApproveStateRunner';
-import { runNotify } from '../handlers/notifyHandler';
-import { clearAgentOutputs, readLatestRun } from '../context/outputStore';
-import { readLearnings } from '../context/learningStore';
-import { resolveTransition } from './transition';
+import {StateDef, StateMachine, WorkflowContext} from '../types';
+import {AgentRegistry} from '../registry/agentRegistry';
+import {ScriptRegistry} from '../registry/scriptRegistry';
+import {addStateToHistory, getCurrentState, saveContext} from '../context/context';
+import {runAgentState} from './AgentStateRunner';
+import {runScriptState} from './ScriptStateRunner';
+import {runCommandState} from './CommandStateRunner';
+import {ApprovalOutcome, runApprovalStep} from './ApproveStateRunner';
+import {runNotify} from '../handlers/notifyHandler';
+import {clearAgentOutputs, readLatestRun} from '../context/outputStore';
+import {readLearnings} from '../context/learningStore';
+import {resolveTransition} from './transition';
 import colors from 'colors/safe';
-import { handleFeedbackPrompt } from '../handlers/manualHandler';
-import { Presenter } from '../presenter';
+import {handleFeedbackPrompt} from '../handlers/manualHandler';
+import {Presenter} from '../presenter';
 
 /** Result returned by every state runner: outcome and optional exports */
 export type StateResult = { outcome: string; exports?: Record<string, string> };
@@ -105,9 +105,10 @@ export class Runner {
    */
   private async enterState(stateId: string, stateDef: StateDef): Promise<void> {
     const { config } = stateDef;
+    const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
+    this.record(stateId);
 
     if (config.max_visits !== undefined) {
-      const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
       this.visitCounts.set(stateId, visits);
       if (visits > config.max_visits) {
         throw new Error(`State '${stateId}' exceeded max_visits limit of ${config.max_visits}`);
@@ -118,66 +119,33 @@ export class Runner {
       clearAgentOutputs(this.cwd, config.reset_outputs, this.workflowArg);
     }
 
-    const lastState = this.context.stateHistory[this.context.stateHistory.length - 1];
-    if (!lastState || lastState.state !== stateId) {
-      this.record(stateId);
 
-      // After persisting the history entry, render a presentational header.
-      try {
-        const entry = this.context.stateHistory[this.context.stateHistory.length - 1];
-        const count = this.context.stateHistory.length;
-        const stateName = stateId.toUpperCase();
-        const type = (config.type as any) ?? 'engine';
+    const entry = this.context.stateHistory[this.context.stateHistory.length - 1];
+    const count = this.context.stateHistory.length;
 
-        // Determine visit count: prefer visitCounts, fall back to history occurrences
-        const visit =
-          this.visitCounts.get(stateId) ??
-          this.context.stateHistory.filter((e) => e.state === stateId).length;
-
-        // Determine learnings / earlier output note
-        let learningsApplied = false;
-        let learningNote: string | undefined = undefined;
-        try {
-          const latestOutput = readLatestRun(this.cwd, stateId, this.workflowArg);
-          if (!latestOutput) {
-            learningNote = 'No earlier run output';
-          }
-
-          if (type === 'agent' && config.agent) {
-            const lg = readLearnings(this.cwd, config.agent, this.workflowArg);
-            learningsApplied = !!lg && lg.trim().length > 0;
-          }
-        } catch (e) {
-          // best-effort for presentation; do not let presentation crash the runner
-        }
-
-        // Use Presenter class (static import) so Jest's module mock is applied consistently in tests.
-        const presenter = new Presenter();
-        // Call the instance renderEntry if available. Some Jest mocks attach the mocked fn to the
-        // mock.instances[0].renderEntry rather than the returned instance; attempt both.
-        const renderFn: any =
-          (presenter as any).renderEntry ??
-          (Presenter as any)?.mock?.instances?.[0]?.renderEntry ??
-          undefined;
-        if (typeof renderFn === 'function') {
-          try {
-            renderFn.call(presenter, {
-              count,
-              stateName,
-              type,
-              enteredAt: entry.enteredAt,
-              visit,
-              learningsApplied,
-              learningNote,
-            });
-          } catch (e) {
-            // Presentation must not break execution; swallow errors here.
-          }
-        }
-      } catch (e) {
-        // Presentation must not break execution; swallow errors here.
+    let outputsApplied = false;
+    let learningsApplied = false;
+    try {
+      const latestOutput = readLatestRun(this.cwd, stateId, this.workflowArg);
+      outputsApplied = Boolean(latestOutput);
+      if (config.type === 'agent' && config.agent) {
+        const lg = readLearnings(this.cwd, config.agent, this.workflowArg);
+        learningsApplied = !!lg && lg.trim().length > 0;
       }
+    } catch (e) {
+      // Workflow dir may not exist yet (e.g. clean run); presenter falls back to defaults.
     }
+
+    const presenter = new Presenter();
+    presenter.appendStateEnter(
+      stateDef,
+      visits,
+      count,
+      entry?.enteredAt,
+      learningsApplied,
+      outputsApplied,
+    );
+    presenter.render();
 
     if (config.notify) {
       const notifyMeta = await runNotify(config.notify, this.cwd, this.context?.vars ?? {});

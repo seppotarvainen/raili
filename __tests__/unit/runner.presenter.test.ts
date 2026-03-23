@@ -1,70 +1,97 @@
-jest.mock('../../src/presenter', () => {
-  return {
-    Presenter: jest.fn().mockImplementation(function (this: any) { this.renderEntry = jest.fn(); }),
-  };
-});
+import {Presenter} from '../../src/presenter';
+import {StateDef} from '../../src/types';
 
-import { Runner, RunnerConfig } from '../../src/runner/Runner';
-import { StateMachine, WorkflowContext } from '../../src/types';
-
-jest.mock('../../src/context/context', () => ({
-  getCurrentState: jest.fn().mockReturnValue(null),
-  addStateToHistory: jest.fn((ctx: any, state: string) => ({ ...ctx, stateHistory: [...(ctx.stateHistory || []), { state, enteredAt: '2026-03-18T10:32:00Z' }] })),
-  saveContext: jest.fn(),
-}));
-
-jest.mock('../../src/context/outputStore', () => ({
-  readLatestRun: jest.fn().mockReturnValue(null),
-}));
-
-jest.mock('../../src/context/learningStore', () => ({
-  readLearnings: jest.fn().mockReturnValue(''),
-}));
-
-import { Presenter } from '../../src/presenter';
-
-function makeRunner(states: StateMachine['states'], initial = 'start') {
-  const stateMachine: StateMachine = { initial, states } as any;
-  const context: WorkflowContext = { stateHistory: [] } as any;
-  return new Runner({
-    stateMachine,
-    agentRegistry: {},
-    scriptRegistry: {},
-    context,
-    cwd: '/tmp',
-  } as RunnerConfig);
+function makeStateDef(id: string, type: string, extra?: Record<string, any>): StateDef {
+  return { id, config: { type, ...extra } as any, transitions: [] };
 }
 
-beforeEach(() => jest.clearAllMocks());
+const TS = '2026-03-18T10:32:00Z';
 
-test('Runner.enterState calls Presenter.renderEntry with correct args for agent state', async () => {
-  const runner = makeRunner({
-    start: { id: 'start', config: { type: 'agent', agent: 'a', on: { PASSED: 'done' } }, transitions: ['done'] },
-    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+describe('Presenter.appendStateEnter', () => {
+  test('stores stateName as uppercased state id', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent', { agent: 'a' }), 1, 1, TS);
+    expect(p.entry?.stateName).toBe('START');
   });
 
-  await (runner as any).enterState('start', runner['stateMachine'].states['start']);
+  test('stores type from stateDef config', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
+    expect(p.entry?.type).toBe('agent');
+  });
 
-  const inst = (Presenter as any).mock.instances[0];
-  expect(inst.renderEntry).toHaveBeenCalled();
-  const arg = inst.renderEntry.mock.calls[0][0];
-  expect(arg.count).toBe(1);
-  expect(arg.stateName).toBe('START');
-  expect(arg.type).toBe('agent');
-  expect(arg.enteredAt).toBe('2026-03-18T10:32:00Z');
+  test('defaults type to engine when config.type is missing', () => {
+    const p = new Presenter();
+    p.appendStateEnter({ id: 'x', config: {} as any, transitions: [] }, 1, 1, TS);
+    expect(p.entry?.type).toBe('engine');
+  });
+
+  test('stores visit count', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('done', 'engine'), 3, 5, TS);
+    expect(p.entry?.visit).toBe(3);
+  });
+
+  test('stores history count', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('done', 'engine'), 1, 5, TS);
+    expect(p.entry?.count).toBe(5);
+  });
+
+  test('stores enteredAt', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
+    expect(p.entry?.enteredAt).toBe(TS);
+  });
+
+  test('entry is null before any call', () => {
+    const p = new Presenter();
+    expect(p.entry).toBeNull();
+  });
+
+  test('sets applyFrame to true', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
+    expect(p.entry?.applyFrame).toBe(true);
+  });
+
+  test('builds lines with emoji, stateName, enteredAt and visit', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
+    expect(p.entry?.lines.entries[0].content).toContain('🤖');
+    expect(p.entry?.lines.entries[0].content).toContain('#1 START');
+    expect(p.entry?.lines.entries[1].content).toContain(TS);
+    expect(p.entry?.lines.entries[2].content).toContain('Visit: 1');
+  });
+
+  test('builds lines with learningsApplied', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS, true);
+    expect(p.entry?.lines.entries[3].content).toContain('✅ Learnings applied');
+  });
+
+  test('builds lines with outputsApplied=true', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS, false, true);
+    expect(p.entry?.lines.entries[3].content).toContain('Earlier output applied');
+  });
+
+  test('builds lines with fallback no earlier run output', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
+    expect(p.entry?.lines.entries[3].content).toContain('No earlier run output');
+  });
 });
 
-test('Runner.enterState calls Presenter.renderEntry with correct args for engine state', async () => {
-  const runner = makeRunner({
-    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
-  }, 'done');
+describe('Presenter.render', () => {
+  test('does not throw when entry is set', () => {
+    const p = new Presenter();
+    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
+    expect(() => p.render()).not.toThrow();
+  });
 
-  await (runner as any).enterState('done', runner['stateMachine'].states['done']);
-
-  const inst = (Presenter as any).mock.instances[0];
-  expect(inst.renderEntry).toHaveBeenCalled();
-  const arg = inst.renderEntry.mock.calls[0][0];
-  expect(arg.count).toBe(1);
-  expect(arg.stateName).toBe('DONE');
-  expect(arg.type).toBe('engine');
+  test('does nothing when entry is null', () => {
+    const p = new Presenter();
+    expect(() => p.render()).not.toThrow();
+  });
 });
