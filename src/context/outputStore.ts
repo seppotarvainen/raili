@@ -12,45 +12,37 @@ function outputPath(cwd: string, stateId: string, workflowArg?: string): string 
 
 /**
  * Filter output based on OutputConfig settings.
- * Applies in order: search pattern (with after lines), then tail.
+ * Behavior: If a marker (default "OUTPUT:") is specified, find the first case-insensitive occurrence
+ * and extract everything after it. If marker not found, use full output. Then trim leading/trailing
+ * blank lines and apply tail if configured.
  */
-function filterOutput(output: string, config: OutputConfig): string {
+export function filterOutput(output: string, config: OutputConfig): string {
   let result = output;
 
-  // Step 1: Apply include_search_pattern if specified
-  if (config.include_search_pattern) {
-    try {
-      const pattern = new RegExp(config.include_search_pattern);
-      const lines = result.split('\n');
-      const filtered: string[] = [];
-      const afterCount = config.include_after ?? 0;
-
-      for (let i = 0; i < lines.length; i++) {
-        if (pattern.test(lines[i])) {
-          // Add matching line and the next 'afterCount' lines
-          filtered.push(lines[i]);
-          for (let j = 1; j <= afterCount && i + j < lines.length; j++) {
-            filtered.push(lines[i + j]);
-          }
-        }
-      }
-
-      // Only use filtered result if matches were found
-      if (filtered.length > 0) {
-        result = filtered.join('\n');
-      }
-    } catch (e) {
-      console.warn(
-        `Invalid regex pattern in include_search_pattern: ${config.include_search_pattern}`,
-      );
+  const marker = config.marker ?? 'OUTPUT:';
+  if (marker && typeof marker === 'string') {
+    const lower = result.toLowerCase();
+    const idx = lower.indexOf(marker.toLowerCase());
+    if (idx !== -1) {
+      result = result.slice(idx + marker.length);
     }
   }
 
-  // Step 2: Apply tail if specified
+  // Trim leading/trailing blank lines but preserve internal newlines
+  const lines = result.split('\n');
+  while (lines.length && lines[0].trim() === '') {
+    lines.shift();
+  }
+  while (lines.length && lines[lines.length - 1].trim() === '') {
+    lines.pop();
+  }
+  result = lines.join('\n');
+
+  // Apply tail if specified
   if (config.tail && config.tail > 0) {
-    const lines = result.split('\n');
-    if (lines.length > config.tail) {
-      result = lines.slice(-config.tail).join('\n');
+    const parts = result.split('\n');
+    if (parts.length > config.tail) {
+      result = parts.slice(-config.tail).join('\n');
     }
   }
 

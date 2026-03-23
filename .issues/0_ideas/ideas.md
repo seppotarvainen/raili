@@ -9,6 +9,51 @@ intent: |
     Usage: `raili run --dashboard` would start the workflow execution and open the dashboard in the browser. The dashboard would show the current state, the history of transitions, and the outputs of each state.
 ```
 
+```yaml
+title: 'Add ability to set LESSON-marker by user'
+intent: |
+    Currently 'LESSON'-marker is hardcoded by the system. It would be great if user could set it by themselves. The default value would still be 'LESSON'. This will be set like this:
+
+    ```yaml
+    code:
+      type: agent
+      agent: raili-coding
+      prompt: "work according to your rules."
+      learn:
+        marker: 'Learn this:' # optional, defaults to "LESSON:"
+        from:
+          - var: ${CHECK_DONE_FAILED}
+      on:
+        PASSED: format
+      lesson_marker: "RAILI_LESSON"  
+```
+
+```yaml
+title: 'Update output store to behave like learnings store'
+intent: |
+  Currently user can set pattern which lines to include into the output.
+  This wasn't useful and it should work similar to learnings, which simply picks up
+  everything after "LESSON:"-marker.
+   
+  User should be able to set the marker for output store, but change behaviour so that it
+  picks up everything after the first marker, instead of picking up lines matching the
+  pattern.
+   
+  Usage:
+   
+  ```yaml
+  code:
+    type: agent
+    agent: raili-coding
+    prompt: "work according to your rules."
+    output:
+      store: true
+      marker: 'SUMMARY:' # optional, defaults to "OUTPUT:"
+      # tail (if present) is applied after like it is currently      
+    on:
+      PASSED: format
+```
+
 
 # Plan: Agent Learning System for Raili
 

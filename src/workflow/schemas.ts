@@ -29,15 +29,11 @@ export const OutputConfigSchema: ObjectSchema = {
     type: 'number',
     description: 'Keep only the last N lines of output',
   },
-  include_search_pattern: {
+  marker: {
     required: false,
     type: 'string',
-    description: 'Regex pattern to search for matching lines',
-  },
-  include_after: {
-    required: false,
-    type: 'number',
-    description: 'Include N lines after each matched line',
+    description:
+      "Marker string to locate the start of the stored output; first occurrence (case-insensitive) is used; default: 'OUTPUT:'",
   },
 };
 
