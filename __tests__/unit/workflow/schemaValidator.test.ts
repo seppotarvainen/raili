@@ -96,7 +96,7 @@ describe('SchemaValidator', () => {
         prompt: 'Analyze this',
         output: { store: true },
         notify: 'echo starting',
-        max_visits: 5,
+        max_visits: { count: 5 },
         reset_outputs: ['previous_state'],
         on: {
           PASSED: 'next_state',
@@ -335,14 +335,14 @@ describe('SchemaValidator', () => {
         );
       });
 
-      it('should throw if max_visits is not number', () => {
+      it('should throw if max_visits is not object', () => {
         const config = {
           type: 'agent',
           agent: 'copilot',
-          max_visits: '5' // string instead of number
+          max_visits: '5' // string instead of object
         };
         expect(() => validateStateConfig(config, 'test_state')).toThrow(
-          /field.*max_visits.*expected number/i
+          /field.*max_visits.*expected object/i
         );
       });
 

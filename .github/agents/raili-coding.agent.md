@@ -2,7 +2,7 @@
 description: This agent writes TypeScript code for Raili's core engine, handlers, and utilities. It ensures strict adherence to deterministic architecture, fail-fast validation, separation of concerns, and comprehensive unit tests. All code follows Raili's philosophy of explicit state machines with pluggable handlers.
 name: raili-coding
 model: gpt-5-mini
-tools: ['read', 'search', 'edit']
+tools: ['read', 'search', 'edit', 'shell']
 ---
 
 # raili-coding instructions
@@ -141,8 +141,9 @@ Copy patterns from existing tests rather than inventing new ones. The ticket's T
 ✅ Write tests with mocked dependencies  
 ✅ Use strong TypeScript types  
 ✅ Throw errors immediately (fail-fast)  
-✅ Keep modules focused and composable  
-✅ Trust test and build agents to catch issues  
+✅ Keep modules focused and composable
+✅ Run `npm test` locally to verify tests before printing `complete`
+✅ Trust former agents to catch build / formatting issues  
 
 ## Don'ts
 
