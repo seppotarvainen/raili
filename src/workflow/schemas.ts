@@ -119,8 +119,9 @@ export const StateConfigSchema: ObjectSchema = {
   },
   max_visits: {
     required: false,
-    type: 'number',
-    description: 'Throw if this state is entered more than N times',
+    type: 'object',
+    description:
+      'Object with count and optional continue target. Example: { count: 5, continue: "done" }',
   },
   agent: {
     required: false,

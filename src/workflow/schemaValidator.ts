@@ -216,6 +216,23 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
     }
   }
 
+  // Validate max_visits object shape (new structured form)
+  if (config.max_visits !== undefined && config.max_visits !== null) {
+    const mv = config.max_visits;
+    if (typeof mv !== 'object' || Array.isArray(mv)) {
+      throw new SchemaValidationError(`Field 'max_visits' expected object`, context);
+    }
+    if (typeof mv.count !== 'number' || !Number.isFinite(mv.count) || mv.count <= 0) {
+      throw new SchemaValidationError(
+        `Field 'max_visits.count' must be a positive number`,
+        context,
+      );
+    }
+    if ('continue' in mv && mv.continue !== undefined && typeof mv.continue !== 'string') {
+      throw new SchemaValidationError(`Field 'max_visits.continue' must be a string`, context);
+    }
+  }
+
   // 'expose' must only be used with script or command states
   if (config.expose !== undefined && config.expose !== null) {
     if (!config.type || !['script', 'command'].includes(config.type)) {

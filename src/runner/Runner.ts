@@ -102,17 +102,33 @@ export class Runner {
   /**
    * On state entry: enforce max_visits, clear outputs, record in history, fire notify.
    */
-  private async enterState(stateId: string, stateDef: StateDef): Promise<void> {
+  /**
+   * On state entry: enforce max_visits, clear outputs, record in history, fire notify.
+   * Returns a continuation target state id when max_visits is exceeded and a continue target is configured.
+   */
+  private async enterState(stateId: string, stateDef: StateDef): Promise<string | null> {
     const { config } = stateDef;
-    const visits = (this.visitCounts.get(stateId) ?? 0) + 1;
-    this.record(stateId);
+    const prev = this.visitCounts.get(stateId) ?? 0;
+    const visits = prev + 1;
 
-    if (config.max_visits !== undefined) {
+    // Handle max_visits structured object: { count, continue? }
+    if (config.max_visits !== undefined && config.max_visits !== null) {
+      const mv = config.max_visits as any;
+      const count = mv.count as number;
+      const cont = mv.continue as string | undefined;
       this.visitCounts.set(stateId, visits);
-      if (visits > config.max_visits) {
-        throw new Error(`State '${stateId}' exceeded max_visits limit of ${config.max_visits}`);
+      if (visits > count) {
+        if (cont) {
+          this.record(stateId, { max_visits: { exceeded: true, target: cont } });
+          return cont;
+        }
+        throw new Error(`State '${stateId}' exceeded max_visits limit of ${count}`);
       }
+    } else {
+      this.visitCounts.set(stateId, visits);
     }
+
+    this.record(stateId);
 
     if (config.reset_outputs?.length) {
       clearAgentOutputs(this.cwd, config.reset_outputs, this.workflowArg);
@@ -150,6 +166,8 @@ export class Runner {
       const notifyMeta = await runNotify(config.notify, this.cwd, this.context?.vars ?? {});
       this.record(stateId, { notify: notifyMeta });
     }
+
+    return null;
   }
 
   // ── Phase: Execute State Handler ────────────────────────────────────
@@ -394,7 +412,11 @@ export class Runner {
         }
 
         // Phase 2: Enter state (max_visits, reset_outputs, history, notify)
-        await this.enterState(stateId, stateDef);
+        const continueTarget = await this.enterState(stateId, stateDef);
+        if (continueTarget) {
+          stateId = continueTarget;
+          continue;
+        }
 
         // Phase 3: Terminal check
         const { config } = stateDef;

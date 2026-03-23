@@ -156,7 +156,7 @@ test('throws when state exceeds max_visits', async () => {
   const runner = makeRunner({
     start: {
       id: 'start',
-      config: { type: 'command', command: 'echo hi', max_visits: 3, on: { PASSED: 'done', FAILED: 'start' } },
+      config: { type: 'command', command: 'echo hi', max_visits: { count: 3 }, on: { PASSED: 'done', FAILED: 'start' } },
       transitions: ['done', 'start'],
     },
     done: { id: 'done', config: { type: 'engine' }, transitions: [] },
@@ -171,7 +171,7 @@ test('does not throw when visits are within max_visits', async () => {
   const runner = makeRunner({
     start: {
       id: 'start',
-      config: { type: 'command', command: 'echo hi', max_visits: 3, on: { PASSED: 'done', FAILED: 'start' } },
+      config: { type: 'command', command: 'echo hi', max_visits: { count: 3 }, on: { PASSED: 'done', FAILED: 'start' } },
       transitions: ['done', 'start'],
     },
     done: { id: 'done', config: { type: 'engine' }, transitions: [] },
@@ -190,7 +190,7 @@ test('max_visits counter resets independently per state', async () => {
   const runner = makeRunner({
     start: {
       id: 'start',
-      config: { type: 'command', command: 'echo hi', max_visits: 5, transitions: { RETRY: 'start', PASSED: 'done' } },
+      config: { type: 'command', command: 'echo hi', max_visits: { count: 5 }, transitions: { RETRY: 'start', PASSED: 'done' } },
       transitions: ['start', 'done'],
     },
     done: { id: 'done', config: { type: 'engine' }, transitions: [] },

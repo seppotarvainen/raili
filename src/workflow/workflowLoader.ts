@@ -139,6 +139,12 @@ export function buildStateMachine(config: WorkflowConfig): StateMachine {
       if (!transitions.includes(s)) transitions.push(s);
     }
 
+    // If state defines max_visits with a continue target, include it so validation can verify the target exists
+    if ((stateConfig as any).max_visits && typeof (stateConfig as any).max_visits === 'object') {
+      const cont = (stateConfig as any).max_visits.continue as string | undefined;
+      if (cont && !transitions.includes(cont)) transitions.push(cont);
+    }
+
     states[stateId] = {
       id: stateId,
       config: stateConfig,

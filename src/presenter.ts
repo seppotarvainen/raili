@@ -104,7 +104,6 @@ export class Presenter {
 
     lines.push(`${outcomePart}${nextPart}${elapsedPart}`, 1);
 
-
     this.entry = {
       count: 0,
       stateName: stateDef.id.toUpperCase(),
@@ -116,7 +115,6 @@ export class Presenter {
       lines,
       borderTop: '-',
     };
-
   }
 
   render(): void {

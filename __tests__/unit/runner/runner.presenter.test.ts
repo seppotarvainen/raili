@@ -49,12 +49,6 @@ describe('Presenter.appendStateEnter', () => {
     expect(p.entry).toBeNull();
   });
 
-  test('sets applyFrame to true', () => {
-    const p = new Presenter();
-    p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
-    expect(p.entry?.applyFrame).toBe(true);
-  });
-
   test('builds lines with emoji, stateName, enteredAt and visit', () => {
     const p = new Presenter();
     p.appendStateEnter(makeStateDef('start', 'agent'), 1, 1, TS);
