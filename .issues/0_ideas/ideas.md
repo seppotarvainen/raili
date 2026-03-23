@@ -16,6 +16,19 @@ intent: |
 ```
 
 ```yaml
+title: 'Add command `raili teach` to manually add learnings'
+intent: |
+    In addition to auto-capturing learnings from output and variables, it would be useful to have a manual command for adding learnings. This allows the user to curate the learnings file with important insights that may not be captured automatically.
+    
+    Usage: `raili teach <agentId>` opens a multiline prompt:
+    "Write a lesson to the agent '<agentId>'. End with /q."
+    The user can write any text as a learning, and it will be appended to `.raili/<workflow>/learnings/<agentId>.md` with a timestamp and a [manual] tag:
+    - [2026-03-20T12:00:00Z] [manual] Remember to check edge cases in input validation.
+
+    User can give workflow as -w flag to specify which workflow's learnings to update. If not given, defaults to current `main`.
+```
+
+```yaml
 title: 'Update output store to behave like learnings store'
 intent: |
   Currently user can set pattern which lines to include into the output.
