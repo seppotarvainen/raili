@@ -1,18 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { StateDef, StateMachine, WorkflowConfig } from '../types';
+import { StateDef, StateMachine, WorkflowConfig, StateConfig, InputDef } from '../types';
 import { validateWorkflowConfig } from './schemaValidator';
-/**
- * Load and parse workflow.yaml from .raili/ directory.
- * Merges any sub-workflow files listed under 'include:'.
- */
 import { resolveWorkflowDir } from '../context/pathUtils';
 
-/**
- * Parse a single YAML file into a raw object, with basic structural checks.
- * Sub-workflow files must NOT define 'initial'.
- */
 function loadYamlFile(filePath: string, isSubWorkflow: boolean): any {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Workflow file not found: ${filePath}`);
@@ -36,59 +28,134 @@ function loadYamlFile(filePath: string, isSubWorkflow: boolean): any {
   return parsed;
 }
 
-export function loadWorkflowConfig(cwd: string, workflowPath?: string): WorkflowConfig {
-  const railiDir = path.join(cwd, '.raili');
+function normalizeInputs(raw: any[] | undefined): InputDef[] | undefined {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw)) throw new Error('Field "inputs" must be an array');
+  return raw.map((it: any, idx: number) => {
+    if (typeof it === 'string') return { name: it, log: false };
+    if (typeof it === 'object' && it !== null) {
+      if (typeof it.name !== 'string') throw new Error(`inputs[${idx}].name must be a string`);
+      if ('description' in it && it.description !== undefined && typeof it.description !== 'string')
+        throw new Error(`inputs[${idx}].description must be a string when provided`);
+      if ('log' in it && typeof it.log !== 'boolean')
+        throw new Error(`inputs[${idx}].log must be a boolean when provided`);
+      const res: any = { name: it.name, log: typeof it.log === 'boolean' ? it.log : false };
+      if (typeof it.description === 'string') res.description = it.description;
+      return res as InputDef;
+    }
+    throw new Error(
+      `Invalid input declaration at index ${idx}: inputs must be strings or objects with 'name'`,
+    );
+  });
+}
 
-  // Determine workflow directory first (may be .raili/main or .raili/<name> or a custom path)
+export function loadWorkflowConfig(cwd: string, workflowPath?: string): WorkflowConfig {
   const workflowDir = resolveWorkflowDir(cwd, workflowPath);
   const resolvedPath = path.join(workflowDir, 'workflow.yaml');
-
   const main = loadYamlFile(resolvedPath, false);
 
-  // Validate the raw parsed workflow object against schema so unknown top-level
-  // fields cause a fail-fast validation error. The schema validator enforces
-  // presence/shape of 'initial' for main workflows and prohibits 'initial' in
-  // sub-workflows (see loadYamlFile's isSubWorkflow guard).
+  // initial schema validation of main so basic mistakes surface early
   validateWorkflowConfig(main);
 
-  // Normalize inputs to [{name, description?}] form for downstream code (description optional)
-  let normalizedInputs: any[] | undefined = undefined;
-  if (main.inputs !== undefined) {
-    if (!Array.isArray(main.inputs)) {
-      throw new Error('Field "inputs" must be an array');
+  // normalize parent inputs
+  let normalizedInputs = normalizeInputs(main.inputs) || undefined;
+
+  // Work on a shallow copy of states to allow merging
+  const parentStates: Record<string, StateConfig> = Object.assign({}, main.states);
+
+  // Process group states by flattening referenced sub-workflows into parent
+  for (const [stateId, stateCfg] of Object.entries(Object.assign({}, parentStates))) {
+    if (stateCfg && (stateCfg as any).type === 'group') {
+      if (!stateCfg.group || typeof stateCfg.group !== 'string') {
+        throw new Error(`Group state '${stateId}' must have a string 'group' property`);
+      }
+
+      // Resolve sub-workflow path relative to parent workflow dir
+      const subPath = path.resolve(workflowDir, stateCfg.group);
+      // If sub-workflow file doesn't exist, defer validation to validateWorkflowNesting
+      // and leave the group state intact for later checks.
+      if (!fs.existsSync(subPath)) {
+        continue;
+      }
+      const sub = loadYamlFile(subPath, true);
+
+      // Sub-workflow must not contain nested group states
+      for (const [subId, subCfg] of Object.entries(sub.states || {})) {
+        if (subCfg && (subCfg as any).type === 'group') {
+          throw new Error(`Sub-workflow '${subPath}' must not contain 'group' states`);
+        }
+      }
+
+      // Normalize and merge sub inputs; detect duplicates
+      const subInputs = normalizeInputs(sub.inputs) || undefined;
+      if (subInputs) {
+        for (const si of subInputs) {
+          if (normalizedInputs && normalizedInputs.some((i) => i.name === si.name)) {
+            throw new Error(
+              `Duplicate input key '${si.name}' found in sub-workflow '${subPath}' and parent workflow`,
+            );
+          }
+        }
+        normalizedInputs = (normalizedInputs || []).concat(subInputs);
+      }
+
+      // Ensure sub-workflow defines at least one terminal 'out: true' state
+      const outStates = Object.entries(sub.states || {})
+        .filter(([_id, cfg]) => (cfg as any).out === true)
+        .map(([id]) => id);
+      if (outStates.length === 0) {
+        throw new Error(`Sub-workflow '${subPath}' must declare at least one 'out: true' state`);
+      }
+
+      // Flatten sub states into parentStates with deterministic prefix
+      const newStates: Record<string, StateConfig> = {};
+      for (const [subId, subCfg] of Object.entries(sub.states || {})) {
+        const newId = `${stateId}.${subId}`;
+        if (parentStates[newId]) {
+          throw new Error(
+            `State id collision when flattening '${subPath}': '${newId}' already exists in parent workflow`,
+          );
+        }
+        // Clone subCfg shallowly
+        const cfgCopy: any = Object.assign({}, subCfg);
+
+        // If this sub-state is marked as out:true, map parent group's routing onto it
+        if ((subCfg as any).out === true) {
+          if ((stateCfg as any).on) {
+            cfgCopy.on = Object.assign({}, (stateCfg as any).on);
+          }
+          if ((stateCfg as any).transitions) {
+            cfgCopy.transitions = Object.assign({}, (stateCfg as any).transitions);
+          }
+        }
+
+        newStates[newId] = cfgCopy as StateConfig;
+      }
+
+      // Determine entry state for sub-workflow: pick first declared state in sub.states
+      const subStateKeys = Object.keys(sub.states || {});
+      if (subStateKeys.length === 0) {
+        throw new Error(`Sub-workflow '${subPath}' contains no states`);
+      }
+      const entry = `${stateId}.${subStateKeys[0]}`;
+
+      // Replace the group state in parent with a proxy engine state that skips to the flattened entry
+      parentStates[stateId] = { type: 'engine', skip: entry } as any;
+
+      // Merge flattened states into parentStates
+      for (const [k, v] of Object.entries(newStates)) parentStates[k] = v;
     }
-    normalizedInputs = main.inputs.map((it: any, idx: number) => {
-      // allow shorthand string form
-      if (typeof it === 'string') {
-        return { name: it, description: undefined, log: false };
-      }
-      if (typeof it === 'object' && it !== null) {
-        if (typeof it.name !== 'string') throw new Error(`inputs[${idx}].name must be a string`);
-        if ('description' in it && typeof it.description !== 'string')
-          throw new Error(`inputs[${idx}].description must be a string when provided`);
-        if ('log' in it && typeof it.log !== 'boolean')
-          throw new Error(`inputs[${idx}].log must be a boolean when provided`);
-        return {
-          name: it.name,
-          description: typeof it.description === 'string' ? it.description : undefined,
-          log: typeof it.log === 'boolean' ? it.log : false,
-        };
-      }
-      throw new Error(
-        `Invalid input declaration at index ${idx}: inputs must be strings or objects with 'name'`,
-      );
-    });
   }
 
   const config: WorkflowConfig = {
     initial: main.initial,
-    states: main.states,
+    states: parentStates,
     inputs: normalizedInputs,
   };
+  if (main.error) config.error = main.error;
 
-  if (main.error) {
-    config.error = main.error;
-  }
+  // Final validation of merged config
+  validateWorkflowConfig(config);
 
   return config;
 }

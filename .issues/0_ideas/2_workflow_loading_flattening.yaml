@@ -1,5 +1,13 @@
 title: "Load and flatten group workflows into single state machine"
 intent: |
+  This is a part of a bigger initiative to implement group states and sub-workflow nesting. This ticket focuses on
+  the workflow loading and flattening logic that merges sub-workflow states into the parent workflow's state machine. 
+  The goal is to ensure that after loading, the runner sees a single flat state machine with all sub-workflow states 
+  and inputs incorporated seamlessly.
+  
+  Previous ticket was RAI-40 and can be found from `.issues/3_done/RAI-40-improvement-add-group-state-validation.md`.
+  You may look it for reference.
+  
   ## Overview
 
   Implement workflow loading and state machine flattening logic. Sub-workflows are loaded,
