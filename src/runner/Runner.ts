@@ -1,11 +1,12 @@
 import { StateDef, StateMachine, WorkflowContext } from '../types';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { ScriptRegistry } from '../registry/scriptRegistry';
-import { addStateToHistory, getCurrentState, saveContext } from '../context/context';
+import { addStateToHistory, saveContext } from '../context/context';
 import { runAgentState } from './AgentStateRunner';
 import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
 import { ApprovalOutcome, runApprovalStep } from './ApproveStateRunner';
+import { runGroupState } from './GroupStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
 import { clearAgentOutputs, readLatestRun } from '../context/outputStore';
 import { readLearnings } from '../context/learningStore';
@@ -196,6 +197,15 @@ export class Runner {
       );
     } else if (config.type === 'command') {
       return runCommandState(stateDef, this.cwd, this.context?.vars, this.workflowArg);
+    } else if (config.type === 'group') {
+      return runGroupState(
+        stateDef,
+        this.cwd,
+        this.context?.vars,
+        this.workflowArg,
+        this.agentRegistry,
+        this.scriptRegistry,
+      );
     }
     return { outcome: 'PASSED' };
   }
@@ -389,7 +399,10 @@ export class Runner {
    * Run the workflow from the current (or initial) state until a terminal state is reached.
    */
   async run(): Promise<void> {
-    const currentStateId = getCurrentState(this.context) ?? this.stateMachine.initial;
+    const currentStateId =
+      this.context && this.context.stateHistory && this.context.stateHistory.length > 0
+        ? this.context.stateHistory[this.context.stateHistory.length - 1].state
+        : this.stateMachine.initial;
 
     if (this.context.stateHistory.length === 0) {
       this.record(currentStateId);
