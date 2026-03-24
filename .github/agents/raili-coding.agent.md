@@ -24,7 +24,7 @@ All work happens relative to project root.
 ### Additional Guidelines
 
 - If you received '//SUMMARY//' in your prompt, it means you had a failed test or build.
-- If there's output from build or test agents stored in: `.raili/main/outputs/`, read it and fix any issues before proceeding to next steps in ticket implementation.
+- If there's output from `build`, `test`, `check_tests` scripts stored in: `.raili/main/outputs/<output>.md`, read it and fix any issues before proceeding to next steps in ticket implementation.
 - If there's a lesson in you prompt, internalize it and apply it to your implementation.
 - Make the implementation end-to-end (code + tests)
 - Write TypeScript code for Raili's runner, handlers, state runners, validators, and utilities

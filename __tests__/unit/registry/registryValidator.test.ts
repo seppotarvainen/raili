@@ -238,3 +238,26 @@ describe('validateWorkflowNesting', () => {
   });
 });
 
+// ── stat.isFile() false branches ─────────────────────────────────────────────
+
+test('throws when agent registry entry points to a directory not a file', () => {
+  const raildir = path.join(TMP, '.raili');
+  fs.mkdirSync(raildir, { recursive: true });
+  // Create a DIRECTORY where the agent file is expected
+  const agentDir = path.join(TMP, 'agents', 'dir-agent');
+  fs.mkdirSync(agentDir, { recursive: true });
+  const reg = { 'dir.agent': { path: './agents/dir-agent' } };
+  fs.writeFileSync(path.join(raildir, 'agent-registry.json'), JSON.stringify(reg));
+  expect(() => validateAgentRegistry(TMP)).toThrow(/not a file/);
+});
+
+test('throws when script registry entry points to a directory not a file', () => {
+  const raildir = path.join(TMP, '.raili');
+  fs.mkdirSync(raildir, { recursive: true });
+  const scriptDir = path.join(TMP, 'scripts', 'dir-script');
+  fs.mkdirSync(scriptDir, { recursive: true });
+  const reg = { 'dir.script': { path: './scripts/dir-script' } };
+  fs.writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
+  expect(() => validateScriptRegistry(TMP)).toThrow(/not a file/);
+});
+

@@ -12,3 +12,6 @@ example
 
 # Draft docs
 docs/exclude
+
+# Coverage reports
+coverage

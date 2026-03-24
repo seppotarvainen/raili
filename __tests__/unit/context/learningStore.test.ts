@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import {appendUniqueLearning, extractLessons, readLearnings} from '../../../src/context/learningStore';
+import {appendUniqueLearning, extractLessons, readLearnings, stripTimestampsFromLearnings} from '../../../src/context/learningStore';
 
 describe('learningStore extractLessons', () => {
   test('single marker extracts following section preserving newlines', () => {
@@ -78,3 +78,30 @@ describe('learningStore appendUniqueLearning', () => {
     expect(stored.includes('\n')).toBe(true);
   });
 });
+
+// ── stripTimestampsFromLearnings ──────────────────────────────────────────────
+
+describe('learningStore stripTimestampsFromLearnings', () => {
+  test('entry with source tag includes source prefix', () => {
+    const content = '- [2026-01-01T00:00:00Z] [output:analyze]\n\nLesson body here\n\n';
+    const entries = stripTimestampsFromLearnings(content);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toContain('[output:analyze]');
+    expect(entries[0]).toContain('Lesson body here');
+  });
+
+  test('entry WITHOUT source tag omits prefix (pushes bare lesson)', () => {
+    // Format: - [TIMESTAMP] followed immediately by newline — no second [source] group
+    const content = '- [2026-01-01T00:00:00Z]\n\nBare lesson here\n\n';
+    const entries = stripTimestampsFromLearnings(content);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toBe('Bare lesson here');
+    expect(entries[0]).not.toContain('[');
+  });
+
+  test('empty content returns empty array', () => {
+    expect(stripTimestampsFromLearnings('')).toEqual([]);
+    expect(stripTimestampsFromLearnings('   ')).toEqual([]);
+  });
+});
+

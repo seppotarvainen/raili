@@ -293,6 +293,179 @@ describe('workflowLoader', () => {
 
       expect(() => validateStateMachine(machine)).not.toThrow();
     });
+
+    test('throws for command state missing command property', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: { id: 'start', config: { type: 'command' }, transitions: [] },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/command type requires/i);
+    });
+
+    test('throws for group state missing group property', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: { id: 'start', config: { type: 'group' }, transitions: [] },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/group type requires/i);
+    });
+
+    test('throws when learn_from is not an array', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: { id: 'start', config: { type: 'engine', learn_from: 'bad' }, transitions: [] },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/learn_from must be an array/i);
+    });
+
+    test('throws when learn_from entry is not an object', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: { id: 'start', config: { type: 'engine', learn_from: ['string-entry'] }, transitions: [] },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/learn_from entries must be objects/i);
+    });
+
+    test('throws when learn_from entry has invalid key', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: { id: 'start', config: { type: 'engine', learn_from: [{ bad: 'x' }] }, transitions: [] },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/learn_from entries must be of form/i);
+    });
+
+    test('throws when learn_from output references unknown state', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: {
+            id: 'start',
+            config: { type: 'engine', learn_from: [{ output: 'nonexistent' }] },
+            transitions: [],
+          },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/unknown state 'nonexistent'/i);
+    });
+
+    test('throws when learn_from output state has no output.store', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: {
+            id: 'start',
+            config: { type: 'engine', learn_from: [{ output: 'prev' }] },
+            transitions: ['prev'],
+          },
+          prev: {
+            id: 'prev',
+            config: { type: 'agent', agent: 'a' }, // no output.store
+            transitions: [],
+          },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/output.store: true/i);
+    });
+
+    test('throws when declared error state is not in states', () => {
+      const machine: any = {
+        initial: 'start',
+        error: 'missing_error',
+        states: {
+          start: { id: 'start', config: { type: 'engine' }, transitions: [] },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/error state.*not found/i);
+    });
+
+    test('throws when error state is not terminal', () => {
+      const machine: any = {
+        initial: 'start',
+        error: 'err',
+        states: {
+          start: { id: 'start', config: { type: 'engine' }, transitions: ['err'] },
+          err:   { id: 'err',   config: { type: 'engine' }, transitions: ['start'] },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/error state.*must be terminal/i);
+    });
+  });
+
+  // ── buildStateMachine config.error and max_visits.continue ───────────────
+
+  describe('buildStateMachine advanced paths', () => {
+    function writeWf(dir: string, yaml: string) {
+      const p = path.join(dir, '.raili', 'main');
+      fs.mkdirSync(p, { recursive: true });
+      fs.writeFileSync(path.join(p, 'workflow.yaml'), yaml);
+    }
+
+    test('sets machine.error when workflow declares error state', () => {
+      writeWf(tmpdir, [
+        'initial: start',
+        'error: err',
+        'states:',
+        '  start:',
+        '    type: engine',
+        '    on:',
+        '      PASSED: done',
+        '      FAILED: err',
+        '  done:',
+        '    type: engine',
+        '  err:',
+        '    type: engine',
+      ].join('\n'));
+      const cfg = loadWorkflowConfig(tmpdir);
+      const machine = buildStateMachine(cfg);
+      expect(machine.error).toBe('err');
+    });
+
+    test('includes max_visits continue target in transitions', () => {
+      writeWf(tmpdir, [
+        'initial: start',
+        'states:',
+        '  start:',
+        '    type: engine',
+        '    max_visits:',
+        '      count: 3',
+        '      continue: fallback',
+        '    on:',
+        '      PASSED: done',
+        '      FAILED: done',
+        '  done:',
+        '    type: engine',
+        '  fallback:',
+        '    type: engine',
+      ].join('\n'));
+      const cfg = loadWorkflowConfig(tmpdir);
+      const machine = buildStateMachine(cfg);
+      expect(machine.states['start'].transitions).toContain('fallback');
+    });
+  });
+
+  // ── inputs validation ─────────────────────────────────────────────────────
+
+  describe('loadWorkflowConfig inputs validation', () => {
+    function writeWf(dir: string, yaml: string) {
+      const p = path.join(dir, '.raili', 'main');
+      fs.mkdirSync(p, { recursive: true });
+      fs.writeFileSync(path.join(p, 'workflow.yaml'), yaml);
+    }
+
+    test('throws when inputs is not an array', () => {
+      writeWf(tmpdir, 'initial: start\ninputs: "not-an-array"\nstates:\n  start:\n    type: engine\n');
+      expect(() => loadWorkflowConfig(tmpdir)).toThrow();
+    });
   });
 });
 
