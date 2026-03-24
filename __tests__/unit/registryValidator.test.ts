@@ -5,8 +5,8 @@ import { validateWorkflowNesting } from '../../src/registry/registryValidator';
 describe('validateWorkflowNesting', () => {
   const workflowDir = '/tmp/raili-test';
 
-  beforeEach(() => {
-    jest.resetAllMocks();
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   test('missing sub-workflow file throws', () => {
@@ -18,8 +18,7 @@ describe('validateWorkflowNesting', () => {
       },
     };
 
-    const resolved = path.resolve(workflowDir, './sub.yaml');
-    (fs.existsSync as any) = jest.fn((p: string) => false);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
 
     expect(() => validateWorkflowNesting(wf, workflowDir)).toThrow(/references missing sub-workflow/);
   });
@@ -32,9 +31,9 @@ describe('validateWorkflowNesting', () => {
       },
     };
 
-    (fs.existsSync as any) = jest.fn(() => true);
     const yamlContent = `states:\n  inner:\n    type: group\n`;
-    (fs.readFileSync as any) = jest.fn(() => yamlContent);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(yamlContent as any);
 
     expect(() => validateWorkflowNesting(wf, workflowDir)).toThrow(/contains nested 'group'/);
   });
@@ -48,9 +47,9 @@ describe('validateWorkflowNesting', () => {
       },
     };
 
-    (fs.existsSync as any) = jest.fn(() => true);
     const yamlContent = `states:\n  inner:\n    type: engine\n    out: true\n`;
-    (fs.readFileSync as any) = jest.fn(() => yamlContent);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(yamlContent as any);
 
     expect(() => validateWorkflowNesting(wf, workflowDir)).toThrow(/Main workflow references inner state 'inner'/);
   });
@@ -63,9 +62,9 @@ describe('validateWorkflowNesting', () => {
       },
     };
 
-    (fs.existsSync as any) = jest.fn(() => true);
     const yamlContent = `states:\n  a:\n    type: engine\n  b:\n    type: agent\n`;
-    (fs.readFileSync as any) = jest.fn(() => yamlContent);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(yamlContent as any);
 
     expect(() => validateWorkflowNesting(wf, workflowDir)).toThrow(/must declare at least one state with 'out: true'/);
   });
