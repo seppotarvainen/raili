@@ -127,14 +127,17 @@ export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: s
     // skip
     if ((cfg as any).skip) referencedTargets.add((cfg as any).skip as string);
     // max_visits.continue
-    if ((cfg as any).max_visits && (cfg as any).max_visits.continue) referencedTargets.add((cfg as any).max_visits.continue as string);
+    if ((cfg as any).max_visits && (cfg as any).max_visits.continue)
+      referencedTargets.add((cfg as any).max_visits.continue as string);
   }
 
   for (const [stateName, stateConfig] of Object.entries(workflow.states)) {
     if (stateConfig.type !== 'group') continue;
 
     if (!('group' in stateConfig) || typeof (stateConfig as any).group !== 'string') {
-      throw new Error(`Group state '${stateName}' must include a 'group' path to a sub-workflow YAML`);
+      throw new Error(
+        `Group state '${stateName}' must include a 'group' path to a sub-workflow YAML`,
+      );
     }
 
     // Resolve group path relative to workflow dir, but also accept path relative to .raili (parent of workflowDir)
@@ -166,14 +169,18 @@ export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: s
     for (const [innerId, innerCfg] of Object.entries(parsed.states)) {
       const innerCfgAny: any = innerCfg;
       if (innerCfgAny && innerCfgAny.type === 'group') {
-        throw new Error(`Sub-workflow '${groupPath}' contains nested 'group' state '${innerId}' — nesting depth > 1 not allowed`);
+        throw new Error(
+          `Sub-workflow '${groupPath}' contains nested 'group' state '${innerId}' — nesting depth > 1 not allowed`,
+        );
       }
     }
 
     // Ensure at least one state inside sub-workflow has out: true
     const hasOut = innerIds.some((id) => parsed.states[id] && parsed.states[id].out === true);
     if (!hasOut) {
-      throw new Error(`Sub-workflow '${groupPath}' must declare at least one state with 'out: true'.`);
+      throw new Error(
+        `Sub-workflow '${groupPath}' must declare at least one state with 'out: true'.`,
+      );
     }
 
     // Ensure main workflow does not reference inner state IDs directly

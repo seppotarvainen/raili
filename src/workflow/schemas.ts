@@ -149,7 +149,7 @@ export const StateConfigSchema: ObjectSchema = {
   group: {
     required: false,
     type: 'string',
-    description: "Relative path to sub-workflow YAML file (for type: group)",
+    description: 'Relative path to sub-workflow YAML file (for type: group)',
     validForTypes: ['group'],
   },
   directory: {
@@ -198,7 +198,8 @@ export const StateConfigSchema: ObjectSchema = {
   out: {
     required: false,
     type: 'boolean',
-    description: "Optional 'out' flag to mark sub-workflow exit points; sub-workflows must declare at least one state with out: true",
+    description:
+      "Optional 'out' flag to mark sub-workflow exit points; sub-workflows must declare at least one state with out: true",
   },
   // Optional skip target: bypass this state and immediately route to the specified state id without running handlers
   skip: {

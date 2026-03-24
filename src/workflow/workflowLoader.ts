@@ -222,8 +222,13 @@ export function validateStateMachine(machine: StateMachine): void {
       throw new Error(`Invalid state '${id}': command type requires 'command' property`);
     }
 
-    if (config.type === 'group' && (!('group' in config) || typeof (config as any).group !== 'string')) {
-      throw new Error(`Invalid state '${id}': group type requires 'group' property pointing to sub-workflow YAML`);
+    if (
+      config.type === 'group' &&
+      (!('group' in config) || typeof (config as any).group !== 'string')
+    ) {
+      throw new Error(
+        `Invalid state '${id}': group type requires 'group' property pointing to sub-workflow YAML`,
+      );
     }
 
     // Basic validation for learn_from entries shape (must be objects with 'output' or 'var')
