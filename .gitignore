@@ -15,3 +15,5 @@ docs/exclude
 
 # Coverage reports
 coverage
+.stryker-tmp
+reports

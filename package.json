@@ -15,6 +15,7 @@
     "build": "npm run build:docs && tsc && chmod +x dist/cli.js",
     "start": "node dist/cli.js",
     "test": "jest --runInBand",
+    "mutate": "stryker run",
     "lint": "echo 'no linter configured'",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
@@ -31,6 +32,8 @@
   "author": "Seppo Tarvainen",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/jest-runner": "^9.6.0",
     "@types/jest": "^29.5.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.4.2",
