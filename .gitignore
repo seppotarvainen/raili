@@ -12,3 +12,8 @@ example
 
 # Draft docs
 docs/exclude
+
+# Coverage reports
+coverage
+.stryker-tmp
+reports

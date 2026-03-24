@@ -286,33 +286,6 @@ Keep integration tests focused on control-flow and I/O boundaries (context, outp
 
 ---
 
-## CLI Commands & Dev Workflow
-
-```bash
-npm run build           # Compile TypeScript → dist/ (also runs build:docs)
-npm test               # Run Jest (mocked tests only)
-npm run lint           # Echo (no linter configured yet)
-npm run format         # Prettier format src/**/*.ts
-npm run format:check   # Prettier check (CI-safe)
-
-# Dev mode (TypeScript direct)
-npx ts-node src/cli.ts init
-npx ts-node src/cli.ts run --var ticket_id=TICKET-123
-npx ts-node src/cli.ts run --workflow my-workflow --clean
-npx ts-node src/cli.ts docs [section]
-npx ts-node src/cli.ts schema
-npx ts-node src/cli.ts stats [workflow] [--latest N]
-npx ts-node src/cli.ts help [topic]
-
-# Production
-npm run build
-npm install -g .       # Install CLI globally
-raili init
-raili run --var ticket_id=TICKET-456
-```
-
----
-
 ## Fail-Fast Behavior (Non-Negotiable)
 
 - `.raili/` missing → error before any execution

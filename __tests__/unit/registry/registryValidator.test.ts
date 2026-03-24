@@ -149,3 +149,115 @@ describe('validateWorkflowReferences', () => {
   });
 });
 
+// Additional tests for group state nesting validation
+import { validateWorkflowNesting } from '../../../src/registry/registryValidator';
+
+describe('validateWorkflowNesting', () => {
+  let tmpDir: string;
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-rvn-'));
+  });
+  afterEach(() => {
+    if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  test('missing sub-workflow file throws', () => {
+    const wf: WorkflowConfig = {
+      initial: 'start',
+      states: {
+        start: { type: 'engine' },
+        groupState: { type: 'group', group: './nope.yaml' },
+      },
+    };
+
+    expect(() => validateWorkflowNesting(wf, tmpDir)).toThrow(/references missing sub-workflow/);
+  });
+
+  test('sub-workflow contains nested group -> throws', () => {
+    const subPath = path.join(tmpDir, 'sub.yaml');
+    const subYaml = `states:\n  inner:\n    type: group\n    group: ./nested.yaml\n`;
+    fs.writeFileSync(subPath, subYaml, 'utf8');
+
+    const wf: WorkflowConfig = {
+      initial: 'start',
+      states: {
+        start: { type: 'engine' },
+        groupState: { type: 'group', group: './sub.yaml' },
+      },
+    };
+
+    expect(() => validateWorkflowNesting(wf, tmpDir)).toThrow(/contains nested 'group' state 'inner'/);
+  });
+
+  test('main workflow references inner state -> throws', () => {
+    const subPath = path.join(tmpDir, 'sub.yaml');
+    const subYaml = `states:\n  a:\n    type: engine\n  b:\n    type: engine\n    out: true\n`;
+    fs.writeFileSync(subPath, subYaml, 'utf8');
+
+    const wf: WorkflowConfig = {
+      initial: 'start',
+      states: {
+        start: { type: 'engine', on: { PASSED: 'b' } as any },
+        groupState: { type: 'group', group: './sub.yaml' },
+      },
+    };
+
+    expect(() => validateWorkflowNesting(wf, tmpDir)).toThrow(/Main workflow references inner state 'b'/);
+  });
+
+  test('sub-workflow with no out:true -> throws', () => {
+    const subPath = path.join(tmpDir, 'sub.yaml');
+    const subYaml = `states:\n  a:\n    type: engine\n`;
+    fs.writeFileSync(subPath, subYaml, 'utf8');
+
+    const wf: WorkflowConfig = {
+      initial: 'start',
+      states: {
+        start: { type: 'engine' },
+        groupState: { type: 'group', group: './sub.yaml' },
+      },
+    };
+
+    expect(() => validateWorkflowNesting(wf, tmpDir)).toThrow(/must declare at least one state with 'out: true'/);
+  });
+
+  test('valid group passes validation', () => {
+    const subPath = path.join(tmpDir, 'sub.yaml');
+    const subYaml = `states:\n  prepare:\n    type: agent\n  done:\n    type: engine\n    out: true\n`;
+    fs.writeFileSync(subPath, subYaml, 'utf8');
+
+    const wf: WorkflowConfig = {
+      initial: 'start',
+      states: {
+        start: { type: 'engine', transitions: { proceed: 'groupState' } as any },
+        groupState: { type: 'group', group: './sub.yaml' },
+      },
+    };
+
+    expect(() => validateWorkflowNesting(wf, tmpDir)).not.toThrow();
+  });
+});
+
+// ── stat.isFile() false branches ─────────────────────────────────────────────
+
+test('throws when agent registry entry points to a directory not a file', () => {
+  const raildir = path.join(TMP, '.raili');
+  fs.mkdirSync(raildir, { recursive: true });
+  // Create a DIRECTORY where the agent file is expected
+  const agentDir = path.join(TMP, 'agents', 'dir-agent');
+  fs.mkdirSync(agentDir, { recursive: true });
+  const reg = { 'dir.agent': { path: './agents/dir-agent' } };
+  fs.writeFileSync(path.join(raildir, 'agent-registry.json'), JSON.stringify(reg));
+  expect(() => validateAgentRegistry(TMP)).toThrow(/not a file/);
+});
+
+test('throws when script registry entry points to a directory not a file', () => {
+  const raildir = path.join(TMP, '.raili');
+  fs.mkdirSync(raildir, { recursive: true });
+  const scriptDir = path.join(TMP, 'scripts', 'dir-script');
+  fs.mkdirSync(scriptDir, { recursive: true });
+  const reg = { 'dir.script': { path: './scripts/dir-script' } };
+  fs.writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
+  expect(() => validateScriptRegistry(TMP)).toThrow(/not a file/);
+});
+

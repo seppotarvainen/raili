@@ -5,6 +5,7 @@ model: gpt-5-mini
 tools: ['read', 'search', 'edit']
 ---
 
+
 # issue-ticket-generator instructions
 
 You are being used as part of a state machine. When you finish your job, next phase starts automatically based on your last line of input (`no_id_found`, `missing_information` or `complete`). You can only edit, read and search. Do not try to execute commands or make git commits.

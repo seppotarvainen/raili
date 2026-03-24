@@ -45,12 +45,10 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
 
   const main = loadYamlFile(resolvedPath, false);
 
-  if (!main.initial || typeof main.initial !== 'string') {
-    throw new Error('workflow.yaml must define "initial" state');
-  }
-
   // Validate the raw parsed workflow object against schema so unknown top-level
-  // fields cause a fail-fast validation error.
+  // fields cause a fail-fast validation error. The schema validator enforces
+  // presence/shape of 'initial' for main workflows and prohibits 'initial' in
+  // sub-workflows (see loadYamlFile's isSubWorkflow guard).
   validateWorkflowConfig(main);
 
   // Normalize inputs to [{name, description?}] form for downstream code (description optional)
@@ -200,9 +198,9 @@ export function validateStateMachine(machine: StateMachine): void {
 
     // Validate state config
     const config = def.config;
-    if (!config.type || !['agent', 'script', 'command', 'engine'].includes(config.type)) {
+    if (!config.type || !['agent', 'script', 'command', 'engine', 'group'].includes(config.type)) {
       throw new Error(
-        `Invalid state '${id}': type must be 'agent', 'script', 'command', or 'engine'`,
+        `Invalid state '${id}': type must be 'agent', 'script', 'command', 'engine', or 'group'`,
       );
     }
 
@@ -222,6 +220,15 @@ export function validateStateMachine(machine: StateMachine): void {
 
     if (config.type === 'command' && !config.command) {
       throw new Error(`Invalid state '${id}': command type requires 'command' property`);
+    }
+
+    if (
+      config.type === 'group' &&
+      (!('group' in config) || typeof (config as any).group !== 'string')
+    ) {
+      throw new Error(
+        `Invalid state '${id}': group type requires 'group' property pointing to sub-workflow YAML`,
+      );
     }
 
     // Basic validation for learn_from entries shape (must be objects with 'output' or 'var')

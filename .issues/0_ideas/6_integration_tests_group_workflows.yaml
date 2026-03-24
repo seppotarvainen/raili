@@ -1,0 +1,52 @@
+title: "End-to-end integration tests for group workflows"
+intent: |
+  ## Overview
+
+  Create comprehensive integration tests for the group workflow feature. These tests validate
+  the entire feature: loading, flattening, execution, routing, variable sharing, output storage,
+  and context persistence.
+
+  ## Test Suite
+
+  Create `__tests__/integration/group.integration.test.ts` with the following tests:
+
+  1. **Test: Simple group routing**
+     - Main workflow with 2 states: `setup` → `group(code)` → `cleanup`
+     - Sub-workflow with 3 states: `analyze` → `code` → `review`
+     - Sub-workflow's `review` state has `out: true` and echoes `"done"`
+     - Main routes on group outcome: `done` → `cleanup`
+     - Verify: all 5 states appear in flattened history
+
+  2. **Test: Group with approval**
+     - Group state has `approval` configuration
+     - Sub-workflow completes, manual approval routes to next state
+
+  3. **Test: Group resumption**
+     - Run main → group → 2 sub-workflow states (stop)
+     - Resume → continues from sub-workflow state 3
+     - Verify: history preserved, no re-execution of completed states
+
+  4. **Test: Shared variables**
+     - Parent declares `ticket_id` in inputs
+     - Sub-workflow uses `ticket_id` in prompt
+     - Verify: sub-workflow state correctly interpolates parent variable
+
+  5. **Test: Sub-workflow outputs**
+     - Sub-workflow state stores output
+     - Sub-workflow terminal state reads previous output and uses it for transition key
+     - Verify: outputs stored and accessible across flattened states
+
+  ## Test utilities
+
+  - Use `createTmpWorkspace`, `writeWorkflow`, `writeAgentRegistry` from `testUtils.ts`
+  - Mock `spawn` and `child_process` to simulate agent execution
+  - Use `fakeChild` helper for stdout, stderr, and exit code simulation
+  - Verify artifacts in temp workspace: `.raili/main/outputs/`, `.raili/main/context.json`
+
+  ## Acceptance criteria
+
+  - [ ] All integration tests pass
+  - [ ] Group feature works end-to-end: load → flatten → execute → persist
+  - [ ] Output and context files created correctly
+  - [ ] State history is flattened and sequential
+

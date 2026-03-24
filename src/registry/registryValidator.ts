@@ -97,3 +97,99 @@ export function validateWorkflowReferences(
     );
   }
 }
+
+/**
+ * Validate 'group' state nesting and sub-workflow constraints.
+ * Ensures sub-workflow file exists, does not declare nested group states, does not define 'initial',
+ * and contains at least one state with 'out: true'. Also ensures the main workflow does not reference
+ * inner state IDs of the sub-workflow directly (must route to the group state only).
+ */
+export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: string): void {
+  const yaml = require('js-yaml');
+  const path = require('path');
+
+  // Collect all potential targets referenced by the main workflow so we can detect illegal cross-references
+  const referencedTargets = new Set<string>();
+  for (const cfg of Object.values(workflow.states)) {
+    // on
+    if (cfg.on) {
+      for (const t of Object.values(cfg.on)) referencedTargets.add(t);
+    }
+    // transitions
+    if (cfg.transitions) {
+      for (const t of Object.values(cfg.transitions)) referencedTargets.add(t);
+    }
+    // approval
+    if ((cfg as any).approval) {
+      referencedTargets.add((cfg as any).approval.PASSED);
+      referencedTargets.add((cfg as any).approval.FAILED);
+    }
+    // skip
+    if ((cfg as any).skip) referencedTargets.add((cfg as any).skip as string);
+    // max_visits.continue
+    if ((cfg as any).max_visits && (cfg as any).max_visits.continue)
+      referencedTargets.add((cfg as any).max_visits.continue as string);
+  }
+
+  for (const [stateName, stateConfig] of Object.entries(workflow.states)) {
+    if (stateConfig.type !== 'group') continue;
+
+    if (!('group' in stateConfig) || typeof (stateConfig as any).group !== 'string') {
+      throw new Error(
+        `Group state '${stateName}' must include a 'group' path to a sub-workflow YAML`,
+      );
+    }
+
+    // Resolve group path relative to workflow dir, but also accept path relative to .raili (parent of workflowDir)
+    const baseDir = path.resolve(workflowDir, '..');
+    let groupPath = path.resolve(workflowDir, (stateConfig as any).group);
+    if (!fs.existsSync(groupPath)) {
+      const alt = path.resolve(baseDir, (stateConfig as any).group);
+      if (!fs.existsSync(alt)) {
+        throw new Error(`Group state '${stateName}' references missing sub-workflow: ${groupPath}`);
+      }
+      groupPath = alt;
+    }
+
+    const content = fs.readFileSync(groupPath, 'utf8');
+    const parsed = yaml.load(content) as any;
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error(`Sub-workflow file is empty or invalid: ${groupPath}`);
+    }
+    if (parsed.initial) {
+      throw new Error(`Sub-workflow file must not define 'initial': ${groupPath}`);
+    }
+    if (!parsed.states || typeof parsed.states !== 'object') {
+      throw new Error(`Sub-workflow file must define 'states' object: ${groupPath}`);
+    }
+
+    const innerIds = Object.keys(parsed.states);
+
+    // Ensure no nested group states inside the sub-workflow
+    for (const [innerId, innerCfg] of Object.entries(parsed.states)) {
+      const innerCfgAny: any = innerCfg;
+      if (innerCfgAny && innerCfgAny.type === 'group') {
+        throw new Error(
+          `Sub-workflow '${groupPath}' contains nested 'group' state '${innerId}' — nesting depth > 1 not allowed`,
+        );
+      }
+    }
+
+    // Ensure at least one state inside sub-workflow has out: true
+    const hasOut = innerIds.some((id) => parsed.states[id] && parsed.states[id].out === true);
+    if (!hasOut) {
+      throw new Error(
+        `Sub-workflow '${groupPath}' must declare at least one state with 'out: true'.`,
+      );
+    }
+
+    // Ensure main workflow does not reference inner state IDs directly
+    for (const innerId of innerIds) {
+      if (referencedTargets.has(innerId)) {
+        throw new Error(
+          `Main workflow references inner state '${innerId}' from sub-workflow '${groupPath}' directly; main workflow must route to the group state '${stateName}' only.`,
+        );
+      }
+    }
+  }
+}

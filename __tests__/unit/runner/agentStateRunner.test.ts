@@ -11,6 +11,7 @@ jest.mock('../../../src/context/learningStore');
 const mockExecuteAgent = agentHandler.executeAgent as jest.MockedFunction<typeof agentHandler.executeAgent>;
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
 const mockLoad = outputStore.loadAgentOutputPath as jest.MockedFunction<typeof outputStore.loadAgentOutputPath>;
+const mockReadLatest = outputStore.readLatestRun as jest.MockedFunction<typeof outputStore.readLatestRun>;
 
 const registry = {};
 const cwd = '/tmp';
@@ -27,6 +28,7 @@ beforeEach(() => {
   jest.resetAllMocks();
   mockExecuteAgent.mockResolvedValue({ success: true, stdout: 'agent output', stderr: '' });
   mockLoad.mockReturnValue(null);
+  mockReadLatest.mockReturnValue(null);
   (learningStore.readLearningsForPrompt as jest.Mock).mockReturnValue('');
   (learningStore.appendUniqueLearning as jest.Mock).mockReturnValue(true);
 });
@@ -75,5 +77,38 @@ test('returns FAILED on failure with on: block', async () => {
   mockExecuteAgent.mockResolvedValue({ success: false, stdout: '', stderr: 'error' });
   const result = await runAgentState(makeState(), registry, cwd);
   expect(result.outcome).toBe('FAILED');
+});
+
+test('learn_from var source appends learning when var value is present', async () => {
+  const state = makeState({
+    learn_from: [{ var: '${ticket_id}' }] as any,
+    on: { PASSED: 'done', FAILED: 'code' },
+  });
+  await runAgentState(state, registry, cwd, { ticket_id: 'LESSON: fix the edge case' });
+  expect(learningStore.appendUniqueLearning).toHaveBeenCalledWith(
+    cwd, 'coder', 'var:ticket_id', expect.any(String), undefined,
+  );
+});
+
+test('learn_from var source skips when var value is absent', async () => {
+  const state = makeState({
+    learn_from: [{ var: '${missing_var}' }] as any,
+    on: { PASSED: 'done', FAILED: 'code' },
+  });
+  await runAgentState(state, registry, cwd, {});
+  expect(learningStore.appendUniqueLearning).not.toHaveBeenCalled();
+});
+
+test('throws when transitions state and agent produces no output', async () => {
+  mockExecuteAgent.mockResolvedValue({ success: true, stdout: '', stderr: '' });
+  const state = makeState({ transitions: { approve: 'done', reject: 'code' }, on: undefined });
+  await expect(runAgentState(state, registry, cwd)).rejects.toThrow(/no output/);
+});
+
+test('returns last stdout line as outcome when transitions configured', async () => {
+  mockExecuteAgent.mockResolvedValue({ success: true, stdout: 'some work\napprove', stderr: '' });
+  const state = makeState({ transitions: { approve: 'done', reject: 'code' }, on: undefined });
+  const result = await runAgentState(state, registry, cwd);
+  expect(result.outcome).toBe('approve');
 });
 
