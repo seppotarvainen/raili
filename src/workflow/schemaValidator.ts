@@ -345,6 +345,20 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     }
   }
 
+  // Also include variables that states expose at runtime (via 'expose' arrays or 'feedback.expose_var').
+  // These are not declared in inputs but are valid references for later states.
+  if (config.states && typeof config.states === 'object') {
+    for (const stateConfig of Object.values(config.states) as any[]) {
+      if (Array.isArray(stateConfig?.expose)) {
+        for (const v of stateConfig.expose) {
+          if (typeof v === 'string' && v) declaredNames.add(v);
+        }
+      }
+      const fbVar = stateConfig?.feedback?.expose_var;
+      if (typeof fbVar === 'string' && fbVar) declaredNames.add(fbVar);
+    }
+  }
+
   // Prepare a synthetic vars object containing only declared names so interpolation will fail fast
   // for any referenced variable that is not declared.
   const syntheticVars: Record<string, string> = {};
