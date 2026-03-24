@@ -3,7 +3,7 @@
 // Workflow configuration loaded from workflow.yaml
 import { deprecate } from 'node:util';
 
-export type StateType = 'agent' | 'script' | 'command' | 'engine';
+export type StateType = 'agent' | 'script' | 'command' | 'engine' | 'group';
 
 export interface OutputConfig {
   store: boolean; // Save output to .raili/outputs/<stateId>.md
@@ -57,6 +57,10 @@ export interface StateConfig {
   on?: Record<string, string>;
   expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>
   learn_from?: LearnSource[]; // Optional: declare persistent learning sources for agent states
+  // Group-specific property: path to sub-workflow YAML file (relative to workflow dir)
+  group?: string;
+  // Marks exit points inside sub-workflow fragments; required at least once inside a sub-workflow
+  out?: boolean;
 }
 
 export interface InputDef {

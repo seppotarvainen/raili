@@ -80,7 +80,7 @@ function validateField(
   fieldName: string,
   fieldValue: any,
   fieldSchema: FieldSchema,
-  stateType?: string,
+  stateType?: StateType,
   context?: string,
 ): void {
   // Check if field is required but missing
@@ -139,7 +139,7 @@ function validateObject(
   obj: any,
   schema: ObjectSchema,
   context: string = '',
-  stateType?: string,
+  stateType?: StateType,
 ): void {
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
     throw new SchemaValidationError(

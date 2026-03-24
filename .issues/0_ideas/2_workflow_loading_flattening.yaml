@@ -1,0 +1,43 @@
+title: "Load and flatten group workflows into single state machine"
+intent: |
+  ## Overview
+
+  Implement workflow loading and state machine flattening logic. Sub-workflows are loaded,
+  validated, and merged into a single flat state machine. All sub-workflow states and inputs
+  are incorporated into the parent workflow for transparent execution.
+
+  ## Scope
+
+  1. **Update `workflow/workflowLoader.ts`:**
+     - Extend `loadWorkflow()` to detect `group` states
+     - For each `group` state:
+       - Load the referenced sub-workflow YAML from relative path
+       - Validate sub-workflow structure (schemas, required keys)
+       - Merge sub-workflow states into parent state map
+       - Extract sub-workflow's `inputs` and merge into parent's `inputs`
+       - Fail if duplicate input key already exists
+     - Build merged `WorkflowConfig` with flattened states + combined inputs
+
+  2. **Add helper function `flattenGroupState()`:**
+     - Takes a group state + loaded sub-workflow
+     - Rewrites group state's `transitions`/`on` to route to flattened sub-workflow initial state
+     - Identifies sub-workflow terminal states and creates synthetic transitions back to parent routing
+
+  3. **Update `schemaValidator.ts`:**
+     - Validate merged workflow config (all state IDs unique, all transitions point to valid states)
+
+  ## Flattening behavior
+
+  After loading and flattening, the workflow has a single flat state machine visible to the runner.
+  There is no distinction between parent and sub-workflow states at execution time.
+
+  ## Acceptance criteria
+
+  - [ ] After load, workflow has single flat state machine (no nested group states visible to runner)
+  - [ ] Sub-workflow inputs merged into parent inputs
+  - [ ] Transition routing from sub-workflow to parent works correctly
+  - [ ] Integration test: load main + sub-workflow → flattened state map is correct
+  - [ ] Integration test: sub-workflow inputs merged into parent inputs
+  - [ ] Unit test: state name collision detection and error message
+  - [ ] Unit test: sub-workflow terminal states correctly route back to parent
+

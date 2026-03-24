@@ -1,0 +1,37 @@
+title: "Implement GroupStateRunner to execute group states"
+intent: |
+  ## Overview
+
+  Create the `GroupStateRunner` state runner implementation to execute group states transparently.
+  Group states act as entry points into flattened sub-workflow states. The runner collects the
+  outcome from the sub-workflow's terminal state and returns it for parent routing.
+
+  ## Scope
+
+  1. **Create `runner/GroupStateRunner.ts`:**
+     - Implement `IStateRunner` interface
+     - Execution flow:
+       - Group state is entered like any other state (phase 1-2)
+       - Run the flattened sub-workflow states until a state with `out: true` is encountered
+       - That state's stdout is parsed for transition key (last non-empty line)
+       - Return outcome string (the transition key)
+       - Continue normal routing in phase 7-8
+
+  2. **Update `Runner.ts`:**
+     - Add case for `type: 'group'` in state execution phase (phase 4)
+     - Route to `GroupStateRunner`
+
+  3. **Key behavior:**
+     - Group execution is transparent: from context's perspective, all sub-workflow states are flattened
+     - State history includes all sub-workflow state entries (not collapsed into a single group entry)
+     - Outputs stored per state (same directory, no grouping by sub-workflow)
+
+  ## Acceptance criteria
+
+  - [ ] Group states execute transparently
+  - [ ] Sub-workflow terminal state outcome routes to parent transitions
+  - [ ] State history is fully flattened and continuous
+  - [ ] Integration test: group state executes sub-workflow, terminal state echoes transition key, parent routes correctly
+  - [ ] Integration test: group state can have `approval` or `on` transitions (works like any state)
+  - [ ] Unit test: GroupStateRunner correctly parses outcome from sub-workflow terminal state
+

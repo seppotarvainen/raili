@@ -1,0 +1,42 @@
+title: "Merge and validate variables across main and sub-workflow"
+intent: |
+  ## Overview
+
+  Implement variable scoping and input merging logic. Variables are shared globally across parent
+  and sub-workflow states. Inputs from both are merged at startup, and duplicate keys are caught
+  during fail-fast validation. All states (parent and sub-workflow) access the same context vars.
+
+  ## Scope
+
+  1. **Update `workflow/workflowLoader.ts`:**
+     - When flattening group state, merge parent + sub-workflow `inputs` arrays
+     - Fail (fail-fast) if same input key appears in both (no shadowing allowed)
+
+  2. **Update `variables/variableInterpolation.ts`:**
+     - Ensure it works correctly with merged inputs from parent and sub-workflows
+     - When a prompt/command references `${VAR}`, it checks shared context
+
+  3. **Update `run.ts` (variable collection):**
+     - After merging inputs, collect variables interactively (for clean runs) or from context (for resumed runs)
+     - Both parent and sub-workflow states will see the same `context.vars` object
+
+  4. **Update `context/context.ts`:**
+     - Confirm context is global and persists merged vars correctly
+
+  ## Variable behavior
+
+  - Variables are NOT scoped to parent or sub-workflow; they are shared globally
+  - If a variable is used in a state but not declared in either parent or sub-workflow inputs, it fails at startup
+  - No variable bubbling; variables exposed via `expose_var` in `feedback:` block remain in shared context
+  - Sub-workflows cannot declare variables that collide with parent workflow inputs
+
+  ## Acceptance criteria
+
+  - [ ] Variables are shared globally (one context.vars for entire flattened workflow)
+  - [ ] Inputs merged at startup (no duplicates allowed)
+  - [ ] Variable resolution works for both parent and sub-workflow states
+  - [ ] Integration test: sub-workflow input missing at startup → interactive prompt (once, shared across parent + sub)
+  - [ ] Integration test: sub-workflow state uses parent-declared variable → resolves correctly
+  - [ ] Unit test: duplicate input key in main + sub → validation error
+  - [ ] Unit test: variable interpolation in sub-workflow state works correctly
+

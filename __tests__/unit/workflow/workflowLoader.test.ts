@@ -34,7 +34,7 @@ describe('workflowLoader', () => {
       fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
       fs.writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), 'states:\n  init:\n    type: engine\n');
 
-      expect(() => loadWorkflowConfig(tmpdir)).toThrow('must define "initial" state');
+      expect(() => loadWorkflowConfig(tmpdir)).toThrow('Required field \'initial\' is missing');
     });
 
     test('loads valid workflow config', () => {

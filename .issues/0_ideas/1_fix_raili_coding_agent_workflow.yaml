@@ -1,0 +1,68 @@
+title: "Fix raili-coding agent workflow: Missing ticket content in prompt and undefined variables"
+
+intent: |
+  The raili-coding agent is not receiving the ticket file content in its prompt, and the workflow
+  is trying to reference undefined variables (`CHECK_DONE_FAILED`, `TEACH_AGENT`). This causes the
+  agent to see only "Work according to your rules." without any context about what ticket to work on.
+  
+  ## Root Causes
+  
+  1. **Ticket content not in prompt**: The agent instructions say "Read ticket from `.issues/2_doing/`"
+     but the ticket file content is never passed to the agent. The agent is expected to use its
+     `read` tool to find and open the ticket file, but it needs to know the filename.
+  
+  2. **Undefined variables in workflow**:
+     - `${CHECK_DONE_FAILED}` is only set when the `check_done` approval is rejected (FAILED).
+     - On first run, this variable doesn't exist, causing interpolation to fail silently.
+     - `${TEACH_AGENT}` is referenced in `learn_from` but never defined or exposed.
+     - These undefined variables cause learnings to not be applied.
+  
+  3. **Missing `TEACH_AGENT` variable**:
+     - The feedback state asks for user feedback but exposes it as `teach_agent` (snake_case).
+     - The `learn_from` references `TEACH_AGENT` (uppercase) which would be the exported var name.
+     - The feedback is collected but never routed back to the `code` state, so it's never available
+       during the next `code` state entry.
+  
+  ## Solution
+  
+  1. **Add a preprocessing state** that reads the current ticket file from `.issues/2_doing/`
+     and exposes it as `TICKET_CONTENT` variable before entering the `code` state.
+  
+  2. **Update the `code` state prompt** to include the ticket content:
+     ```yaml
+     prompt: |
+       ${TICKET_CONTENT}
+       
+       Feedback from previous attempt:
+       ${CHECK_DONE_FAILED}
+       
+       ${TEACH_AGENT}
+       
+       Work according to your rules.
+     ```
+  
+  3. **Make learn_from more resilient**:
+     - Only include `var: ${CHECK_DONE_FAILED}` in `learn_from` if there's a prior approval failure.
+     - Only include `var: ${TEACH_AGENT}` if feedback was collected.
+     - Consider using optional variables in interpolation (with fallback to empty string).
+  
+  4. **Update the feedback routing** so collected feedback is available for the next `code` entry:
+     - After `feedback` state, route back to appropriate next state (currently routes to `done`).
+     - Ensure `TEACH_AGENT` is exposed properly so it appears in context vars for subsequent runs.
+  
+  ## Immediate Fix
+  
+  1. Create a preprocessing step before `code`:
+     ```yaml
+     load_ticket:
+       type: command
+       command: cat .issues/2_doing/RAI-$(echo $RAILI_VAR_ID | cut -d- -f1 | tr -d '0')-*.md
+       expose:
+         - ticket_content
+       on:
+         PASSED: code
+         FAILED: exit
+     ```
+  
+  2. Update the `code` state to use the ticket content and make learn_from optional.
+

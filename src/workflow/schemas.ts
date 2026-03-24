@@ -3,6 +3,8 @@
 
 export type FieldType = 'string' | 'boolean' | 'number' | 'object' | 'array' | 'record';
 
+import { StateType } from '../types';
+
 export interface FieldSchema {
   required: boolean;
   type: FieldType;
@@ -10,7 +12,7 @@ export interface FieldSchema {
   description?: string;
   validate?: 'mutual-exclusive-with-transitions' | 'on-requires-passed' | 'record-keys-enum'; // Custom validation rule
   recordKeyEnum?: string[]; // If type is 'record', restrict allowed keys to these values
-  validForTypes?: ('agent' | 'script' | 'command' | 'engine')[]; // If set, field is only valid for these state types
+  validForTypes?: StateType[]; // If set, field is only valid for these state types
 }
 
 export interface ObjectSchema {
@@ -95,7 +97,7 @@ export const StateConfigSchema: ObjectSchema = {
   type: {
     required: true,
     type: 'string',
-    enum: ['agent', 'script', 'command', 'engine'],
+    enum: ['agent', 'script', 'command', 'engine', 'group'],
     description: 'Type of state handler',
   },
   notify: {
@@ -143,6 +145,13 @@ export const StateConfigSchema: ObjectSchema = {
     description: 'Inline shell command (for type: command)',
     validForTypes: ['command'],
   },
+  // Path to sub-workflow YAML (for type: group)
+  group: {
+    required: false,
+    type: 'string',
+    description: "Relative path to sub-workflow YAML file (for type: group)",
+    validForTypes: ['group'],
+  },
   directory: {
     required: false,
     type: 'string',
@@ -185,6 +194,11 @@ export const StateConfigSchema: ObjectSchema = {
     description:
       'Optional success flag for terminal (engine) states; persisted to context.json when present',
     validForTypes: ['engine'],
+  },
+  out: {
+    required: false,
+    type: 'boolean',
+    description: "Optional 'out' flag to mark sub-workflow exit points; sub-workflows must declare at least one state with out: true",
   },
   // Optional skip target: bypass this state and immediately route to the specified state id without running handlers
   skip: {
