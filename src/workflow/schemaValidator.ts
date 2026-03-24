@@ -7,6 +7,7 @@ import {
   StateConfigSchema,
   WorkflowConfigSchema,
 } from './schemas';
+import { interpolateObject } from '../variables/variableInterpolation';
 
 export class SchemaValidationError extends Error {
   constructor(
@@ -331,6 +332,37 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
       throw new SchemaValidationError(
         `Field 'inputs[${i}]' must be either a string or an object with 'name' and optional 'description'`,
       );
+    }
+  }
+
+  // Validate that variables referenced in state-level strings are declared in workflow inputs.
+  // Build a set of declared input names.
+  const declaredNames = new Set<string>();
+  if (config.inputs && Array.isArray(config.inputs)) {
+    for (const it of config.inputs) {
+      const name = typeof it === 'string' ? it : it && typeof it.name === 'string' ? it.name : '';
+      if (name) declaredNames.add(name);
+    }
+  }
+
+  // Prepare a synthetic vars object containing only declared names so interpolation will fail fast
+  // for any referenced variable that is not declared.
+  const syntheticVars: Record<string, string> = {};
+  for (const n of declaredNames) syntheticVars[n] = 'DUMMY';
+
+  if (config.states && typeof config.states === 'object') {
+    for (const [stateId, stateConfig] of Object.entries(config.states)) {
+      try {
+        // Attempt to interpolate the state config; interpolateObject will throw if any ${VAR}
+        // is encountered that is not present in syntheticVars.
+        interpolateObject(stateConfig, syntheticVars, { throwOnMissing: true });
+      } catch (err: any) {
+        const msg = err && err.message ? err.message : String(err);
+        throw new SchemaValidationError(
+          `State '${stateId}' references undeclared variable: ${msg}`,
+          `state '${stateId}'`,
+        );
+      }
     }
   }
 
