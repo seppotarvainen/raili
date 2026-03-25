@@ -7,7 +7,6 @@ import {
   StateConfigSchema,
   WorkflowConfigSchema,
 } from './schemas';
-import { interpolateObject } from '../variables/variableInterpolation';
 
 export class SchemaValidationError extends Error {
   constructor(
@@ -251,6 +250,52 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
 }
 
 /**
+ * Recursively collect all ${VAR} names found in any string within obj.
+ */
+function collectVarRefs(obj: any, refs: Set<string>): void {
+  if (typeof obj === 'string') {
+    const re = /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(obj)) !== null) refs.add(m[1]);
+    return;
+  }
+  if (Array.isArray(obj)) {
+    for (const item of obj) collectVarRefs(item, refs);
+    return;
+  }
+  if (obj !== null && typeof obj === 'object') {
+    for (const value of Object.values(obj)) collectVarRefs(value, refs);
+  }
+}
+
+/**
+ * Collect ${VAR} references only from the fail-fast fields of a state config.
+ *
+ * Lenient fields are excluded because they use throwOnMissing:false (or no interpolation) at runtime:
+ *   - prompt          → AgentStateRunner uses throwOnMissing:false
+ *   - learn_from      → AgentStateRunner silently skips missing vars
+ *   - approval.question → ApproveStateRunner uses throwOnMissing:false
+ *   - feedback.question → not interpolated at runtime
+ */
+function collectFailFastVarRefs(stateConfig: any): Set<string> {
+  const refs = new Set<string>();
+  const { prompt: _p, learn_from: _lf, approval, feedback, ...rest } = stateConfig as any;
+
+  collectVarRefs(rest, refs);
+
+  if (approval && typeof approval === 'object') {
+    const { question: _q, ...restApproval } = approval;
+    collectVarRefs(restApproval, refs);
+  }
+  if (feedback && typeof feedback === 'object') {
+    const { question: _q, ...restFeedback } = feedback;
+    collectVarRefs(restFeedback, refs);
+  }
+
+  return refs;
+}
+
+/**
  * Validates a WorkflowConfig object
  */
 export function validateWorkflowConfig(config: any): WorkflowConfig {
@@ -335,47 +380,44 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     }
   }
 
-  // Validate that variables referenced in state-level strings are declared in workflow inputs.
-  // Build a set of declared input names.
-  const declaredNames = new Set<string>();
+  // Build knownVars: all names that are valid ${VAR} references at runtime.
+  // Includes declared inputs plus any variables exposed by states at runtime.
+  const knownVars = new Set<string>();
+
+  // 1. Declared workflow inputs
   if (config.inputs && Array.isArray(config.inputs)) {
     for (const it of config.inputs) {
       const name = typeof it === 'string' ? it : it && typeof it.name === 'string' ? it.name : '';
-      if (name) declaredNames.add(name);
+      if (name) knownVars.add(name);
     }
   }
 
-  // Also include variables that states expose at runtime (via 'expose' arrays or 'feedback.expose_var').
-  // These are not declared in inputs but are valid references for later states.
+  // 2. Variables produced at runtime: 'expose' arrays and 'feedback.expose_var'
   if (config.states && typeof config.states === 'object') {
     for (const stateConfig of Object.values(config.states) as any[]) {
       if (Array.isArray(stateConfig?.expose)) {
         for (const v of stateConfig.expose) {
-          if (typeof v === 'string' && v) declaredNames.add(v);
+          if (typeof v === 'string' && v) knownVars.add(v);
         }
       }
       const fbVar = stateConfig?.feedback?.expose_var;
-      if (typeof fbVar === 'string' && fbVar) declaredNames.add(fbVar);
+      if (typeof fbVar === 'string' && fbVar) knownVars.add(fbVar);
     }
   }
 
-  // Prepare a synthetic vars object containing only declared names so interpolation will fail fast
-  // for any referenced variable that is not declared.
-  const syntheticVars: Record<string, string> = {};
-  for (const n of declaredNames) syntheticVars[n] = 'DUMMY';
-
+  // 3. Check that every ${VAR} reference in fail-fast fields is in knownVars.
+  //    Lenient fields (prompt, learn_from, approval.question, feedback.question)
+  //    are excluded — see collectFailFastVarRefs for rationale.
   if (config.states && typeof config.states === 'object') {
     for (const [stateId, stateConfig] of Object.entries(config.states)) {
-      try {
-        // Attempt to interpolate the state config; interpolateObject will throw if any ${VAR}
-        // is encountered that is not present in syntheticVars.
-        interpolateObject(stateConfig, syntheticVars, { throwOnMissing: true });
-      } catch (err: any) {
-        const msg = err && err.message ? err.message : String(err);
-        throw new SchemaValidationError(
-          `State '${stateId}' references undeclared variable: ${msg}`,
-          `state '${stateId}'`,
-        );
+      const refs = collectFailFastVarRefs(stateConfig);
+      for (const varName of refs) {
+        if (!knownVars.has(varName)) {
+          throw new SchemaValidationError(
+            `State '${stateId}' references undeclared variable '\${${varName}}'`,
+            `state '${stateId}'`,
+          );
+        }
       }
     }
   }
