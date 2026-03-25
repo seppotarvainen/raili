@@ -4,13 +4,14 @@ import * as path from 'path';
 import {appendUniqueLearning, extractLessons, readLearnings, stripTimestampsFromLearnings} from '../../../src/context/learningStore';
 
 describe('learningStore extractLessons', () => {
-  test('single marker extracts following section preserving newlines', () => {
+  test('single marker extracts following section and escapes internal newlines', () => {
     const input = 'Intro text\nLESSON: This is line1\nThis is line2\n';
     const lessons = extractLessons(input);
     expect(lessons.length).toBe(1);
-    expect(lessons[0]).toContain('This is line1');
-    expect(lessons[0]).toContain('This is line2');
-    expect(lessons[0].includes('\n')).toBe(true);
+    // internal newline must be escaped as two-character sequence \n
+    expect(lessons[0]).toContain('This is line1\\nThis is line2');
+    // no real newline characters in returned lesson
+    expect(lessons[0].includes('\n')).toBe(false);
   });
 
   test('multiple markers: only first is considered a marker', () => {
@@ -64,38 +65,39 @@ describe('learningStore appendUniqueLearning', () => {
     expect(content).toBe('');
   });
 
-  test('persists marked multiline lesson and deduplicates', () => {
+  test('persists marked multiline lesson and always appends (no dedupe)', () => {
     const agentId = 'my-agent';
     const content = 'Header info\nLESSON: Line1\nLine2\n';
     const appended = appendUniqueLearning(cwd, agentId, 'output:test', content);
     expect(appended).toBe(true);
+    // uniqueness check removed — subsequent identical inputs are appended as well
     const again = appendUniqueLearning(cwd, agentId, 'output:test', content);
-    expect(again).toBe(false);
+    expect(again).toBe(true);
     const stored = readLearnings(cwd, agentId);
-    expect(stored).toContain('Line1');
-    expect(stored).toContain('Line2');
-    // ensure internal newlines preserved in stored content
-    expect(stored.includes('\n')).toBe(true);
+    // stored entries are single physical lines that include the literal '\\n' escape
+    expect(stored).toContain('Line1\\nLine2');
+    expect(stored.includes('\\n')).toBe(true);
   });
 });
 
 // ── stripTimestampsFromLearnings ──────────────────────────────────────────────
 
 describe('learningStore stripTimestampsFromLearnings', () => {
-  test('entry with source tag includes source prefix', () => {
-    const content = '- [2026-01-01T00:00:00Z] [output:analyze]\n\nLesson body here\n\n';
+  test('entry with source tag includes source prefix and decodes \\n sequences', () => {
+    const content = '- [2026-01-01T00:00:00Z] [output:analyze] Lesson line1\\nLine2\n';
     const entries = stripTimestampsFromLearnings(content);
     expect(entries).toHaveLength(1);
     expect(entries[0]).toContain('[output:analyze]');
-    expect(entries[0]).toContain('Lesson body here');
+    // decoded newlines should be real newlines in returned entry
+    expect(entries[0].includes('\n')).toBe(true);
+    expect(entries[0]).not.toContain('\\n');
   });
 
-  test('entry WITHOUT source tag omits prefix (pushes bare lesson)', () => {
-    // Format: - [TIMESTAMP] followed immediately by newline — no second [source] group
-    const content = '- [2026-01-01T00:00:00Z]\n\nBare lesson here\n\n';
+  test('entry WITHOUT source tag returns decoded bare lesson', () => {
+    const content = '- [2026-01-01T00:00:00Z] Bare\\nMore\n';
     const entries = stripTimestampsFromLearnings(content);
     expect(entries).toHaveLength(1);
-    expect(entries[0]).toBe('Bare lesson here');
+    expect(entries[0]).toBe('Bare\nMore');
     expect(entries[0]).not.toContain('[');
   });
 

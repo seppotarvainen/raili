@@ -1,13 +1,9 @@
 import { stripTimestampsFromLearnings, readLearningsForPrompt } from '../../src/context/learningStore';
 
 describe('learningStore stripTimestampsFromLearnings', () => {
-  const sample = `- [2026-03-23T19:00:00.000Z] [output:code]
-
-Lesson: Remember to run ` + '`npm run build`' + ` before tests.
-
-- [2026-03-23T19:10:00.000Z] [var:ticket_id]
-
-Lesson: Ticket IDs should be validated for format PROJ-\\d+.
+  // Single-line stored entries with literal "\\n" escapes for internal newlines
+  const sample = `- [2026-03-23T19:00:00.000Z] [output:code] Lesson: Remember to run ` + '`npm run build`' + ` before tests.\\n\\nThis is a follow-up note.
+- [2026-03-23T19:10:00.000Z] [var:ticket_id] Lesson: Ticket IDs should be validated for format PROJ-\\d+.
 `;
 
   test('strips ISO timestamps and preserves source tags and lesson bodies', () => {
