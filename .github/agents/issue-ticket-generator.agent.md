@@ -146,4 +146,4 @@ If any relevant information is missing or unclear print `missing_information` as
 After creating the ticket:
 - Confirm the ticket ID, type, and filename
 - Provide the full path where it was created
-- Print `complete` as the last line of your output to indicate successful completion and trigger the next phase in the state machine.
+- Print `complete` as the last line of your output to indicate successful completion and trigger the next phase in the state machine. Print `failed` if you encounter any issues that prevent ticket creation.

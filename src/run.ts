@@ -42,10 +42,11 @@ export async function runCommand(
   const workflowConfig = loadWorkflowConfig(cwd, workflowPath);
 
   // Detect states with `skip` configured from the raw workflow config and prompt the user to confirm skipping them.
+  // Exclude internal group-proxy states (_groupProxy: true) that are added by the loader when flattening group states.
   // Use the raw workflowConfig here instead of the built state machine so unit tests that mock buildStateMachine
   // (but not loadWorkflowConfig) continue to work.
   const skipped = Object.entries(workflowConfig.states)
-    .filter(([_, def]) => (def as any).skip)
+    .filter(([_, def]) => (def as any).skip && !(def as any)._groupProxy)
     .map(([id]) => id);
 
   if (skipped.length > 0) {

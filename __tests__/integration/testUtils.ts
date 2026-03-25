@@ -39,6 +39,23 @@ export function writeNamedWorkflow(dir: string, name: string, yamlContent: strin
   fs.writeFileSync(path.join(wfDir, 'workflow.yaml'), yamlContent, 'utf8');
 }
 
+/**
+ * Write a sub-workflow YAML file directly inside a workflow directory as a plain file.
+ * E.g. writeSubWorkflow(dir, 'main', 'sub.yaml', content) writes to .raili/main/sub.yaml as a FILE.
+ * Use this instead of writeNamedWorkflow when the group state references a plain .yaml file
+ * (not a named workflow subdirectory with its own outputs/ and learnings/).
+ */
+export function writeSubWorkflow(
+  dir: string,
+  workflowDir: string,
+  filename: string,
+  yamlContent: string,
+): void {
+  const fullPath = path.join(dir, '.raili', workflowDir, filename);
+  fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+  fs.writeFileSync(fullPath, yamlContent, 'utf8');
+}
+
 /** Write arbitrary .raili/<filename> (kept for compatibility) */
 function writeWorkflowFile(dir: string, filename: string, yamlContent: string): void {
   fs.writeFileSync(path.join(dir, '.raili', filename), yamlContent, 'utf8');
