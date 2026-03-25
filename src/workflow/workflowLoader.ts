@@ -63,6 +63,9 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
   // Work on a shallow copy of states to allow merging
   const parentStates: Record<string, StateConfig> = Object.assign({}, main.states);
 
+  // Track IDs of group-proxy states created by flattening, so we can mark them after schema validation.
+  const groupProxyIds = new Set<string>();
+
   // Process group states by flattening referenced sub-workflows into parent
   for (const [stateId, stateCfg] of Object.entries(Object.assign({}, parentStates))) {
     if (stateCfg && (stateCfg as any).type === 'group') {
@@ -107,6 +110,7 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
       }
 
       // Flatten sub states into parentStates with deterministic prefix
+      const subStateIdSet = new Set(Object.keys(sub.states || {}));
       const newStates: Record<string, StateConfig> = {};
       for (const [subId, subCfg] of Object.entries(sub.states || {})) {
         const newId = `${stateId}.${subId}`;
@@ -141,6 +145,23 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
           if ((stateCfg as any).approval) {
             cfgCopy.approval = Object.assign({}, (stateCfg as any).approval);
           }
+        } else {
+          // For non-out sub-states, rewrite transition targets that reference other sub-states
+          // to their fully-qualified (prefixed) names so the flat state machine validates correctly.
+          if (cfgCopy.on) {
+            const rewrote: Record<string, string> = {};
+            for (const [k, v] of Object.entries(cfgCopy.on as Record<string, string>)) {
+              rewrote[k] = subStateIdSet.has(v) ? `${stateId}.${v}` : v;
+            }
+            cfgCopy.on = rewrote;
+          }
+          if (cfgCopy.transitions) {
+            const rewrote: Record<string, string> = {};
+            for (const [k, v] of Object.entries(cfgCopy.transitions as Record<string, string>)) {
+              rewrote[k] = subStateIdSet.has(v) ? `${stateId}.${v}` : v;
+            }
+            cfgCopy.transitions = rewrote;
+          }
         }
 
         newStates[newId] = cfgCopy as StateConfig;
@@ -153,8 +174,9 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
       }
       const entry = `${stateId}.${subStateKeys[0]}`;
 
-      // Replace the group state in parent with a proxy engine state that skips to the flattened entry
+      // Replace the group state in parent with a proxy engine state that skips to the flattened entry.
       parentStates[stateId] = { type: 'engine', skip: entry } as any;
+      groupProxyIds.add(stateId);
 
       // Merge flattened states into parentStates
       for (const [k, v] of Object.entries(newStates)) parentStates[k] = v;
@@ -170,6 +192,13 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
 
   // Final validation of merged config
   validateWorkflowConfig(config);
+
+  // After validation, tag group-proxy states with an internal marker.
+  // This is intentionally post-validation so the schema validator does not see it.
+  // run.ts uses this flag to skip the user-facing skip-confirmation prompt for internal proxies.
+  for (const proxyId of groupProxyIds) {
+    (parentStates[proxyId] as any)._groupProxy = true;
+  }
 
   return config;
 }
