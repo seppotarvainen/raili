@@ -26,10 +26,13 @@ export function extractLessons(content: string): string[] {
   if (!m) return [];
   const start = m.index + m[0].length;
   let lesson = content.slice(start);
-  // Trim leading/trailing blank lines/whitespace but preserve internal newlines
+  // Trim surrounding whitespace
   lesson = lesson.replace(/^\s+/, '');
   lesson = lesson.replace(/\s+$/, '');
-  return [lesson];
+  lesson = lesson.trim();
+  // Normalize CRLF to LF then escape internal newlines as two-character sequence "\\n"
+  const escaped = lesson.replace(/\r\n/g, '\n').replace(/\n/g, '\\n');
+  return [escaped];
 }
 
 /**
@@ -40,21 +43,23 @@ export function extractLessons(content: string): string[] {
 export function stripTimestampsFromLearnings(content: string): string[] {
   if (!content || !content.trim()) return [];
 
-  // Match blocks that start with: - [TIMESTAMP] [OPTIONAL_SOURCE]
-  // followed by one or more blank lines and then the lesson body until next - [ or EOF.
-  const re = /- \[([^\]]+)\](?: \[([^\]]+)\])?\s*\n\s*\n([\s\S]*?)(?=(?:\n- \[)|$)/g;
+  // Line-oriented parser: each lesson is stored as a single physical line:
+  // - [TIMESTAMP] [OPTIONAL_SOURCE] <lesson-with-\\n-escapes>
+  const lines = content.split(/\r?\n/);
   const results: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(content))) {
+  const re = /^- \[([^\]]+)\](?: \[([^\]]+)\])? (.*)$/;
+  for (const line of lines) {
+    const m = re.exec(line);
+    if (!m) continue;
     const source = m[2];
-    let lesson = m[3] || '';
-    // Trim surrounding blank lines but preserve internal newlines
-    lesson = lesson.replace(/^\s+/, '');
-    lesson = lesson.replace(/\s+$/, '');
+    let lessonEscaped = m[3] || '';
+    lessonEscaped = lessonEscaped.trim();
+    // Decode literal "\\n" sequences back to real newlines for prompt consumption
+    const decoded = lessonEscaped.replace(/\\n/g, '\n');
     if (source) {
-      results.push(`[${source}]\n${lesson}`);
+      results.push(`[${source}]\n${decoded}`);
     } else {
-      results.push(lesson);
+      results.push(decoded);
     }
   }
   return results;
@@ -90,11 +95,6 @@ export function appendUniqueLearning(
   if (!lessons.length) return false; // nothing to store
 
   const p = learningsFilePath(cwd, agentId, workflowArg);
-  let existing = '';
-  if (fs.existsSync(p)) {
-    existing = fs.readFileSync(p, 'utf8');
-  }
-  const normalizedExisting = normalizeForCompare(existing);
 
   // Ensure directory exists
   const dir = path.dirname(p);
@@ -104,13 +104,8 @@ export function appendUniqueLearning(
   const timestamp = new Date().toISOString();
 
   for (const lesson of lessons) {
-    const normalizedNew = normalizeForCompare(lesson);
-    if (normalizedExisting.includes(normalizedNew) && normalizedNew.length > 0) {
-      continue; // already present
-    }
-
-    // Store as a block to preserve multiline content
-    const entry = `- [${timestamp}] [${sourceTag}]\n\n${lesson.trim()}\n\n`;
+    // Store as single-line entry with literal "\\n" escapes for internal newlines
+    const entry = `- [${timestamp}] [${sourceTag}] ${lesson.trim()}\n`;
     fs.appendFileSync(p, entry, 'utf8');
     appendedAny = true;
   }
@@ -127,21 +122,14 @@ export function appendManualLearning(
   if (!content || !content.trim()) return false;
 
   const p = learningsFilePath(cwd, agentId, workflowArg);
-  let existing = '';
-  if (fs.existsSync(p)) {
-    existing = fs.readFileSync(p, 'utf8');
-  }
-
-  const normalizedExisting = normalizeForCompare(existing);
-  const normalizedNew = normalizeForCompare(content);
-  if (normalizedNew.length === 0) return false;
-  if (normalizedExisting.includes(normalizedNew)) return false;
 
   const dir = path.dirname(p);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const timestamp = new Date().toISOString();
-  const entry = `- [${timestamp}] [manual]\n\n${content.trim()}\n\n`;
+  // Escape internal newlines as literal "\\n" so each lesson is one physical line
+  const escaped = content.trim().replace(/\r\n/g, '\n').replace(/\n/g, '\\n');
+  const entry = `- [${timestamp}] [manual] ${escaped}\n`;
   fs.appendFileSync(p, entry, 'utf8');
   return true;
 }
