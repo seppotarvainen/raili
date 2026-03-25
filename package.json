@@ -21,6 +21,7 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "knip": "knip",
     "knip:fix": "knip --fix",
+    "loc": "cloc src/ --by-file",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -37,6 +38,7 @@
     "@types/jest": "^29.5.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.4.2",
+    "cloc": "^2.6.0-cloc",
     "jest": "^29.6.1",
     "prettier": "^3.8.1",
     "ts-jest": "^29.1.0",
