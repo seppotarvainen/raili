@@ -36,7 +36,7 @@ Methodology:
 5. **Read existing tests**: Before writing the Test Plan, read `__tests__/integration/testUtils.ts` and at least one existing integration test (e.g. `__tests__/integration/agent.test.ts` or `__tests__/integration/command.test.ts`) to understand the established mock patterns. Your test plan must reference these patterns.
 6. **Create Slug**: Convert the short title to a URL-friendly slug (lowercase, hyphens instead of spaces, remove special characters).
 7. **Structure the Ticket**: Use the Ticket Structure Template below.
-8. **Save File**: Store in `.issues/1_todo/` with filename format: `RAI-<ID>-<type>-<slug>.md`
+8. **Save File**: Store in `.issues/1_todo/` with filename format: `RAI-<ID=integer>-<type>-<slug>.md`
 
 Ticket Structure Template:
 ````markdown

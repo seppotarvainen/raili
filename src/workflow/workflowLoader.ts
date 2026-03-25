@@ -99,12 +99,11 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
         normalizedInputs = (normalizedInputs || []).concat(subInputs);
       }
 
-      // Ensure sub-workflow defines at least one terminal 'out: true' state
       const outStates = Object.entries(sub.states || {})
         .filter(([_id, cfg]) => (cfg as any).out === true)
         .map(([id]) => id);
       if (outStates.length === 0) {
-        throw new Error(`Sub-workflow '${subPath}' must declare at least one 'out: true' state`);
+        throw new Error(`Sub-workflow '${subPath}' must declare at least one 'out: true'`);
       }
 
       // Flatten sub states into parentStates with deterministic prefix
@@ -119,13 +118,28 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
         // Clone subCfg shallowly
         const cfgCopy: any = Object.assign({}, subCfg);
 
-        // If this sub-state is marked as out:true, map parent group's routing onto it
+        // If this sub-state is marked as out:true, it must not define any routing of its own.
         if ((subCfg as any).out === true) {
+          if (
+            (subCfg as any).on ||
+            (subCfg as any).transitions ||
+            (subCfg as any).approval ||
+            (subCfg as any).skip ||
+            (subCfg as any).max_visits
+          ) {
+            throw new Error(
+              `Invalid sub-state '${subId}' in '${subPath}': 'out: true' states must not define routing (on/transitions/approval/skip/max_visits)`,
+            );
+          }
+          // Inherit parent's routing onto the sub-state so the sub-workflow can signal back into the parent.
           if ((stateCfg as any).on) {
             cfgCopy.on = Object.assign({}, (stateCfg as any).on);
           }
           if ((stateCfg as any).transitions) {
             cfgCopy.transitions = Object.assign({}, (stateCfg as any).transitions);
+          }
+          if ((stateCfg as any).approval) {
+            cfgCopy.approval = Object.assign({}, (stateCfg as any).approval);
           }
         }
 
