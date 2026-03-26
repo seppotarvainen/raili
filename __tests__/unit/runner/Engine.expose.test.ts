@@ -1,10 +1,10 @@
-jest.mock('../../../src/runner/ScriptStateRunner');
+jest.mock('../../../src/runner/scriptStateRunner');
 jest.mock('../../../src/context/context');
 jest.mock('../../../src/handlers/notifyHandler');
 jest.mock('../../../src/context/outputStore');
 
-import {Runner} from '../../../src/runner/Runner';
-import {runScriptState} from '../../../src/runner/ScriptStateRunner';
+import {Runner} from '../../../src/runner/runner';
+import {runScriptState} from '../../../src/runner/scriptStateRunner';
 import {addStateToHistory, getCurrentState, saveContext} from '../../../src/context/context';
 
 const mockRunScript = runScriptState as jest.MockedFunction<any>;

@@ -13,7 +13,7 @@ Implement shared (flattened) persistence for outputs, learnings and context acro
 - src/context/learningStore.ts (appendUniqueLearning, appendManualLearning, readLearningsForPrompt)
 - src/context/context.ts (loadContext, saveContext, addStateToHistory, initializeContext, clearContext)
 - src/runner/Runner.ts (Runner.enterState, Runner.record, Runner.run, visitCounts handling)
-- src/runner/GroupStateRunner.ts (runGroupState) — ensure parent workflowArg flows into sub-workflow execution and output/learning writes
+- src/runner/groupStateRunner.ts (runGroupState) — ensure parent workflowArg flows into sub-workflow execution and output/learning writes
 - src/context/pathUtils.ts (resolveWorkflowDir, learningsFilePath)
 - __tests__/integration/testUtils.ts (createTmpWorkspace, writeNamedWorkflow helpers)
 
@@ -22,7 +22,7 @@ Ordered steps the coding agent should follow. Read each referenced file before e
 
 1. **src/context/pathUtils.ts** — Add/confirm a helper `resolveSharedWorkflowDir(cwd: string, workflowArg?: string): string` (or reuse resolveWorkflowDir) documented to return the parent workflow directory used for shared persistence. Ensure learningsFilePath continues to use resolveWorkflowDir but make it clear in comments that `workflowArg` should be the parent workflow name when used from GroupStateRunner.
 
-2. **src/runner/GroupStateRunner.ts** — Modify `runGroupState` so that any nested execution (loading context, saving outputs, appending learnings) is invoked with the parent workflowArg (the group owner). Specifically, when spawning nested state execution or invoking handlers, pass the parent's workflowArg through so calls to saveOutput/readLatestRun/readLearnings use the shared `.raili/<parent>/` directory. If GroupStateRunner currently creates its own workflowArg, replace it with the parent's, or add a parameter to propagated function calls.
+2. **src/runner/groupStateRunner.ts** — Modify `runGroupState` so that any nested execution (loading context, saving outputs, appending learnings) is invoked with the parent workflowArg (the group owner). Specifically, when spawning nested state execution or invoking handlers, pass the parent's workflowArg through so calls to saveOutput/readLatestRun/readLearnings use the shared `.raili/<parent>/` directory. If GroupStateRunner currently creates its own workflowArg, replace it with the parent's, or add a parameter to propagated function calls.
 
 3. **src/context/outputStore.ts** — Make explicit that outputs are always written into the resolved workflowDir outputs folder (no subfolder per included workflow). Verify `outputPath()` uses `resolveWorkflowDir(cwd, workflowArg)` and remove any logic that would create subfolders per include. Add unit tests if needed to assert path.isAbsolute and correctness. Add a short comment documenting the new flattened behavior.
 

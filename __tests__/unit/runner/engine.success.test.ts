@@ -1,16 +1,16 @@
-import {Runner, RunnerConfig} from '../../../src/runner/Runner';
+import {Runner, RunnerConfig} from '../../../src/runner/runner';
 import * as outputStore from '../../../src/context/outputStore';
 import * as notifyHandler from '../../../src/handlers/notifyHandler';
 import * as agentStateRunner from '../../../src/runner/agentStateRunner';
-import * as scriptStateRunner from '../../../src/runner/ScriptStateRunner';
-import * as commandStateRunner from '../../../src/runner/CommandStateRunner';
+import * as scriptStateRunner from '../../../src/runner/scriptStateRunner';
+import * as commandStateRunner from '../../../src/runner/commandStateRunner';
 import {StateMachine, WorkflowContext} from '../../../src/types';
 
 jest.mock('../../../src/context/outputStore');
 jest.mock('../../../src/handlers/notifyHandler');
 jest.mock('../../../src/runner/agentStateRunner');
-jest.mock('../../../src/runner/ScriptStateRunner');
-jest.mock('../../../src/runner/CommandStateRunner');
+jest.mock('../../../src/runner/scriptStateRunner');
+jest.mock('../../../src/runner/commandStateRunner');
 
 jest.mock('../../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),

@@ -1,7 +1,7 @@
 import { StateDef } from '../types';
 import { saveOutput } from '../context/outputStore';
 import { parseExports } from '../variables/variableExports';
-import type { StateResult } from './Runner';
+import type { StateResult } from './runner';
 
 /** Execution result shape shared by script and command handlers. */
 interface HandlerResult {

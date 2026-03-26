@@ -1,4 +1,4 @@
-import {runCommandState} from '../../../src/runner/CommandStateRunner';
+import {runCommandState} from '../../../src/runner/commandStateRunner';
 import {StateDef} from '../../../src/types';
 import * as outputStore from '../../../src/context/outputStore';
 

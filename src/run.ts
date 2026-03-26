@@ -12,7 +12,7 @@ import {
   validateWorkflowReferences,
 } from './registry/registryValidator';
 import { clearContext, initializeContext, loadContext } from './context/context';
-import { Runner } from './runner/Runner';
+import { Runner } from './runner/runner';
 import { appendRunLog } from './context/runLog';
 import { loadVarsFile } from './variables/varsLoader';
 import { handleManualTransition } from './handlers/manualHandler';

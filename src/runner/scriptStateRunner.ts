@@ -1,8 +1,8 @@
 import { StateDef } from '../types';
 import { ScriptRegistry } from '../registry/scriptRegistry';
 import { executeScript } from '../handlers/scriptHandler';
-import type { StateResult } from './Runner';
-import { IStateRunner } from './StateRunner';
+import type { StateResult } from './runner';
+import { IStateRunner } from './stateRunner';
 import { buildEnvOverrides, processStateResult } from './stateRunnerUtils';
 
 /**

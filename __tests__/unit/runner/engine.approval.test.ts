@@ -1,4 +1,4 @@
-import {Runner} from '../../../src/runner/Runner';
+import {Runner} from '../../../src/runner/runner';
 import {StateMachine} from '../../../src/types';
 import * as approveRunner from '../../../src/runner/approveStateRunner';
 import * as contextModule from '../../../src/context/context';

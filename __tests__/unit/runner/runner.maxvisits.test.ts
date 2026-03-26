@@ -1,9 +1,9 @@
-import { Runner, RunnerConfig } from '../../../src/runner/Runner';
-import * as commandStateRunner from '../../../src/runner/CommandStateRunner';
+import { Runner, RunnerConfig } from '../../../src/runner/runner';
+import * as commandStateRunner from '../../../src/runner/commandStateRunner';
 import * as notifyHandler from '../../../src/handlers/notifyHandler';
 import { StateMachine, WorkflowContext } from '../../../src/types';
 
-jest.mock('../../../src/runner/CommandStateRunner');
+jest.mock('../../../src/runner/commandStateRunner');
 jest.mock('../../../src/handlers/notifyHandler');
 
 // Provide a context mock that records stateHistory entries so tests can assert on meta

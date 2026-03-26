@@ -1,7 +1,7 @@
-import {runCommandState} from '../../../src/runner/CommandStateRunner';
-import {runScriptState} from '../../../src/runner/ScriptStateRunner';
+import {runCommandState} from '../../../src/runner/commandStateRunner';
+import {runScriptState} from '../../../src/runner/scriptStateRunner';
 import {validateStateConfig} from '../../../src/workflow/schemaValidator';
-import {Runner} from '../../../src/runner/Runner';
+import {Runner} from '../../../src/runner/runner';
 
 jest.mock('../../../src/handlers/commandHandler');
 jest.mock('../../../src/handlers/scriptHandler');
@@ -75,7 +75,7 @@ describe('expose variables feature', () => {
 
   test('engine throws when declared expose not produced', async () => {
     // Mock runScriptState to return no exports
-    const mockRunScript = jest.spyOn(require('../../../src/runner/ScriptStateRunner'), 'runScriptState')
+    const mockRunScript = jest.spyOn(require('../../../src/runner/scriptStateRunner'), 'runScriptState')
       .mockResolvedValue({ outcome: 'PASSED', exports: {} });
 
     const stateMachine = {

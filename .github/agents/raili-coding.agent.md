@@ -40,10 +40,10 @@ Print a concise memo at the end of your response to preserve context for the nex
 **Format:**
 ```
 //SUMMARY//
-**What:** Brief one-liner describing the implementation (e.g., "Added skip logic to Runner.ts")
+**What:** Brief one-liner describing the implementation (e.g., "Added skip logic to runner.ts")
 **Why:** One sentence explaining the architectural reason (e.g., "Enable workflow state jumping on demand")
 **Files:** List key files modified/created, one per line:
-  - src/runner/Runner.ts (added skipState phase)
+  - src/runner/runner.ts (added skipState phase)
   - src/runner/stateRunnerUtils.ts (new resolveSkipTarget helper)
   - __tests__/unit/runner/skip.test.ts (new test file)
 ```
@@ -60,10 +60,10 @@ Print a concise memo at the end of your response to preserve context for the nex
 **Example with continuation (if you received a summary and did another round this is what you print at the end):**
 ```
 //SUMMARY//
-**What:** Implemented skip routing with skipState phase in Runner.ts; fixed state history append order bug
+**What:** Implemented skip routing with skipState phase in runner.ts; fixed state history append order bug
 **Why:** Allow workflows to jump states on demand; ensure audit trail correctness
 **Files:**
-  - src/runner/Runner.ts (added skipState phase; fixed stateHistory.push to use unshift for new entries)
+  - src/runner/runner.ts (added skipState phase; fixed stateHistory.push to use unshift for new entries)
   - src/runner/stateRunnerUtils.ts (new resolveSkipTarget helper)
   - __tests__/unit/runner/skip.test.ts (skip resolution, illegal skip, state history tests, added off-by-one regression test)
 ===
@@ -109,7 +109,7 @@ When implementing a feature, read the relevant doc to understand current behavio
 ## Core Implementation Patterns
 
 ### Engine & State Runners
-- Runner.ts controls transitions explicitly (no dynamic routing). Use direct lookup or switch/case.
+- runner.ts controls transitions explicitly (no dynamic routing). Use direct lookup or switch/case.
 - State runners return `{outcome: string, metadata?: any}`. Runner routes based on outcome string.
 
 ### Handlers

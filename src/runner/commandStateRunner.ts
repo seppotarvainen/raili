@@ -1,7 +1,7 @@
 import { StateDef } from '../types';
 import { executeCommand } from '../handlers/commandHandler';
-import type { StateResult } from './Runner';
-import { IStateRunner } from './StateRunner';
+import type { StateResult } from './runner';
+import { IStateRunner } from './stateRunner';
 import { buildEnvOverrides, processStateResult } from './stateRunnerUtils';
 
 /**

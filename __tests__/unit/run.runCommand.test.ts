@@ -7,13 +7,13 @@ import {
   validateWorkflowReferences
 } from '../../src/registry/registryValidator';
 import {clearContext, initializeContext, loadContext} from '../../src/context/context';
-import {Runner} from '../../src/runner/Runner';
+import {Runner} from '../../src/runner/runner';
 
 jest.mock('../../src/workflow/workflowLoader');
 jest.mock('fs');
 jest.mock('../../src/registry/registryValidator');
 jest.mock('../../src/context/context');
-jest.mock('../../src/runner/Runner');
+jest.mock('../../src/runner/runner');
 
 describe('runCommand', () => {
   beforeEach(() => {

@@ -3,8 +3,8 @@ import { AgentRegistry } from '../registry/agentRegistry';
 import { executeAgent } from '../handlers/agentHandler';
 import { loadAgentOutputPath, readLatestRun, saveOutput } from '../context/outputStore';
 import { interpolateString } from '../variables/variableInterpolation';
-import type { StateResult } from './Runner';
-import { IStateRunner } from './StateRunner';
+import type { StateResult } from './runner';
+import { IStateRunner } from './stateRunner';
 import { appendUniqueLearning, readLearningsForPrompt } from '../context/learningStore';
 
 /**

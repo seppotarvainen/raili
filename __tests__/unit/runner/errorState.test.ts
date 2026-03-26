@@ -1,12 +1,12 @@
-import {Runner, RunnerConfig} from '../../../src/runner/Runner';
+import {Runner, RunnerConfig} from '../../../src/runner/runner';
 import * as outputStore from '../../../src/context/outputStore';
 import * as notifyHandler from '../../../src/handlers/notifyHandler';
-import * as commandStateRunner from '../../../src/runner/CommandStateRunner';
+import * as commandStateRunner from '../../../src/runner/commandStateRunner';
 import {WorkflowContext} from '../../../src/types';
 
 jest.mock('../../../src/context/outputStore');
 jest.mock('../../../src/handlers/notifyHandler');
-jest.mock('../../../src/runner/CommandStateRunner');
+jest.mock('../../../src/runner/commandStateRunner');
 
 // mock context helpers so we can assert they were called correctly
 jest.mock('../../../src/context/context', () => ({

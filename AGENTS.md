@@ -7,7 +7,7 @@ Raili is a **deterministic CLI workflow orchestrator** for AI-assisted developme
 **Three-tier separation:**
 1. **Workflow Config** (`workflow.yaml`) — Declares states, transitions, inputs, registries
 2. **Registries** — Map names to implementations: `agent-registry.json` and `script-registry.json`
-3. **Runner** (`Runner.ts`) — Controls state transitions deterministically; all routing is explicit
+3. **Runner** (`runner.ts`) — Controls state transitions deterministically; all routing is explicit
 
 **Key constraint:** No business logic in state definitions. Handlers perform all side effects (agent calls, shell scripts, notifications).
 
@@ -30,11 +30,11 @@ src/
     schema-formatter.ts       # Formats schema definitions for display
     stats.ts                  # Run statistics (avg loops, success rate, etc.)
   runner/
-    Runner.ts                 # Core state machine executor (was Engine.ts)
-    StateRunner.ts            # IStateRunner interface
+    runner.ts                 # Core state machine executor (was Engine.ts)
+    stateRunner.ts            # IStateRunner interface
     agentStateRunner.ts       # Runs agent states with prompt interpolation + learnings
-    ScriptStateRunner.ts      # Runs shell scripts
-    CommandStateRunner.ts     # Runs inline shell commands
+    scriptStateRunner.ts      # Runs shell scripts
+    commandStateRunner.ts     # Runs inline shell commands
     approveStateRunner.ts     # Manual approval prompts
     stateRunnerUtils.ts       # Shared: env overrides, output storage, expose parsing, outcome resolution
     transition.ts             # Transition resolution (case-insensitive, default key)
@@ -82,7 +82,7 @@ src/
 1. **Init** (`raili init`) → Creates `.raili/` with template files
 2. **Load & Validate** → Reads workflow.yaml, registries, checks all references exist (fail-fast)
 3. **Build State Machine** → Converts workflow config to explicit state DAG with typed transitions
-4. **Run Loop** → Runner (`Runner.ts`) executes phases per state:
+4. **Run Loop** → Runner (`runner.ts`) executes phases per state:
    - **Phase 1 – Skip:** If `skip` is set, bypass state and jump to target
    - **Phase 2 – Enter:** Enforce `max_visits`, run `reset_outputs`, record in history, fire `notify`
    - **Phase 3 – Terminal check:** If no routing defined → terminal state (persist `success` flag, stop)
@@ -303,14 +303,14 @@ Keep integration tests focused on control-flow and I/O boundaries (context, outp
 
 | Task | Key Files |
 |------|-----------|
-| Add new state type | `types.ts` (StateType union), `workflow/workflowLoader.ts` (build routing), `runner/Runner.ts` (add runner), new `runner/*StateRunner.ts` |
+| Add new state type | `types.ts` (StateType union), `workflow/workflowLoader.ts` (build routing), `runner/runner.ts` (add runner), new `runner/*stateRunner.ts` |
 | Add new registry type | `registry/registryValidator.ts`, new registry loader/validator |
 | Change variable interpolation | `variables/variableInterpolation.ts`, test: `variableInterpolation.test.ts` |
 | Modify agent model override | `runner/agentStateRunner.ts`, `handlers/agentHandler.ts` (frontmatter parsing) |
-| Add error recovery | `runner/Runner.ts` (error state routing already supported), add error state handling |
+| Add error recovery | `runner/runner.ts` (error state routing already supported), add error state handling |
 | Change approval flow | `runner/approveStateRunner.ts`, `handlers/manualHandler.ts` |
 | Modify output filtering | `context/outputStore.ts` (tail/regex logic) |
-| Change feedback collection | `handlers/manualHandler.ts` (handleFeedbackPrompt), `runner/Runner.ts` (handleFeedback phase) |
+| Change feedback collection | `handlers/manualHandler.ts` (handleFeedbackPrompt), `runner/runner.ts` (handleFeedback phase) |
 | Add/modify agent learnings | `context/learningStore.ts`, `runner/agentStateRunner.ts` (learn_from processing) |
 | Change run statistics | `cli/stats.ts` (computeMetrics), `context/runLog.ts` (appendRunLog) |
 | Change variable export parsing | `variables/variableExports.ts` (parseExports), `runner/stateRunnerUtils.ts` (parseExposedVars) |

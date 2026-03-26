@@ -1,4 +1,4 @@
-import {runScriptState} from '../../../src/runner/ScriptStateRunner';
+import {runScriptState} from '../../../src/runner/scriptStateRunner';
 import * as outputStore from '../../../src/context/outputStore';
 import {StateDef} from '../../../src/types';
 

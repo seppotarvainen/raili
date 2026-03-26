@@ -48,7 +48,7 @@ describe('runCommand skip confirmation', () => {
     }) as any);
 
     const { runCommand } = require('../../src/run');
-    const { Runner } = require('../../src/runner/Runner');
+    const { Runner } = require('../../src/runner/runner');
     const runSpy = jest.spyOn(Runner.prototype, 'run').mockImplementation(async () => {});
 
     // Act
@@ -83,7 +83,7 @@ describe('runCommand skip confirmation', () => {
     });
 
     const { runCommand } = require('../../src/run');
-    const { Runner } = require('../../src/runner/Runner');
+    const { Runner } = require('../../src/runner/runner');
     const runSpy = jest.spyOn(Runner.prototype, 'run').mockImplementation(async () => {});
 
     await runCommand(tmp, 'clean', {}, undefined);

@@ -4,10 +4,10 @@ import os from 'os';
 import {runCommand} from '../../src/run';
 
 jest.mock('../../src/registry/registryValidator');
-jest.mock('../../src/runner/Runner');
+jest.mock('../../src/runner/runner');
 
 const registryValidator = require('../../src/registry/registryValidator');
-const { Runner } = require('../../src/runner/Runner');
+const { Runner } = require('../../src/runner/runner');
 
 describe('runCommand', () => {
   let tmpdir: string;

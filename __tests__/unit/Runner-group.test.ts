@@ -1,7 +1,7 @@
-import { Runner } from '../../src/runner/Runner';
+import { Runner } from '../../src/runner/runner';
 import { StateMachine } from '../../src/types';
 
-jest.mock('../../src/runner/GroupStateRunner', () => ({
+jest.mock('../../src/runner/groupStateRunner', () => ({
   runGroupState: jest.fn(),
 }));
 
@@ -11,7 +11,7 @@ jest.mock('../../src/context/context', () => ({
   saveContext: jest.fn(),
 }));
 
-const { runGroupState } = require('../../src/runner/GroupStateRunner');
+const { runGroupState } = require('../../src/runner/groupStateRunner');
 
 describe('Runner group dispatch', () => {
   it('dispatches to runGroupState and merges exports into context', async () => {
