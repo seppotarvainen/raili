@@ -1,4 +1,4 @@
-import {runAgentState} from '../../../src/runner/AgentStateRunner';
+import {runAgentState} from '../../../src/runner/agentStateRunner';
 import * as agentHandler from '../../../src/handlers/agentHandler';
 import * as outputStore from '../../../src/context/outputStore';
 import {StateDef} from '../../../src/types';

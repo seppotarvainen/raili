@@ -1,4 +1,4 @@
-import {runAgentState} from '../../../src/runner/AgentStateRunner';
+import {runAgentState} from '../../../src/runner/agentStateRunner';
 import * as agentHandler from '../../../src/handlers/agentHandler';
 import {StateDef, WorkflowContext} from '../../../src/types';
 import * as learningStore from '../../../src/context/learningStore';

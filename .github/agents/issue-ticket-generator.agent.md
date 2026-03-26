@@ -28,7 +28,7 @@ Methodology:
 1. **ID**: ID should be given to you as prompt. If not, print `no_id_found` as last line of your input.
 2. **Classify Ticket Type**: Determine the appropriate type from: feature (new functionality), improvement (enhancement to existing), bug (defect), fix (correction), or chore (maintenance/tooling). Match based on the nature of the change.
 3. **Scope Analysis (Bug tickets only)**: The example in a bug description is a starting point, not the full scope. Actively search the codebase for structurally parallel implementations that share the same code pattern as the reported bug:
-   - State runners share logic: if one has a bug, check `agentStateRunner.ts`, `CommandStateRunner.ts`, `ScriptStateRunner.ts`, and `ApproveStateRunner.ts`.
+   - State runners share logic: if one has a bug, check `agentStateRunner.ts`, `CommandStateRunner.ts`, `ScriptStateRunner.ts`, and `approveStateRunner.ts`.
    - Handlers share patterns: check all files in `src/handlers/`.
    - Registry loaders share patterns: check `agentRegistry.ts` and `scriptRegistry.ts`.
    - List **every** affected file explicitly in the ticket. Never assume the example is the only affected location.

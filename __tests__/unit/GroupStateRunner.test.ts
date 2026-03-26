@@ -1,5 +1,5 @@
 import { runGroupState } from '../../src/runner/GroupStateRunner';
-import { runAgentState } from '../../src/runner/AgentStateRunner';
+import { runAgentState } from '../../src/runner/agentStateRunner';
 import { runScriptState } from '../../src/runner/ScriptStateRunner';
 
 jest.mock('fs', () => ({
@@ -14,7 +14,7 @@ jest.mock('js-yaml', () => ({ load: jest.fn(() => ({
   },
 })) }));
 
-jest.mock('../../src/runner/AgentStateRunner', () => ({ runAgentState: jest.fn() }));
+jest.mock('../../src/runner/agentStateRunner', () => ({ runAgentState: jest.fn() }));
 jest.mock('../../src/runner/ScriptStateRunner', () => ({ runScriptState: jest.fn() }));
 jest.mock('../../src/context/context', () => ({
   loadContext: jest.fn(() => ({ stateHistory: [] })),

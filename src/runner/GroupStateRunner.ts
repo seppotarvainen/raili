@@ -5,10 +5,10 @@ import { StateDef } from '../types';
 import type { StateResult } from './Runner';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { ScriptRegistry } from '../registry/scriptRegistry';
-import { runAgentState } from './AgentStateRunner';
+import { runAgentState } from './agentStateRunner';
 import { runScriptState } from './ScriptStateRunner';
 import { runCommandState } from './CommandStateRunner';
-import { runApprovalStep } from './ApproveStateRunner';
+import { runApprovalStep } from './approveStateRunner';
 import { loadContext, addStateToHistory, saveContext } from '../context/context';
 import { resolveWorkflowDir } from '../context/pathUtils';
 

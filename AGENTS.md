@@ -35,7 +35,7 @@ src/
     agentStateRunner.ts       # Runs agent states with prompt interpolation + learnings
     ScriptStateRunner.ts      # Runs shell scripts
     CommandStateRunner.ts     # Runs inline shell commands
-    ApproveStateRunner.ts     # Manual approval prompts
+    approveStateRunner.ts     # Manual approval prompts
     stateRunnerUtils.ts       # Shared: env overrides, output storage, expose parsing, outcome resolution
     transition.ts             # Transition resolution (case-insensitive, default key)
   handlers/
@@ -189,7 +189,7 @@ states:
 - Access in commands: `$RAILI_VAR_TICKET_ID`
 
 - **Fail-fast (default):** The interpolation utility (`src/variables/variableInterpolation.ts`) throws on missing variables by default.
-- **YAML-style exceptions for prompts/questions:** Agent prompts and approval questions intentionally use YAML-style interpolation — missing variables are substituted with an empty string instead of throwing. This behavior is implemented in `src/runner/agentStateRunner.ts` and `src/runner/ApproveStateRunner.ts` (they call the interpolator with `{ throwOnMissing: false, missingValue: '' }`).
+- **YAML-style exceptions for prompts/questions:** Agent prompts and approval questions intentionally use YAML-style interpolation — missing variables are substituted with an empty string instead of throwing. This behavior is implemented in `src/runner/agentStateRunner.ts` and `src/runner/approveStateRunner.ts` (they call the interpolator with `{ throwOnMissing: false, missingValue: '' }`).
 
 ---
 
@@ -308,7 +308,7 @@ Keep integration tests focused on control-flow and I/O boundaries (context, outp
 | Change variable interpolation | `variables/variableInterpolation.ts`, test: `variableInterpolation.test.ts` |
 | Modify agent model override | `runner/agentStateRunner.ts`, `handlers/agentHandler.ts` (frontmatter parsing) |
 | Add error recovery | `runner/Runner.ts` (error state routing already supported), add error state handling |
-| Change approval flow | `runner/ApproveStateRunner.ts`, `handlers/manualHandler.ts` |
+| Change approval flow | `runner/approveStateRunner.ts`, `handlers/manualHandler.ts` |
 | Modify output filtering | `context/outputStore.ts` (tail/regex logic) |
 | Change feedback collection | `handlers/manualHandler.ts` (handleFeedbackPrompt), `runner/Runner.ts` (handleFeedback phase) |
 | Add/modify agent learnings | `context/learningStore.ts`, `runner/agentStateRunner.ts` (learn_from processing) |

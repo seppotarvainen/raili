@@ -1,6 +1,6 @@
 import {Runner} from '../../../src/runner/Runner';
 import {StateMachine} from '../../../src/types';
-import * as approveRunner from '../../../src/runner/ApproveStateRunner';
+import * as approveRunner from '../../../src/runner/approveStateRunner';
 import * as contextModule from '../../../src/context/context';
 
 describe('Engine approval persistence', () => {
