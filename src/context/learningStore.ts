@@ -51,16 +51,19 @@ export function stripTimestampsFromLearnings(content: string): string[] {
   for (const line of lines) {
     const m = re.exec(line);
     if (!m) continue;
-    const source = m[2];
+    // const source = m[2];
     let lessonEscaped = m[3] || '';
     lessonEscaped = lessonEscaped.trim();
     // Decode literal "\\n" sequences back to real newlines for prompt consumption
     const decoded = lessonEscaped.replace(/\\n/g, '\n');
-    if (source) {
-      results.push(`[${source}]\n${decoded}`);
-    } else {
-      results.push(decoded);
-    }
+    // Strip source tags entirely for prompt consumption. Only return the lesson body.
+    // Prepend a dash to mimic a bullet point used in examples/communication.
+    // Preserve multiline lesson bodies.
+    const withBullet = decoded
+      .split('\n')
+      .map((line, idx) => (idx === 0 ? `- ${line}` : `  ${line}`))
+      .join('\n');
+    results.push(withBullet);
   }
   return results;
 }
