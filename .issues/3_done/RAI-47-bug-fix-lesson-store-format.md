@@ -6,7 +6,7 @@
 Every lesson stored in the learnings files should be written as a single physical line; internal newlines must be escaped as the two-character sequence "\\n". Currently lessons are stored as multi-line blocks which leads to parsing bugs (a trailing '-' getting glued to the previous lesson) and brittle whitespace handling. Also, remove the uniqueness check so lessons are always appended (no dedup logic).
 
 ## Documentation References
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 - documentation/ (no dedicated learning doc found)
 
 ## Code References

@@ -6,7 +6,7 @@
 Add comprehensive integration tests for the "group workflow" feature verifying loading, flattening, execution, routing, variable sharing, output storage, and context persistence. These tests exercise the engine end-to-end using established test utilities and child_process mocks so behavior is deterministic and isolated.
 
 ## Documentation References
-- documentation/workflow-yaml.md
+- documentation/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/run.ts (runCommand)

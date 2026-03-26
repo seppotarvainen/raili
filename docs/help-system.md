@@ -17,7 +17,7 @@ raili help routing        # Binary vs named vs approval routing
 raili help variables      # Input variables and interpolation
 raili help approval       # Manual approval state syntax
 raili help output         # Output storage and filtering
-raili help states         # State types (agent, script, command, engine)
+raili help states         # State types (agent, script, command, engine, group)
 ```
 
 **Best for:** Quick lookup of a concept, syntax, or pattern you forgot
@@ -184,9 +184,6 @@ raili run --clean
 ### **For AI-assisted help**
 → Use `raili-helper` agent in your workflow
 
-### **For authoritative reference**
-→ `docs/workflow-yaml.md` (markdown file in repo)
-
 ---
 
 ## Offline Documentation
@@ -198,7 +195,6 @@ All documentation is embedded in the CLI binaries. No internet connection requir
 - `raili docs`
 - `raili schema`
 - `AGENTS.md` (in repo)
-- `docs/workflow-yaml.md` (in repo)
 
 ---
 

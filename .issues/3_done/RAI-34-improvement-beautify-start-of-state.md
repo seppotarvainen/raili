@@ -7,7 +7,7 @@ Improve the console presentation when entering a state by introducing a new Pres
 
 ## Documentation References
 - documentation/states.md
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 - docs/raili-mvp.md
 
 ## Code References

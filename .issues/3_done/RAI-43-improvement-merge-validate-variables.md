@@ -6,7 +6,7 @@
 Implement global variable scoping and input merging for parent and sub-workflows so all states share a single context.vars. Merge declared inputs at startup; reject duplicate keys across parent and sub-workflows (fail-fast). Ensure interpolation, interactive collection (clean runs) and resumed runs use the merged vars object.
 
 ## Documentation References
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/workflow/workflowLoader.ts (loadWorkflowConfig, buildStateMachine)

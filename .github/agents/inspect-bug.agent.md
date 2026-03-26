@@ -22,7 +22,7 @@ Methodology:
 1. **ID**: ID should be given to you in the prompt. If not, print `no_id_found` as the last line of your output.
 2. **Read the code**: Before writing anything, read the actual source files related to the bug. Understand the current implementation — do not guess at function names or behavior.
 3. **Scope Analysis**: The reported example is a starting point, not the full scope. Actively search for structurally parallel implementations:
-   - State runners share logic: check `AgentStateRunner.ts`, `CommandStateRunner.ts`, `ScriptStateRunner.ts`, and `ApproveStateRunner.ts`.
+   - State runners share logic: check `agentStateRunner.ts`, `CommandStateRunner.ts`, `ScriptStateRunner.ts`, and `ApproveStateRunner.ts`.
    - Handlers share patterns: check all files in `src/handlers/`.
    - Registry loaders share patterns: check `agentRegistry.ts` and `scriptRegistry.ts`.
    - List **every** affected file explicitly. Never assume the example is the only affected location.

@@ -6,7 +6,7 @@
 Create a GroupStateRunner that executes "group" states by running their flattened sub-workflow states transparently. The runner should execute the flattened states until a sub-workflow terminal state (marked out: true) is reached, parse its terminal stdout for the routing key, and return that outcome so the parent workflow can route normally.
 
 ## Documentation References
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 - src/workflow/workflowLoader.ts
 
 ## Code References

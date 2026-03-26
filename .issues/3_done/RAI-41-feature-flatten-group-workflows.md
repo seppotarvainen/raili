@@ -8,7 +8,7 @@ Implement loading and flattening of `group` states so sub-workflow fragments are
 This change is part of the group states / sub-workflow nesting initiative and focuses on loader/validation/flattening logic only.
 
 ## Documentation References
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/workflow/workflowLoader.ts (loadYamlFile, loadWorkflowConfig, buildStateMachine)
@@ -64,7 +64,7 @@ Ordered steps. Each step names file, function/class, and specific change.
    - Test case: main + sub-workflow loads and `runCommand(tmp, 'clean', {})` proceeds with flattened state machine; verify `.raili/main/context.json` stateHistory shows flattened state ids or final terminal state reached.
    - Test case: sub-workflow inputs merged into parent inputs (assert process.env RAILI_VAR_... set during run or verify loader returned config.inputs contains merged entries).
 
-8. **Docs** — Update `docs/workflow-yaml.md` to document `group` state semantics, `out: true` requirement in sub-workflows, collision rules, and the deterministic ID prefixing convention.
+8. **Docs** — Update `docs/workflow-yaml.md [File removed as redundant (26.3.2026)]` to document `group` state semantics, `out: true` requirement in sub-workflows, collision rules, and the deterministic ID prefixing convention.
 
 9. **Developer notes / logging**
    - Add clear error messages for fail-fast conditions: missing sub-workflow file, nested 'group', duplicate inputs, state id collision, and missing out:true.

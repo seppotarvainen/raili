@@ -32,7 +32,7 @@ src/
   runner/
     Runner.ts                 # Core state machine executor (was Engine.ts)
     StateRunner.ts            # IStateRunner interface
-    AgentStateRunner.ts       # Runs agent states with prompt interpolation + learnings
+    agentStateRunner.ts       # Runs agent states with prompt interpolation + learnings
     ScriptStateRunner.ts      # Runs shell scripts
     CommandStateRunner.ts     # Runs inline shell commands
     ApproveStateRunner.ts     # Manual approval prompts
@@ -189,7 +189,7 @@ states:
 - Access in commands: `$RAILI_VAR_TICKET_ID`
 
 - **Fail-fast (default):** The interpolation utility (`src/variables/variableInterpolation.ts`) throws on missing variables by default.
-- **YAML-style exceptions for prompts/questions:** Agent prompts and approval questions intentionally use YAML-style interpolation — missing variables are substituted with an empty string instead of throwing. This behavior is implemented in `src/runner/AgentStateRunner.ts` and `src/runner/ApproveStateRunner.ts` (they call the interpolator with `{ throwOnMissing: false, missingValue: '' }`).
+- **YAML-style exceptions for prompts/questions:** Agent prompts and approval questions intentionally use YAML-style interpolation — missing variables are substituted with an empty string instead of throwing. This behavior is implemented in `src/runner/agentStateRunner.ts` and `src/runner/ApproveStateRunner.ts` (they call the interpolator with `{ throwOnMissing: false, missingValue: '' }`).
 
 ---
 
@@ -306,12 +306,12 @@ Keep integration tests focused on control-flow and I/O boundaries (context, outp
 | Add new state type | `types.ts` (StateType union), `workflow/workflowLoader.ts` (build routing), `runner/Runner.ts` (add runner), new `runner/*StateRunner.ts` |
 | Add new registry type | `registry/registryValidator.ts`, new registry loader/validator |
 | Change variable interpolation | `variables/variableInterpolation.ts`, test: `variableInterpolation.test.ts` |
-| Modify agent model override | `runner/AgentStateRunner.ts`, `handlers/agentHandler.ts` (frontmatter parsing) |
+| Modify agent model override | `runner/agentStateRunner.ts`, `handlers/agentHandler.ts` (frontmatter parsing) |
 | Add error recovery | `runner/Runner.ts` (error state routing already supported), add error state handling |
 | Change approval flow | `runner/ApproveStateRunner.ts`, `handlers/manualHandler.ts` |
 | Modify output filtering | `context/outputStore.ts` (tail/regex logic) |
 | Change feedback collection | `handlers/manualHandler.ts` (handleFeedbackPrompt), `runner/Runner.ts` (handleFeedback phase) |
-| Add/modify agent learnings | `context/learningStore.ts`, `runner/AgentStateRunner.ts` (learn_from processing) |
+| Add/modify agent learnings | `context/learningStore.ts`, `runner/agentStateRunner.ts` (learn_from processing) |
 | Change run statistics | `cli/stats.ts` (computeMetrics), `context/runLog.ts` (appendRunLog) |
 | Change variable export parsing | `variables/variableExports.ts` (parseExports), `runner/stateRunnerUtils.ts` (parseExposedVars) |
 
@@ -319,7 +319,7 @@ Keep integration tests focused on control-flow and I/O boundaries (context, outp
 
 ## Example Workflow Structure
 
-See `docs/workflow-yaml.md` for full reference. Minimal example:
+See `documentation/` for complete reference (states.md, routing.md, variables.md, etc.). Minimal example:
 
 ```yaml
 initial: start

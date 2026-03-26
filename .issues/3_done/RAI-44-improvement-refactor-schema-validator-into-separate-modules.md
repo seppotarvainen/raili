@@ -6,7 +6,7 @@
 SchemaValidator (src/workflow/schemaValidator.ts) has grown large and mixes multiple responsibilities: field/type validation, object validation, state-level rules, var-reference collection, and workflow-level checks. Split internal logic into focused modules to improve maintainability, readability, and testability while preserving the current public API (so existing tests and imports remain unchanged).
 
 ## Documentation References
-- documentation/workflow-yaml.md
+- documentation/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/workflow/schemaValidator.ts (validateWorkflowConfig, validateStateConfig, validateApprovalConfig, SchemaValidationError)

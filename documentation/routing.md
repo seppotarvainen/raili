@@ -68,6 +68,42 @@ done:
   notify: "echo 'Complete'"
 ```
 
+## Error State
+
+Raili supports an optional top-level `error:` field that names a state to which the engine will deterministically route if an unhandled exception escapes the normal state handler/routing logic.
+
+**Declaration:**
+
+```yaml
+initial: start
+error: error_state    # ← routes here on unexpected failure
+
+states:
+  start:
+    type: agent
+    agent: main_logic
+    transitions:
+      ready: done
+
+  error_state:
+    type: engine
+    notify: "alert.sh 'Workflow failed'"
+```
+
+**Key points:**
+
+- `error:` is optional. If present, its value must be a valid state ID defined under `states:`
+- The declared error state must be **terminal**: it cannot have `on:`, `transitions:`, or `approval:`
+- The error state behaves like any other state on entry: `reset_outputs` and `notify` run (if present), then execution stops
+- `notify` on the error state is best-effort: failures do not crash further
+- The engine appends the error state to context history, so runs remain auditable
+
+**Why use an error state?**
+
+- Provides a single place to handle unexpected failures (e.g., send alerts, cleanup, record messages)
+- Keeps the engine thin: instead of trying to recover automatically, route to a known state
+- All errors are persisted to context.json for auditability and debugging
+
 ## Important Notes
 
 - Agents always exit code 0 regardless of internal logic → use `transitions:` not `on:`
@@ -75,4 +111,5 @@ done:
 - Missing routing key in `transitions:` → workflow error
 - Variables can be used in approval questions with `${variable_name}` syntax
 - `skip` may be used to bypass a state and immediately route to another state without running handlers. Use with care to avoid hiding important checks.
+- **Group states** define routing on the parent group (`on:`, `transitions:`, or `approval:`). The sub-workflow's `out: true` state inherits this routing. See `documentation/groups.md` for details.
 

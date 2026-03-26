@@ -6,7 +6,7 @@
 Implement shared (flattened) persistence for outputs, learnings and context across group workflows so that parent and included sub-workflow states write to a single outputs/ and learnings/ directory and the context.stateHistory is a flattened, sequential log. This makes resuming mid-sub-workflow deterministic and simplifies memory management.
 
 ## Documentation References
-- documentation: docs/workflow-yaml.md
+- documentation: docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/context/outputStore.ts (filterOutput, saveOutput, readLatestRun, clearAgentOutputs, clearAllOutputs)
@@ -34,7 +34,7 @@ Ordered steps the coding agent should follow. Read each referenced file before e
 
 7. **Tests: unit and integration** — Add tests as described in Test Plan below. Modify any existing integration helpers only in tests (not production code) to create a group/sub-workflow scenario and assert flattened persistence.
 
-8. **Documentation update** — Update docs/workflow-yaml.md where `include:` behavior and outputs/learnings location are described: add a short paragraph describing flattened storage (no per-include subfolders) and resumability from any state.
+8. **Documentation update** — Update docs/workflow-yaml.md [File removed as redundant (26.3.2026)] where `include:` behavior and outputs/learnings location are described: add a short paragraph describing flattened storage (no per-include subfolders) and resumability from any state.
 
 ## Examples
 

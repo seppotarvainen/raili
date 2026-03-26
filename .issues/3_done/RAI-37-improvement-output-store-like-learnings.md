@@ -7,7 +7,7 @@ Change output storage behavior so it extracts everything after a single marker (
 
 ## Documentation References
 - docs/output.md
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/context/outputStore.ts (filterOutput, saveOutput, readLatestRun)

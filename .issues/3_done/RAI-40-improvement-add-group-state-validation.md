@@ -8,7 +8,7 @@ Add a new `group` state type to allow embedding a sub-workflow YAML (one level d
 This enforces deterministic composition and prevents runtime surprises when nesting workflows.
 
 ## Documentation References
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/types.ts (StateType, StateConfig, WorkflowConfig)
@@ -47,7 +47,7 @@ This enforces deterministic composition and prevents runtime surprises when nest
    - Missing sub-workflow file → runCommand fails early
    - Nested group in sub-workflow → runCommand fails early
    - Main workflow references inner state ID → runCommand fails early
-8. **Docs** — Update `docs/workflow-yaml.md` to document `group` state usage and the `out` flag and nesting limitations (one paragraph). Keep minimal change.
+8. **Docs** — Update `docs/workflow-yaml.md [File removed as redundant (26.3.2026)]` to document `group` state usage and the `out` flag and nesting limitations (one paragraph). Keep minimal change.
 
 ## Examples
 

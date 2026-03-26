@@ -1,7 +1,7 @@
 # States
 
-> Four state types: agent (Copilot agents), script (shell scripts), command (inline commands), engine (no-op). Each has
-> different routing rules.
+> Five state types: agent (Copilot agents), script (shell scripts), command (inline commands), engine (no-op), group
+> (embedded sub-workflow). Each has different routing rules.
 
 ## Type: agent
 
@@ -133,6 +133,47 @@ done:
 - Terminal state with notification
 - No-op before another state
 
+## Type: group
+
+Embeds a sub-workflow YAML file as a single state. The sub-workflow is flattened into the parent at load time — the runner sees a single flat state machine. Nesting is limited to one level.
+
+```yaml
+build_group:
+  type: group
+  group: ./build-steps.yaml
+  on:
+    PASSED: deploy
+    FAILED: rework
+```
+
+The referenced sub-workflow declares states but no `initial`. At least one state must be marked `out: true` — this is the exit point that inherits the parent's routing.
+
+```yaml
+# build-steps.yaml
+states:
+  compile:
+    type: command
+    command: npm run build
+    on:
+      PASSED: test
+  test:
+    type: script
+    script: run_tests
+    out: true
+```
+
+**Fields:**
+
+- `group` (required) — Relative path to sub-workflow YAML file (relative to workflow directory)
+
+**Routing:** Defined on the group state (`on:`, `transitions:`, or `approval:`). The `out: true` sub-state inherits this routing.
+
+**Flattening:** Sub-state IDs are prefixed with `<groupId>.` (e.g., `build_group.compile`). The group state becomes a proxy engine state that skips to the first sub-state. Context, outputs, and learnings are shared with the parent.
+
+**Constraints:** Sub-workflows must not contain `group` states (depth = 1), must declare `out: true` at least once, and `out: true` states must not define their own routing.
+
+See `documentation/groups.md` for full details on flattening, shared context, resumption, and examples.
+
 ## Common State Fields
 
 All states support:
@@ -168,6 +209,7 @@ Metadata is optional and extensible; older context files lacking `meta` continue
 | script  | on (binary) or transitions (named)     | 0 = PASSED, ≠0 = FAILED |
 | command | on (binary) or transitions (named)     | 0 = PASSED, ≠0 = FAILED |
 | engine  | on, transitions, approval, or terminal | Always PASSED           |
+| group   | on, transitions, or approval           | From out:true sub-state |
 
 **Note:** Agents may use `on`, but agent handlers currently always return `PASSED`; for multi-outcome use `transitions`.
 

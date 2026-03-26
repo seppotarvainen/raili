@@ -1,6 +1,6 @@
 # Raili (MVP)
 
-Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution. See [workflow-yaml.md](docs/workflow-yaml.md) for workflow configuration.
+Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution. See `documentation/` for workflow configuration reference.
 
 This repository contains the Raili MVP core: a thin CLI that validates a `.raili/` configuration directory and registries.
 

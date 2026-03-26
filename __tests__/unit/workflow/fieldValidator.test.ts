@@ -1,5 +1,5 @@
-import { validateField, validateFieldType } from '../../src/workflow/fieldValidator';
-import { SchemaValidationError } from '../../src/workflow/schemaErrors';
+import { validateField, validateFieldType } from '../../../src/workflow/fieldValidator';
+import { SchemaValidationError } from '../../../src/workflow/schemaErrors';
 
 describe('fieldValidator', () => {
   test('rejects wrong primitive types', () => {

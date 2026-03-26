@@ -9,7 +9,7 @@ The core component that executes workflows was renamed to `Runner` (class in src
 - documentation/routing.md
 - documentation/states.md
 - documentation/usage/run.md
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 
 ## Code References
 - src/run.ts (local variable creation & usage: `const engine = new Runner(...)`, await engine.run())

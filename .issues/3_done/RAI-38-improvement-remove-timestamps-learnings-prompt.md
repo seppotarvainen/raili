@@ -6,7 +6,7 @@
 Agents currently receive the full learnings file content verbatim, including per-entry timestamps and source tags (e.g. "- [2026-03-23T...] [output:state]"). These timestamps add noise and consume tokens without aiding agent decisions. This change strips timestamp metadata from stored learnings when they are injected into agent prompts, preserving the lesson text and source tag only if helpful, to reduce prompt size and improve signal-to-noise.
 
 ## Documentation References
-- docs/workflow-yaml.md (Agent memory / learnings sections)
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)] (Agent memory / learnings sections)
 
 ## Code References
 - src/context/learningStore.ts (extractLessons, appendUniqueLearning, readLearnings)
@@ -37,7 +37,7 @@ Ordered steps to implement the improvement. Each step references a concrete file
    - **__tests__/integration/learnings-injection.test.ts** — Using `createTmpWorkspace()` write a pre-populated `.raili/main/learnings/<agentId>.md` containing two appended entries (the exact storage format produced by appendUniqueLearning, with timestamps). Register an agent and workflow with a prompt. Mock `child_process.spawn` to capture the copilot call (use `fakeChild`) and assert the `--prompt` value (args after `--prompt`) does not contain ISO timestamps but does contain lesson text.
    - Use `cleanupRailiEnvVars()` and `cleanupTmpWorkspace()` as per patterns.
 
-6. **Documentation update (optional):** docs/workflow-yaml.md — add a short note in "Agent memory" section that learnings are stored with timestamps for audit, but timestamps are removed when injected into agent prompts to reduce token usage.
+6. **Documentation update (optional):** docs/workflow-yaml.md [File removed as redundant (26.3.2026)] — add a short note in "Agent memory" section that learnings are stored with timestamps for audit, but timestamps are removed when injected into agent prompts to reduce token usage.
 
 7. **Run tests:** Execute `npm test` and adjust tests as necessary until all unit and integration tests pass. Ensure no other tests rely on readLearnings() returning a timestamp-stripped string.
 

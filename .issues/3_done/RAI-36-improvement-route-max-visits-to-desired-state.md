@@ -16,7 +16,7 @@ states:
 If `continue` is omitted the engine retains the current behavior and will throw when the limit is exceeded. If `continue` is provided and the referenced state does not exist, validation fails (fail-fast).
 
 ## Documentation References
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 - src/workflow/schemas.ts
 
 ## Code References
@@ -57,7 +57,7 @@ Ordered steps. Each step names the file, the function/class, and what to do.
 
 6. **src/workflow/schemaValidator.ts (validateStateMachine)** — No code change required if buildStateMachine appended continue target to transitions, but confirm validation behavior. If necessary add explicit check that `max_visits.continue`, if present, refers to an existing state (validateStateMachine will catch because transitions include continue).
 
-7. **docs/workflow-yaml.md** — Update the documentation section for `max_visits` to show the new object form and explain behavior when `continue` is present vs omitted. Add one short example snippet.
+7. **docs/workflow-yaml.md [File removed as redundant (26.3.2026)]** — Update the documentation section for `max_visits` to show the new object form and explain behavior when `continue` is present vs omitted. Add one short example snippet.
 
 8. **Tests** — Add/modify tests as described in the Test Plan below.
 
@@ -130,7 +130,7 @@ Behavior: On 6th entry the Runner records a max_visits event and routes to state
 - [x] Schema accepts the new `max_visits` object and validates `count` is a positive number and `continue` is a string (src/workflow/schemas.ts + schemaValidator.ts).
 - [x] buildStateMachine includes `max_visits.continue` in the state's transitions so validation fails when target missing (src/workflow/workflowLoader.ts).
 - [x] Runner no longer throws when a state's visits exceed the configured count if `continue` is provided; instead it routes deterministically to the target (src/runner/Runner.ts). If `continue` is omitted it retains previous throwing behaviour.
-- [x] Documentation updated with example and behavior note (docs/workflow-yaml.md).
+- [x] Documentation updated with example and behavior note (docs/workflow-yaml.md [File removed as redundant (26.3.2026)]).
 - [x] Unit and integration tests added per Test Plan demonstrating both behaviors (routing and throwing).
 
 

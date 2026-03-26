@@ -8,7 +8,7 @@ Print a concise, framed "state end" summary after every state completes. For sta
 This improves UX by surfacing outcome, next state, and elapsed time in a consistent, testable way.
 
 ## Documentation References
-- docs/workflow-yaml.md (if present)
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)] (if present)
 
 ## Code References
 - src/runner/Runner.ts (Runner.run, routeToNext, handleApproval, handleFeedback)
@@ -51,7 +51,7 @@ Ordered changes with file and function-level detail. Read the referenced files b
    - If necessary, extract a small helper to find the last enteredAt for a state (from context.stateHistory) to keep code readable.
 
 7. **Documentation**
-   - Update docs/workflow-yaml.md or a short note in documentation/ that run prints a framed end-of-state summary using Presenter.
+   - Update docs/workflow-yaml.md [File removed as redundant (26.3.2026)] or a short note in documentation/ that run prints a framed end-of-state summary using Presenter.
 
 ## Examples
 

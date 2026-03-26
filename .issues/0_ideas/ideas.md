@@ -433,7 +433,7 @@ intent: |
       5. If learnings exist, append them to resolvedPrompt as:
          "\n\n## Learnings from previous runs\n\n<learnings content>"
 
-  docs/workflow-yaml.md
+  docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
     - Add a learn_from section under "Type: agent" documenting the field, source types,
       runtime behavior, and fail-fast validation.
 

@@ -7,7 +7,7 @@ A workflow-marked `expose` variable is not being made available to later states.
 
 ## Documentation References
 - documentation/variables.md
-- docs/workflow-yaml.md
+- docs/workflow-yaml.md [File removed as redundant (26.3.2026)]
 - documentation/states.md
 
 ## Code References
@@ -28,7 +28,7 @@ A workflow-marked `expose` variable is not being made available to later states.
   - ScriptStateRunner: when stdout contains `id=123` vs `export id=123` vs no line -> exports present/missing
   - CommandStateRunner: same cases
   - Engine integration: when `expose` configured and export missing -> engine throws and routes to error state (mock handlers)
-- [x] Update documentation/variables.md and docs/workflow-yaml.md with a short example showing how a script should emit `name=value` lines and explain why `export` inside child process does not propagate to parent environment.
+- [x] Update documentation/variables.md and docs/workflow-yaml.md [File removed as redundant (26.3.2026)] with a short example showing how a script should emit `name=value` lines and explain why `export` inside child process does not propagate to parent environment.
 - [x] Provide an example correction for scripts/next_id.sh in documentation and tests demonstrating a working pattern.
 
 

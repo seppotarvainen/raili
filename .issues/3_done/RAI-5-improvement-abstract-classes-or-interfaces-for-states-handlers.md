@@ -6,7 +6,7 @@
 Explore using TypeScript abstract classes or interfaces (or composition) to consolidate shared logic between State implementations and their handlers. The goal is to reduce duplication, improve maintainability, and make it easier to add new state/handler types without repeating plumbing. If abstraction is not appropriate, evaluate composition and document the recommended approach with migration steps that preserve existing behavior and tests.
 
 ## Documentation References
-- documentation/workflow-yaml.md
+- documentation/workflow-yaml.md [File removed as redundant (26.3.2026)]
 - documentation/raili-mvp.md
 - docs/states.md
 - docs/routing.md
