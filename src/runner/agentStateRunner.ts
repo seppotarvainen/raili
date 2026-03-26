@@ -76,7 +76,11 @@ class AgentStateRunner implements IStateRunner {
     // handlers can decide how to behave. Only prepend learnings when an explicit prompt exists.
     let assembledPrompt = interpolatedPrompt ?? undefined;
     if (fullLearnings && assembledPrompt) {
-      assembledPrompt = `${assembledPrompt}\n\n## Learnings from previous runs\n${fullLearnings}`;
+      const learningsIntro = "## Learnings from previous runs\n" +
+        "The following are lessons learned from previous workflow runs.\n" +
+        "You MUST apply these lessons. Violating them is considered a failure.\n";
+
+      assembledPrompt = `${learningsIntro}\n${fullLearnings}\n---\n\n## Current prompt\n\n${assembledPrompt}`;
     }
 
     const result = await executeAgent(
