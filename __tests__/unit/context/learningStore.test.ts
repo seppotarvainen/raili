@@ -88,36 +88,37 @@ describe('learningStore appendUniqueLearning', () => {
 // ── stripTimestampsFromLearnings ──────────────────────────────────────────────
 
 describe('learningStore stripTimestampsFromLearnings', () => {
-    test('entry with source tag includes source prefix and decodes \\n sequences', () => {
+    test('entry with source tag does NOT include source prefix and decodes \\n sequences', () => {
         const content = '- [2026-01-01T00:00:00Z] [output:analyze] Lesson line1\\nLine2\n';
         const entries = stripTimestampsFromLearnings(content);
         expect(entries).toHaveLength(1);
-        expect(entries[0]).toContain('[output:analyze]');
+        expect(entries[0]).not.toContain('[output:analyze]');
         // decoded newlines should be real newlines in returned entry
         expect(entries[0].includes('\n')).toBe(true);
         expect(entries[0]).not.toContain('\\n');
+        expect(entries[0]).toContain('- Lesson line1');
     });
 
-    test('strips ISO timestamps and preserves source tags and lesson bodies', () => {
+    test('strips ISO timestamps and removes source tags while preserving lesson bodies', () => {
         const sample = `- [2026-03-23T19:00:00.000Z] [output:code] Lesson: Remember to run ` + '`npm run build`' + ` before tests.\\n\\nThis is a follow-up note.
 - [2026-03-23T19:10:00.000Z] [var:ticket_id] Lesson: Ticket IDs should be validated for format PROJ-\\d+.
 `
         const entries = stripTimestampsFromLearnings(sample);
         expect(entries.length).toBe(2);
-        expect(entries[0]).toContain('[output:code]');
+        expect(entries[0]).not.toContain('[output:code]');
         expect(entries[0]).toContain('Lesson: Remember to run');
-        expect(entries[1]).toContain('[var:ticket_id]');
+        expect(entries[1]).not.toContain('[var:ticket_id]');
         expect(entries[1]).toContain('Ticket IDs should be validated');
         // No ISO timestamps
         const combined = entries.join('\n\n');
         expect(combined).not.toMatch(/\d{4}-\d{2}-\d{2}T/);
     });
 
-    test('entry WITHOUT source tag returns decoded bare lesson', () => {
+    test('entry WITHOUT source tag returns decoded bare lesson with bullet', () => {
         const content = '- [2026-01-01T00:00:00Z] Bare\\nMore\n';
         const entries = stripTimestampsFromLearnings(content);
         expect(entries).toHaveLength(1);
-        expect(entries[0]).toBe('Bare\nMore');
+        expect(entries[0]).toBe('- Bare\n  More');
         expect(entries[0]).not.toContain('[');
     });
 
