@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import {buildStateMachine, loadWorkflowConfig, validateStateMachine} from '../../src/workflow/workflowLoader';
+import {
+  buildStateMachine,
+  loadWorkflowConfig,
+  validateStateMachine,
+} from '../../src/workflow/workflowLoader';
 
 describe('Integration: success field in terminal engine states', () => {
   let tmpDir: string;

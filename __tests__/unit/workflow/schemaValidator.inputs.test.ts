@@ -1,4 +1,4 @@
-import {validateWorkflowConfig} from "../../src/workflow/schemaValidator";
+import {validateWorkflowConfig} from '../../../src/workflow/schemaValidator';
 
 describe('schemaValidator inputs referencing', () => {
   test('state uses ${...} syntax for undeclared var in a command string -> validation error', () => {

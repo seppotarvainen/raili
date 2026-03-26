@@ -1,13 +1,13 @@
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 // Mock child_process globally — engine states (type: engine) produce no spawns,
@@ -33,7 +33,9 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 describe('simple linear engine workflow', () => {
   it('transitions through two engine states and records history', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: start
 states:
   start:
@@ -42,7 +44,8 @@ states:
       PASSED: done
   done:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -59,7 +62,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('multi-step engine chain', () => {
   it('traverses three engine states in sequence', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: a
 states:
   a:
@@ -72,7 +77,8 @@ states:
       PASSED: c
   c:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -89,7 +95,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('engine state with notify', () => {
   it('fires notify shell command on state entry', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: start
 states:
   start:
@@ -100,7 +108,8 @@ states:
   done:
     type: engine
     notify: "echo 'workflow done'"
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -122,7 +131,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('engine state with approval', () => {
   it('routes to PASSED state when approval is accepted', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: review
 states:
   review:
@@ -135,7 +146,8 @@ states:
     type: engine
   cancelled:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -152,7 +164,9 @@ states:
   });
 
   it('routes to FAILED state when approval is rejected', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: review
 states:
   review:
@@ -165,7 +179,8 @@ states:
     type: engine
   cancelled:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -180,4 +195,3 @@ states:
     expect(states).toEqual(['review', 'cancelled']);
   });
 });
-

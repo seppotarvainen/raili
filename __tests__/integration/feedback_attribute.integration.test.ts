@@ -1,15 +1,15 @@
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentFile,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentFile,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');

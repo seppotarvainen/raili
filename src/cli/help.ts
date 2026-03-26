@@ -13,6 +13,8 @@ const COMMAND_HELP: Record<string, string> = {
   schema: 'Usage: raili schema\n\nDisplay YAML workflow schema with all state fields and types.',
   stats:
     'Usage: raili stats [<workflow>] [--latest N]\n\nShow recent workflow run metrics. Defaults to workflow "main" and latest 10 runs.',
+  teach:
+    'Usage: raili teach <agentId> [-w <workflow>]\n\nOpen a multiline prompt, finish with /q, and append to .raili/<workflow>/learnings/<agentId>.md',
 };
 
 export function formatHelp(command?: string, topic?: string): string {

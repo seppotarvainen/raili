@@ -1,17 +1,17 @@
-import { Runner } from '../../src/runner/runner';
-import { StateMachine } from '../../src/types';
+import { Runner } from '../../../src/runner/runner';
+import { StateMachine } from '../../../src/types';
 
-jest.mock('../../src/runner/groupStateRunner', () => ({
+jest.mock('../../../src/runner/groupStateRunner', () => ({
   runGroupState: jest.fn(),
 }));
 
-jest.mock('../../src/context/context', () => ({
+jest.mock('../../../src/context/context', () => ({
   loadContext: jest.fn(() => ({ stateHistory: [] })),
   addStateToHistory: jest.fn((ctx, state) => ({ ...ctx, stateHistory: [...(ctx.stateHistory || []), { state }] })),
   saveContext: jest.fn(),
 }));
 
-const { runGroupState } = require('../../src/runner/groupStateRunner');
+const { runGroupState } = require('../../../src/runner/groupStateRunner');
 
 describe('Runner group dispatch', () => {
   it('dispatches to runGroupState and merges exports into context', async () => {

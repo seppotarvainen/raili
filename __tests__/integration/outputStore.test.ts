@@ -30,7 +30,9 @@ afterEach(() => {
 
 describe('integration: outputStore marker extraction', () => {
   it('agent state stores content after marker to outputs file', async () => {
-    writeWorkflow(tmpDir, `initial: code
+    writeWorkflow(
+      tmpDir,
+      `initial: code
 states:
   code:
     type: agent
@@ -42,7 +44,8 @@ states:
       PASSED: done
   done:
     type: engine
-`);
+`,
+    );
 
     writeAgentRegistry(tmpDir, { 'raili-coding': { path: '.github/agents/raili-coding.md' } });
     writeScriptRegistry(tmpDir, {});

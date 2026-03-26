@@ -1,16 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 // Import runCommand after mocking where necessary
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -32,7 +32,9 @@ describe('run-log integration with approval wait exclusion', () => {
   });
 
   it('records waitMs for approval and run-log duration excludes it', async () => {
-    writeWorkflow(tmpDir, `initial: start
+    writeWorkflow(
+      tmpDir,
+      `initial: start
 states:
   start:
     type: engine
@@ -46,7 +48,8 @@ states:
       FAILED: start
   done:
     type: engine
-`);
+`,
+    );
 
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});

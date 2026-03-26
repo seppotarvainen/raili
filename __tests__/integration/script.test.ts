@@ -1,16 +1,16 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptFile,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptFile,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -34,7 +34,9 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 describe('script state with binary on routing — PASSED', () => {
   it('routes to success state when script exits 0', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: run_tests
 states:
   run_tests:
@@ -47,7 +49,8 @@ states:
     type: engine
   failed:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, { test_runner: { path: './scripts/run_tests.sh' } });
     writeScriptFile(tmpDir, 'scripts/run_tests.sh', '#!/bin/bash\necho "tests passed"');
@@ -59,8 +62,8 @@ states:
 
     await runCommand(tmpDir, 'clean', {});
 
-    const scriptCall = spawn.mock.calls.find((c: any[]) =>
-      typeof c[0] === 'string' && c[0].includes('run_tests.sh'),
+    const scriptCall = spawn.mock.calls.find(
+      (c: any[]) => typeof c[0] === 'string' && c[0].includes('run_tests.sh'),
     );
     expect(scriptCall).toBeDefined();
 
@@ -74,7 +77,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('script state with binary on routing — FAILED', () => {
   it('routes to failed state when script exits non-zero', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: run_tests
 states:
   run_tests:
@@ -87,7 +92,8 @@ states:
     type: engine
   failed:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, { test_runner: { path: './scripts/run_tests.sh' } });
     writeScriptFile(tmpDir, 'scripts/run_tests.sh', '#!/bin/bash\nexit 1');
@@ -109,7 +115,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('script state with transitions routing', () => {
   it('routes via last stdout line as transition key', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: check
 states:
   check:
@@ -122,7 +130,8 @@ states:
     type: engine
   fix:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, { checker: { path: './scripts/check.sh' } });
     writeScriptFile(tmpDir, 'scripts/check.sh', '#!/bin/bash\necho "clean"');
@@ -144,7 +153,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('script state with output storage and notify', () => {
   it('stores output and fires notify on entry', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: build
 states:
   build:
@@ -161,13 +172,15 @@ states:
     type: engine
   error:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, { builder: { path: './scripts/build.sh' } });
     writeScriptFile(tmpDir, 'scripts/build.sh', '#!/bin/bash\necho "build output"');
 
     spawn.mockImplementation((cmd: string) => {
-      if (cmd.includes('build.sh')) return fakeChild('build output line 1\nbuild output line 2\n', '', 0);
+      if (cmd.includes('build.sh'))
+        return fakeChild('build output line 1\nbuild output line 2\n', '', 0);
       return fakeChild('', '', 0);
     });
 
@@ -188,4 +201,3 @@ states:
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
   });
 });
-

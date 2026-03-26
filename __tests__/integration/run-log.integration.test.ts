@@ -1,15 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
+import { runCommand } from '../../src/run';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptFile,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptFile,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -30,7 +30,9 @@ describe('run-log integration', () => {
   });
 
   it('appends a run-log with loops and approval failures', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: start
 inputs:
   - name: ticket_id
@@ -54,9 +56,14 @@ states:
       FAILED: start
   done:
     type: engine
-`);
+`,
+    );
     // write workflow-scoped vars file to supply declared inputs without interactive prompt
-    fs.writeFileSync(path.join(tmpDir, '.raili', 'main', 'vars.yaml'), `ticket_id: T1\nsecret: X\n`, 'utf8');
+    fs.writeFileSync(
+      path.join(tmpDir, '.raili', 'main', 'vars.yaml'),
+      `ticket_id: T1\nsecret: X\n`,
+      'utf8',
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, { s1: { path: 'scripts/s1.sh' }, s2: { path: 'scripts/s2.sh' } });
     writeScriptFile(tmpDir, 'scripts/s1.sh', 'exit 0');

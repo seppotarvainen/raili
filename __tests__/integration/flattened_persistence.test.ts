@@ -34,11 +34,35 @@ describe('integration: flattened persistence across group/sub-workflow', () => {
     // main workflow with a group state that references deploy.yaml in the same workflow dir
     writeWorkflow(
       tmpDir,
-      [`initial: start`, `states:`, `  start:`, `    type: engine`, `    transitions:`, `      PASSED: do_group`, `  do_group:`, `    type: group`, `    group: ./deploy.yaml`, `    on:`, `      PASSED: done`, `  done:`, `    type: engine`, ""].join('\n'),
+      [
+        `initial: start`,
+        `states:`,
+        `  start:`,
+        `    type: engine`,
+        `    transitions:`,
+        `      PASSED: do_group`,
+        `  do_group:`,
+        `    type: group`,
+        `    group: ./deploy.yaml`,
+        `    on:`,
+        `      PASSED: done`,
+        `  done:`,
+        `    type: engine`,
+        '',
+      ].join('\n'),
     );
 
     // sub-workflow file placed inside .raili/main/deploy.yaml
-    const deployYaml = [`states:`, `  deploy:`, `    type: agent`, `    agent: deploy_agent`, `    out: true`, `    output:`, `      store: true`, ""].join('\n');
+    const deployYaml = [
+      `states:`,
+      `  deploy:`,
+      `    type: agent`,
+      `    agent: deploy_agent`,
+      `    out: true`,
+      `    output:`,
+      `      store: true`,
+      '',
+    ].join('\n');
     // write as .raili/main/deploy.yaml
     const deployPath = path.join(tmpDir, '.raili', 'main', 'deploy.yaml');
     fs.writeFileSync(deployPath, deployYaml, 'utf8');

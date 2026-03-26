@@ -2,7 +2,7 @@
 description: This agent reviews issues and git diffs to determine if documentation needs updating. It reads existing documentation, compares against the changes, and makes targeted updates to keep docs accurate and complete.
 name: documentation
 model: gpt-5-mini
-tools: ['read', 'search', 'edit']
+tools: ['read', 'view', 'search', 'edit', 'grep', 'glob']
 ---
 
 # documentation instructions

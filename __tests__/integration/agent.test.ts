@@ -1,16 +1,16 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentFile,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentFile,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -34,7 +34,9 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 describe('agent state with transitions routing', () => {
   it('routes via last stdout line and reaches terminal state', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: analyze
 states:
   analyze:
@@ -48,7 +50,8 @@ states:
     type: engine
   rework:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
@@ -74,7 +77,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('agent state with output storage', () => {
   it('stores agent output to .raili/outputs/<stateId>.md', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: analyze
 states:
   analyze:
@@ -87,7 +92,8 @@ states:
       approve: done
   done:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
@@ -116,7 +122,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('agent prompt with variable interpolation', () => {
   it('interpolates ${ticket_id} and sets RAILI_VAR_TICKET_ID', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: analyze
 inputs:
   - name: ticket_id
@@ -130,7 +138,8 @@ states:
       done: complete
   complete:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
@@ -164,7 +173,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('agent state followed by approval', () => {
   it('runs agent, then approval routes to the correct next state', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: analyze
 states:
   analyze:
@@ -179,7 +190,8 @@ states:
     type: engine
   redo:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
@@ -211,4 +223,3 @@ states:
     expect(states).toEqual(['analyze', 'deploy']);
   });
 });
-
