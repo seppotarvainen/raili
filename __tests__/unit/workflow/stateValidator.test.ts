@@ -1,5 +1,5 @@
-import { validateStateConfig } from '../../src/workflow/stateValidator';
-import { SchemaValidationError } from '../../src/workflow/schemaErrors';
+import { validateStateConfig } from '../../../src/workflow/stateValidator';
+import { SchemaValidationError } from '../../../src/workflow/schemaErrors';
 
 describe('stateValidator', () => {
   test("rejects state with both 'on' and 'transitions'", () => {

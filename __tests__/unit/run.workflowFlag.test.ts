@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import {runCommand} from '../../src/run';
+import { runCommand } from '../../src/run';
 
 jest.mock('../../src/registry/registryValidator');
 jest.mock('../../src/runner/runner');
@@ -28,7 +28,14 @@ describe('runCommand with workflow path', () => {
     const devDir = path.join(railiDir, 'dev');
     fs.mkdirSync(devDir, { recursive: true });
 
-    const altWorkflow = ['initial: alt', 'states:', '  alt:', "    type: engine", '  done:', '    type: engine'].join('\n');
+    const altWorkflow = [
+      'initial: alt',
+      'states:',
+      '  alt:',
+      '    type: engine',
+      '  done:',
+      '    type: engine',
+    ].join('\n');
     fs.writeFileSync(path.join(devDir, 'workflow.yaml'), altWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
@@ -50,10 +57,19 @@ describe('runCommand with workflow path', () => {
     const devDir = path.join(railiDir, 'dev');
     fs.mkdirSync(devDir, { recursive: true });
 
-    const altWorkflow = ['initial: alt', 'states:', '  alt:', "    type: engine", '  done:', '    type: engine'].join('\n');
+    const altWorkflow = [
+      'initial: alt',
+      'states:',
+      '  alt:',
+      '    type: engine',
+      '  done:',
+      '    type: engine',
+    ].join('\n');
     fs.writeFileSync(path.join(devDir, 'workflow.yaml'), altWorkflow);
 
-    const existingContext = JSON.stringify({ stateHistory: [{ state: 'alt', enteredAt: new Date().toISOString() }] });
+    const existingContext = JSON.stringify({
+      stateHistory: [{ state: 'alt', enteredAt: new Date().toISOString() }],
+    });
     fs.writeFileSync(path.join(devDir, 'context.json'), existingContext);
 
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));

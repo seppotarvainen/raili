@@ -1,15 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -33,7 +33,9 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 describe('command state with on routing — PASSED', () => {
   it('routes to success when command exits 0', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: build
 states:
   build:
@@ -46,7 +48,8 @@ states:
     type: engine
   error:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -70,7 +73,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('command state with on routing — FAILED', () => {
   it('routes to error when command exits non-zero', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: build
 states:
   build:
@@ -83,7 +88,8 @@ states:
     type: engine
   error:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -106,7 +112,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('command state with transitions routing', () => {
   it('routes via last stdout line', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: check
 states:
   check:
@@ -119,7 +127,8 @@ states:
     type: engine
   review:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -142,7 +151,9 @@ states:
 // ---------------------------------------------------------------------------
 describe('command state with output, notify, and approval', () => {
   it('stores output, fires notify, and routes through approval', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: lint
 states:
   lint:
@@ -159,7 +170,8 @@ states:
     type: engine
   fix:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -193,4 +205,3 @@ states:
     expect(states).toEqual(['lint', 'deploy']);
   });
 });
-

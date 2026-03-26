@@ -7,7 +7,7 @@ import { loadWorkflowConfig } from './workflow/workflowLoader';
 import { printHelp } from './cli/help';
 import { printDocs } from './cli/docs';
 import { printSchema } from './cli/schema';
-import commandLineArgs from 'command-line-args'
+import commandLineArgs from 'command-line-args';
 import { RailiRunArgs } from './types';
 import { statsCommand } from './cli/stats';
 import { RailiCommand } from './cli/railiCommand';
@@ -180,12 +180,32 @@ async function main() {
       }
     } else if (command.teach) {
       try {
-        const parsed = parseRunArgs(runArgs);
-        const workflowPath = parsed.workflow ? parsed.workflow : undefined;
-        const agentId = runArgs[0];
+        // Tolerant parsing: parseRunArgs can throw on bare positional tokens. Teach accepts a
+        // positional <agentId> and optionally -w/--workflow. Try structured parse first, but
+        // fall back to manual extraction so positional agent ids are accepted.
+        let workflowPath: string | undefined;
+        try {
+          const parsed = parseRunArgs(runArgs);
+          workflowPath = parsed.workflow ? parsed.workflow : undefined;
+        } catch {
+          // ignore parse errors for teach command
+          workflowPath = undefined;
+        }
+        // If workflow not found via parse, scan for -w/--workflow manually
+        if (!workflowPath) {
+          const wfIndex = runArgs.findIndex((a) => a === '-w' || a === '--workflow');
+          if (wfIndex !== -1 && runArgs[wfIndex + 1]) workflowPath = runArgs[wfIndex + 1];
+        }
+        // Derive agentId as the first non-flag argument (positional)
+        const agentId = runArgs.find((a) => !a.startsWith('-'));
         await teachCommand(process.cwd(), agentId, workflowPath);
         process.exit(0);
       } catch (err: any) {
+        // If the error is an exit sentinel from a mocked process.exit in tests (e.g. 'EXIT:0'),
+        // rethrow it so tests can observe the intended exit code instead of being treated as a failure.
+        if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+          throw err;
+        }
         console.error(err.message || String(err));
         process.exit(1);
       }
@@ -198,10 +218,16 @@ async function main() {
       process.exit(2);
     }
   } catch (err: any) {
+    // Propagate test sentinel exit errors so test mocks can assert the intended exit code.
+    if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+      throw err;
+    }
     console.error(err.message || String(err));
     process.exit(1);
   }
 }
+
+export { main };
 
 if (require.main === module) {
   main();

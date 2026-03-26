@@ -2,7 +2,7 @@
 description: This agent inspects and documents bugs by analyzing the codebase, identifying root cause, scope, and affected files, and creating a structured bug ticket with an implementation plan and test plan.
 name: inspect-bug
 model: gpt-5-mini
-tools: ['read', 'search', 'edit']
+tools: ['read', 'view', 'search', 'edit', 'grep', 'glob']
 ---
 
 # inspect-bug instructions

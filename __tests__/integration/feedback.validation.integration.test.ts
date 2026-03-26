@@ -59,6 +59,8 @@ states:
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
-    await expect(runCommand(tmpDir, 'clean')).rejects.toThrow(/conflicts with declared workflow input/i);
+    await expect(runCommand(tmpDir, 'clean')).rejects.toThrow(
+      /conflicts with declared workflow input/i,
+    );
   });
 });

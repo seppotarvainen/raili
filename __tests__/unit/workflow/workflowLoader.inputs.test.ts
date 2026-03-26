@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import {loadWorkflowConfig} from "../../src/workflow/workflowLoader";
+import {loadWorkflowConfig} from '../../../src/workflow/workflowLoader';
 
 describe('workflowLoader inputs merging', () => {
   let tmpdir: string;

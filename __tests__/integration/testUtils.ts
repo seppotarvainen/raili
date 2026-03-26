@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 import crypto from 'crypto';
 
 /**
@@ -93,7 +93,6 @@ export function writeScriptFile(dir: string, relativePath: string, content: stri
   fs.writeFileSync(fullPath, content, 'utf8');
   fs.chmodSync(fullPath, 0o755);
 }
-
 
 /**
  * Creates a fake child process that emits stdout/stderr data then closes.

@@ -250,7 +250,13 @@ states:
     let ctx = loadContext(tmpDir);
     const statesAfterFirst = ctx.stateHistory.map((e) => e.state);
     // 'subgroup' proxy + a + b all recorded; 'c' is recorded in enterState before execution throws.
-    expect(statesAfterFirst).toEqual(['start', 'subgroup', 'subgroup.a', 'subgroup.b', 'subgroup.c']);
+    expect(statesAfterFirst).toEqual([
+      'start',
+      'subgroup',
+      'subgroup.a',
+      'subgroup.b',
+      'subgroup.c',
+    ]);
 
     // Second run: c succeeds this time, routing continues to 'end'.
     spawn.mockReset();
@@ -264,7 +270,14 @@ states:
     ctx = loadContext(tmpDir);
     const finalStates = ctx.stateHistory.map((e) => e.state);
     // 'subgroup.c' was already in history; second run appends only 'end'.
-    expect(finalStates).toEqual(['start', 'subgroup', 'subgroup.a', 'subgroup.b', 'subgroup.c', 'end']);
+    expect(finalStates).toEqual([
+      'start',
+      'subgroup',
+      'subgroup.a',
+      'subgroup.b',
+      'subgroup.c',
+      'end',
+    ]);
   });
 });
 

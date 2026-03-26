@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
@@ -31,7 +31,9 @@ afterEach(() => {
 
 describe('state end summary is printed', () => {
   it('prints framed end summary after agent state', async () => {
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: analyze
 states:
   analyze:
@@ -45,7 +47,8 @@ states:
     type: engine
   rework:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');

@@ -1,13 +1,13 @@
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -29,7 +29,9 @@ afterEach(() => {
 
 describe('integration: feedback multiline end-to-end', () => {
   it('captures multiline feedback via RAILI_FEEDBACK_ env and exposes to downstream command preserving newlines', async () => {
-    writeWorkflow(tmpDir, `initial: ask
+    writeWorkflow(
+      tmpDir,
+      `initial: ask
 states:
   ask:
     type: engine
@@ -45,7 +47,8 @@ states:
       PASSED: done
   done:
     type: engine
-`);
+`,
+    );
 
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
@@ -75,7 +78,9 @@ states:
     // Ensure downstream command was invoked and its env contained RAILI_VAR_NOTE
     const shCalls = spawn.mock.calls.filter((c: any[]) => c[0] === 'sh');
     expect(shCalls.length).toBeGreaterThan(0);
-    const useCall = shCalls.find((c: any[]) => Array.isArray(c[1]) && typeof c[1][1] === 'string' && c[1][1].includes('echo'));
+    const useCall = shCalls.find(
+      (c: any[]) => Array.isArray(c[1]) && typeof c[1][1] === 'string' && c[1][1].includes('echo'),
+    );
     expect(useCall).toBeDefined();
     const opts = useCall[2];
     expect(opts).toBeDefined();

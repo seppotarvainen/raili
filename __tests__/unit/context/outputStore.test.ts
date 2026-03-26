@@ -1,4 +1,4 @@
-import { filterOutput } from '../../src/context/outputStore';
+import { filterOutput } from '../../../src/context/outputStore';
 
 describe('outputStore.filterOutput', () => {
   it('extracts after first marker (case-insensitive)', () => {

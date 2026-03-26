@@ -11,7 +11,7 @@
 #   0 - All tests valid
 #   1 - Issues found
 
-set -eo pipefail
+set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TESTS_DIR="$REPO_ROOT/__tests__/unit"
@@ -59,17 +59,73 @@ while IFS= read -r test_file; do
   # Extract core filename (before first dot for dot-notation tests)
   core_name="${file_name%%.*}"
 
-  # Issue 1: Check for dash in test file names (should use dot notation)
+  # Issue 1: Check for dash in test file names - convert to camelCase or dot notation
   base_filename=$(basename "$rel_path" .test.ts)
   if [[ "$base_filename" == *"-"* ]]; then
-    output_issue "$rel_path" "bad_naming" "Should use dot notation: $(echo "$base_filename" | sed 's/-/./g').test.ts"
+    # Get the primary import to extract the real module name
+    primary_import=$(get_primary_import "$test_file")
+
+    if [ -n "$primary_import" ]; then
+      # Extract module name from import: "src/context/runLog" -> "runLog"
+      import_module=$(basename "$primary_import")
+
+      # Extract any suffix after the module name (for dot-notation variants)
+      suffix=""
+      if [[ "$base_filename" == *"."* ]]; then
+        suffix=$(echo "$base_filename" | sed 's/^[^.]*//')  # Get ".flattened" etc
+      fi
+
+      # Suggest both valid options
+      camel_case="$import_module$suffix"
+      dot_notation=$(echo "$base_filename" | sed 's/-/./g')
+
+      output_issue "$rel_path" "bad_naming" "Use either: $camel_case.test.ts (camelCase) or $dot_notation.test.ts (dot notation for categorization)"
+    else
+      # No import found, suggest basic dash-to-dot conversion
+      dot_notation=$(echo "$base_filename" | sed 's/-/./g')
+      output_issue "$rel_path" "bad_naming" "Use: $dot_notation.test.ts (replace dashes with dots)"
+    fi
   fi
 
-  # Issue 2: Check if test imports from src at all
+  # Issue 2: Check if test is a placeholder (no actual tests defined)
+  if ! grep -qE "(test\(|describe\(|it\()" "$test_file"; then
+    output_issue "$rel_path" "placeholder" "Placeholder file - no test() or describe() found. Delete this file or add actual tests."
+    continue
+  fi
+
+  # Issue 2a: Check if test imports from src at all
   if ! has_src_import "$test_file"; then
     output_issue "$rel_path" "no_imports" "Doesn't import from any src/ module"
     continue
   fi
+
+  # Issue 2b: Check if unit test imports from integration tests (forbidden)
+  if grep -qE "(from|require).*__tests__/integration" "$test_file"; then
+    output_issue "$rel_path" "integration_import" "Unit tests must not import from __tests__/integration/ (move to integration tests folder or remove)"
+  fi
+
+  # Issue 2c: Check if test uses real I/O operations (integration test pattern in unit test folder)
+  # TODO: This needs careful analysis - some unit tests legitimately use fs with temp dirs
+  # Commenting out for now until we have clearer criteria
+  # if grep -qE "(fs\.(writeFile|mkdir|rmSync|mkdtempSync|readFile)\s*\(|spawn\s*\(|exec\s*\(|os\.tmpdir\s*\()" "$test_file"; then
+  #   # Check if operations are mocked
+  #   if grep -q "jest.mock.*['\"]fs['\"]" "$test_file" 2>/dev/null; then
+  #     has_fs_mock=true
+  #   else
+  #     has_fs_mock=false
+  #   fi
+  #
+  #   if grep -q "jest.mock.*['\"]child_process['\"]" "$test_file" 2>/dev/null; then
+  #     has_spawn_mock=true
+  #   else
+  #     has_spawn_mock=false
+  #   fi
+  #
+  #   # If operations are called but NOT mocked, it's likely an integration test
+  #   if [ "$has_fs_mock" = false ] && [ "$has_spawn_mock" = false ]; then
+  #     output_issue "$rel_path" "likely_integration" "Uses real I/O operations (fs, spawn, etc.) without jest.mock(). Should this be in __tests__/integration/?"
+  #   fi
+  # fi
 
   # Issue 3: Verify test directory matches its source import location
   primary_import=$(get_primary_import "$test_file")
@@ -137,7 +193,8 @@ else
   echo ""
 
   # Print all issues
-  for issue in "${ISSUE_LIST[@]}"; do
+  for i in "${!ISSUE_LIST[@]}"; do
+    issue="${ISSUE_LIST[$i]}"
     IFS='|' read -r test_file issue_type message <<< "$issue"
     echo "$test_file | $message"
   done

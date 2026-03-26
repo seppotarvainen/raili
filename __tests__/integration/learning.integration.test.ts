@@ -1,16 +1,16 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentFile,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentFile,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -31,7 +31,9 @@ afterEach(() => {
 
 describe('integration: learning extraction and storage', () => {
   it('extracts LESSON: from producer output and stores it for agent', async () => {
-    writeWorkflow(tmpDir, `initial: produce
+    writeWorkflow(
+      tmpDir,
+      `initial: produce
 states:
   produce:
     type: command
@@ -53,7 +55,8 @@ states:
       done: done
   done:
     type: engine
-`);
+`,
+    );
 
     writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
     writeScriptRegistry(tmpDir, {});

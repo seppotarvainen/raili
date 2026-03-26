@@ -1,4 +1,10 @@
-import { createTmpWorkspace, cleanupTmpWorkspace, writeNamedWorkflow, writeWorkflow } from '../../__tests__/integration/testUtils';
+import fs from 'fs';
+import {
+  createTmpWorkspace,
+  cleanupTmpWorkspace,
+  writeNamedWorkflow,
+  writeWorkflow,
+} from './testUtils';
 import { loadWorkflowConfig } from '../../src/workflow/workflowLoader';
 import * as path from 'path';
 
@@ -21,7 +27,7 @@ describe('workflowLoader flatten group states', () => {
       expect(cfg.states['do_group.approve']).toBeDefined();
       // inputs should contain sub_id
       const inputs = cfg.inputs || [];
-      expect(inputs.some(i => i.name === 'sub_id')).toBe(true);
+      expect(inputs.some((i) => i.name === 'sub_id')).toBe(true);
     } finally {
       cleanupTmpWorkspace(tmp);
     }

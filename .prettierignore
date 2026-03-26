@@ -10,6 +10,5 @@ README.md
 docs
 documentation
 scripts
-__tests__
 src/cli/generatedDocs.ts
 

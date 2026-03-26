@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import {runCommand} from '../../src/run';
+import { runCommand } from '../../src/run';
 
 jest.mock('../../src/registry/registryValidator');
 jest.mock('../../src/runner/runner');
@@ -31,13 +31,18 @@ describe('runCommand', () => {
 
   test('fails if registries missing or invalid', async () => {
     fs.mkdirSync(mainDir, { recursive: true });
-    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    const minimalWorkflow =
+      'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
     fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
 
     await expect(runCommand(tmpdir)).rejects.toThrow('agent-registry.json not found');
 
-    registryValidator.validateAgentRegistry.mockImplementation(() => { throw new Error('Agent registry JSON parse error'); });
-    registryValidator.validateScriptRegistry.mockImplementation(() => { throw new Error('Script registry JSON parse error'); });
+    registryValidator.validateAgentRegistry.mockImplementation(() => {
+      throw new Error('Agent registry JSON parse error');
+    });
+    registryValidator.validateScriptRegistry.mockImplementation(() => {
+      throw new Error('Script registry JSON parse error');
+    });
 
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), 'not json');
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), 'not json');
@@ -46,10 +51,17 @@ describe('runCommand', () => {
 
   test('constructs Engine and calls run() when valid', async () => {
     fs.mkdirSync(mainDir, { recursive: true });
-    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    const minimalWorkflow =
+      'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
     fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
-    fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({ a: { path: './x' } }));
-    fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({ s: { path: './y' } }));
+    fs.writeFileSync(
+      path.join(railiDir, 'agent-registry.json'),
+      JSON.stringify({ a: { path: './x' } }),
+    );
+    fs.writeFileSync(
+      path.join(railiDir, 'script-registry.json'),
+      JSON.stringify({ s: { path: './y' } }),
+    );
 
     registryValidator.validateAgentRegistry.mockImplementation(() => ({ a: { path: './x' } }));
     registryValidator.validateScriptRegistry.mockImplementation(() => ({ s: { path: './y' } }));
@@ -66,12 +78,15 @@ describe('runCommand', () => {
 
   test('clean mode deletes context.json before running', async () => {
     fs.mkdirSync(mainDir, { recursive: true });
-    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    const minimalWorkflow =
+      'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
     fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
 
-    const existingContext = JSON.stringify({ stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }] });
+    const existingContext = JSON.stringify({
+      stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }],
+    });
     fs.writeFileSync(path.join(mainDir, 'context.json'), existingContext);
 
     registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
@@ -86,12 +101,15 @@ describe('runCommand', () => {
 
   test('continue mode preserves existing context.json', async () => {
     fs.mkdirSync(mainDir, { recursive: true });
-    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    const minimalWorkflow =
+      'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
     fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
 
-    const existingContext = JSON.stringify({ stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }] });
+    const existingContext = JSON.stringify({
+      stateHistory: [{ state: 'init', enteredAt: new Date().toISOString() }],
+    });
     fs.writeFileSync(path.join(mainDir, 'context.json'), existingContext);
 
     registryValidator.validateAgentRegistry.mockImplementation(() => ({}));
@@ -107,7 +125,8 @@ describe('runCommand', () => {
 
   test('vars are set on process.env as RAILI_VAR_* and stored in context', async () => {
     fs.mkdirSync(mainDir, { recursive: true });
-    const minimalWorkflow = 'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
+    const minimalWorkflow =
+      'initial: init\nstates:\n  init:\n    type: engine\n  done:\n    type: engine\n';
     fs.writeFileSync(path.join(mainDir, 'workflow.yaml'), minimalWorkflow);
     fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), JSON.stringify({}));
     fs.writeFileSync(path.join(railiDir, 'script-registry.json'), JSON.stringify({}));
@@ -126,4 +145,3 @@ describe('runCommand', () => {
     delete process.env.RAILI_VAR_DESCRIPTION;
   });
 });
-

@@ -7,23 +7,28 @@ jest.mock('fs', () => ({
   readFileSync: jest.fn(() => 'dummy'),
 }));
 
-jest.mock('js-yaml', () => ({ load: jest.fn(() => ({
-  states: {
-    subA: { type: 'agent', agent: 'analyzer', expose: ['valueA'] },
-    subB: { type: 'script', script: 'do_it', out: true, expose: ['resultB'] },
-  },
-})) }));
+jest.mock('js-yaml', () => ({
+  load: jest.fn(() => ({
+    states: {
+      subA: { type: 'agent', agent: 'analyzer', expose: ['valueA'] },
+      subB: { type: 'script', script: 'do_it', out: true, expose: ['resultB'] },
+    },
+  })),
+}));
 
 jest.mock('../../src/runner/agentStateRunner', () => ({ runAgentState: jest.fn() }));
 jest.mock('../../src/runner/scriptStateRunner', () => ({ runScriptState: jest.fn() }));
 jest.mock('../../src/context/context', () => ({
   loadContext: jest.fn(() => ({ stateHistory: [] })),
-  addStateToHistory: jest.fn((ctx, state) => ({ ...ctx, stateHistory: [...(ctx.stateHistory || []), { state }] })),
+  addStateToHistory: jest.fn((ctx, state) => ({
+    ...ctx,
+    stateHistory: [...(ctx.stateHistory || []), { state }],
+  })),
   saveContext: jest.fn(),
 }));
 
-const mockAgent = (runAgentState as unknown) as jest.Mock;
-const mockScript = (runScriptState as unknown) as jest.Mock;
+const mockAgent = runAgentState as unknown as jest.Mock;
+const mockScript = runScriptState as unknown as jest.Mock;
 
 describe('GroupStateRunner', () => {
   beforeEach(() => {
@@ -40,7 +45,14 @@ describe('GroupStateRunner', () => {
       config: { type: 'group', group: 'sub.yaml', on: { PASSED: 'after_ok' } },
     };
 
-    const res = await runGroupState(state, process.cwd(), { ticket: '123' }, undefined, {}, {} as any);
+    const res = await runGroupState(
+      state,
+      process.cwd(),
+      { ticket: '123' },
+      undefined,
+      {},
+      {} as any,
+    );
 
     expect(res.outcome).toBe('APPROVE');
     expect(res.exports).toBeDefined();

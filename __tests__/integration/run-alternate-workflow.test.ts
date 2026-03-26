@@ -1,15 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
+import { runCommand } from '../../src/run';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeNamedWorkflow,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeNamedWorkflow,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 // Mock child_process globally — alternate workflow uses engine states so spawn is still used for notify
@@ -32,20 +32,27 @@ afterEach(() => {
 describe('run (integration - alternate workflow)', () => {
   it('runs with named workflow and persists context in its own directory', async () => {
     // Default main workflow
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: main
 states:
   main:
     type: engine
-`);
+`,
+    );
 
     // Named workflow 'dev'
-    writeNamedWorkflow(tmpDir, 'dev', `
+    writeNamedWorkflow(
+      tmpDir,
+      'dev',
+      `
 initial: devstart
 states:
   devstart:
     type: engine
-`);
+`,
+    );
 
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});

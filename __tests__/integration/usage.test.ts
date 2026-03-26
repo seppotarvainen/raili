@@ -1,20 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import {initCommand} from '../../src/init';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
-import {formatHelp} from '../../src/cli/help';
-import {formatDocs} from '../../src/cli/docs';
-import {formatSchema} from '../../src/cli/schema';
-import {loadVarsFile} from '../../src/cli';
+import { initCommand } from '../../src/init';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
+import { formatHelp } from '../../src/cli/help';
+import { formatDocs } from '../../src/cli/docs';
+import { formatSchema } from '../../src/cli/schema';
+import { loadVarsFile } from '../../src/cli';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -70,7 +70,9 @@ describe('raili init', () => {
 describe('raili run — clean run', () => {
   it('runs a clean workflow from initial state', async () => {
     tmpDir = createTmpWorkspace();
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: start
 states:
   start:
@@ -79,7 +81,8 @@ states:
       PASSED: done
   done:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -96,7 +99,9 @@ states:
 describe('raili run — continue (resume)', () => {
   it('resumes workflow from last persisted state', async () => {
     tmpDir = createTmpWorkspace();
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: step_a
 states:
   step_a:
@@ -109,7 +114,8 @@ states:
       PASSED: step_c
   step_c:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     writeScriptRegistry(tmpDir, {});
 
@@ -151,12 +157,15 @@ describe('raili run — fail-fast validation', () => {
 
   it('throws when agent-registry.json is missing', async () => {
     tmpDir = createTmpWorkspace();
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: start
 states:
   start:
     type: engine
-`);
+`,
+    );
     writeScriptRegistry(tmpDir, {});
     // No agent-registry.json
 
@@ -165,12 +174,15 @@ states:
 
   it('throws when script-registry.json is missing', async () => {
     tmpDir = createTmpWorkspace();
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: start
 states:
   start:
     type: engine
-`);
+`,
+    );
     writeAgentRegistry(tmpDir, {});
     // No script-registry.json
 
@@ -184,7 +196,9 @@ states:
 describe('raili run — vars.yaml loading', () => {
   it('loads declared vars from vars.yaml', () => {
     tmpDir = createTmpWorkspace();
-    writeWorkflow(tmpDir, `
+    writeWorkflow(
+      tmpDir,
+      `
 initial: start
 inputs:
   - ticket_id
@@ -192,7 +206,8 @@ inputs:
 states:
   start:
     type: engine
-`);
+`,
+    );
     // Write vars.yaml to the main workflow directory
     fs.writeFileSync(
       path.join(tmpDir, '.raili', 'main', 'vars.yaml'),
@@ -284,4 +299,3 @@ describe('raili schema', () => {
     expect(output).toContain('type');
   });
 });
-

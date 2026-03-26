@@ -1,15 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import {runCommand} from '../../src/run';
-import {loadContext} from '../../src/context/context';
+import { runCommand } from '../../src/run';
+import { loadContext } from '../../src/context/context';
 import {
-    cleanupRailiEnvVars,
-    cleanupTmpWorkspace,
-    createTmpWorkspace,
-    fakeChild,
-    writeAgentRegistry,
-    writeScriptRegistry,
-    writeWorkflow,
+  cleanupRailiEnvVars,
+  cleanupTmpWorkspace,
+  createTmpWorkspace,
+  fakeChild,
+  writeAgentRegistry,
+  writeScriptRegistry,
+  writeWorkflow,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
@@ -33,7 +33,9 @@ afterEach(() => {
 
 describe('integration: skip state end-to-end', () => {
   it('bypasses skipped state, does not run its notify/command, and continues at target', async () => {
-    writeWorkflow(tmpDir, `initial: start
+    writeWorkflow(
+      tmpDir,
+      `initial: start
 states:
   start:
     type: command
@@ -48,7 +50,8 @@ states:
       PASSED: done
   done:
     type: engine
-`);
+`,
+    );
 
     // empty registries
     writeAgentRegistry(tmpDir, {});
