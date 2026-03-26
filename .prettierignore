@@ -11,5 +11,5 @@ docs
 documentation
 scripts
 __tests__
-src/cli/generated-docs.ts
+src/cli/generatedDocs.ts
 

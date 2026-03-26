@@ -7,10 +7,10 @@ import { loadWorkflowConfig } from './workflow/workflowLoader';
 import { printHelp } from './cli/help';
 import { printDocs } from './cli/docs';
 import { printSchema } from './cli/schema';
-import commandLineArgs from 'command-line-args';
+import commandLineArgs from 'command-line-args'
 import { RailiRunArgs } from './types';
 import { statsCommand } from './cli/stats';
-import { RailiCommand } from './cli/RailiCommand';
+import { RailiCommand } from './cli/railiCommand';
 import { teachCommand } from './cli/teach';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
 import { loadVarsFile } from './variables/varsLoader';

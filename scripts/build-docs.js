@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const docsDir = path.join(__dirname, '..', 'documentation');
-const outputFile = path.join(__dirname, '..', 'src', 'cli', 'generated-docs.ts');
+const outputFile = path.join(__dirname, '..', 'src', 'cli', 'generatedDocs.ts');
 
 // Read markdown files from both root and subdirectories
 const usage = {};

@@ -1,7 +1,7 @@
 // Pure, deterministic help formatter for the Raili CLI.
-// Loads help topics from generated-docs.ts (built from documentation/ markdown files)
+// Loads help topics from generatedDocs.ts (built from documentation/ markdown files)
 
-import { HELP_TOPICS, USAGE_HELP, AVAILABLE_TOPICS, AVAILABLE_USAGE } from './generated-docs';
+import { HELP_TOPICS, USAGE_HELP, AVAILABLE_TOPICS, AVAILABLE_USAGE } from './generatedDocs';
 
 const GLOBAL_USAGE = 'Usage: raili <command> [options]';
 

@@ -1,7 +1,7 @@
-import {generateSchemaOutput} from '../../../src/cli/schema-formatter';
+import {generateSchemaOutput} from '../../../src/cli/schemaFormatter';
 import * as schemasModule from '../../../src/workflow/schemas';
 
-describe('schema-formatter', () => {
+describe('schemaFormatter', () => {
   describe('generateSchemaOutput', () => {
     it('should return a string', () => {
       const output = generateSchemaOutput();

@@ -1,7 +1,7 @@
 // Documentation viewer for Raili workflow reference
-// Loads sections from generated-docs.ts (built from documentation/ markdown files)
+// Loads sections from generatedDocs.ts (built from documentation/ markdown files)
 
-import { DOCS_SECTIONS, USAGE_DOCS, AVAILABLE_SECTIONS, AVAILABLE_USAGE } from './generated-docs';
+import { DOCS_SECTIONS, USAGE_DOCS, AVAILABLE_SECTIONS, AVAILABLE_USAGE } from './generatedDocs';
 
 export function formatDocs(section?: string): string {
   if (!section) {

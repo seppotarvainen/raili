@@ -22,12 +22,12 @@ src/
   init.ts                     # Creates .raili/ scaffold
   types.ts                    # Shared types (StateConfig, WorkflowConfig, etc.)
   cli/
-    RailiCommand.ts           # CLI command parser (init, run, docs, schema, stats, help)
+    railiCommand.ts           # CLI command parser (init, run, docs, schema, stats, help)
     help.ts                   # Help text printer (topic-aware)
     docs.ts                   # Built-in docs command
-    generated-docs.ts         # Auto-generated documentation content
+    generatedDocs.ts         # Auto-generated documentation content
     schema.ts                 # Prints workflow YAML schema reference
-    schema-formatter.ts       # Formats schema definitions for display
+    schemaFormatter.ts       # Formats schema definitions for display
     stats.ts                  # Run statistics (avg loops, success rate, etc.)
   runner/
     runner.ts                 # Core state machine executor (was Engine.ts)
