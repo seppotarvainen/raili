@@ -76,15 +76,21 @@ function collectVarRefs(obj: any, refs: Set<string>): void {
   if (typeof obj === 'string') {
     const re = /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(obj)) !== null) refs.add(m[1]);
+    while ((m = re.exec(obj)) !== null) {
+      refs.add(m[1]);
+    }
     return;
   }
   if (Array.isArray(obj)) {
-    for (const item of obj) collectVarRefs(item, refs);
+    for (const item of obj) {
+      collectVarRefs(item, refs);
+    }
     return;
   }
   if (obj !== null && typeof obj === 'object') {
-    for (const value of Object.values(obj)) collectVarRefs(value, refs);
+    for (const value of Object.values(obj)) {
+      collectVarRefs(value, refs);
+    }
   }
 }
 

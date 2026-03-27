@@ -8,15 +8,21 @@ export function resolveTransition(
   stateTransitions: Record<string, any>,
   outcome: TransitionOutcome,
 ): string | null {
-  if (!stateTransitions) return null;
+  if (!stateTransitions) {
+    return null;
+  }
 
   // Direct mapping
-  if (stateTransitions[outcome]) return stateTransitions[outcome];
+  if (stateTransitions[outcome]) {
+    return stateTransitions[outcome];
+  }
 
   // Case-insensitive matching (e.g. PASSED vs passed)
   const oLower = outcome.toString().toLowerCase();
   for (const [k, v] of Object.entries(stateTransitions)) {
-    if (k.toLowerCase() === oLower) return v;
+    if (k.toLowerCase() === oLower) {
+      return v;
+    }
   }
 
   // default key takes precedence for unknown outcomes

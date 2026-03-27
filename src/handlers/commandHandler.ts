@@ -1,11 +1,11 @@
 import { spawn } from 'child_process';
 
-type CommandExecutionResult = {
+interface CommandExecutionResult {
   success: boolean;
   stdout: string;
   stderr: string;
   exitCode?: number;
-};
+}
 
 export function executeCommand(
   command: string,

@@ -6,7 +6,7 @@ import { StateType } from '../types';
 export function validateObject(
   obj: any,
   schema: ObjectSchema,
-  context: string = '',
+  context = '',
   stateType?: StateType,
 ): void {
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {

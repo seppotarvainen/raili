@@ -1,15 +1,22 @@
 import * as readline from 'readline';
 import { FeedbackConfig } from '../types';
 
-export type ManualTransitionConfig = {
+export interface ManualTransitionConfig {
   question: string;
   options: Record<string, string>; // e.g., { PASSED: 'execute', FAILED: 'analyze' }
   multiline?: boolean;
-};
+}
 
-export type ManualResult = { chosen: string; target: string; reason: string; waitMs?: number };
+export interface ManualResult {
+  chosen: string;
+  target: string;
+  reason: string;
+  waitMs?: number;
+}
 
-type ManualOpts = { multiline: boolean | undefined };
+interface ManualOpts {
+  multiline: boolean | undefined;
+}
 
 /**
  * Prompts the user interactively and measures idle wait time spent waiting for user input.
@@ -21,7 +28,9 @@ export async function handleManualTransition(
   config: ManualTransitionConfig,
 ): Promise<ManualResult> {
   const keys = Object.keys(config.options || {});
-  if (keys.length === 0) throw new Error('No manual options provided');
+  if (keys.length === 0) {
+    throw new Error('No manual options provided');
+  }
 
   // Test escape hatch — skip prompt entirely
   const forced = process.env.RAILI_MANUAL_CHOICE;
@@ -85,7 +94,9 @@ export async function handleManualTransition(
  */
 export async function handleFeedbackPrompt(feedback: FeedbackConfig): Promise<string> {
   const name = feedback.expose_var;
-  if (!name || name.trim() === '') throw new Error('Feedback: expose_var must be provided');
+  if (!name || name.trim() === '') {
+    throw new Error('Feedback: expose_var must be provided');
+  }
 
   const envName = `RAILI_FEEDBACK_${name.toUpperCase()}`;
   const forced = process.env[envName];
@@ -131,7 +142,9 @@ export async function handleFeedbackPrompt(feedback: FeedbackConfig): Promise<st
 
   while (true) {
     const val = multiline ? await promptMulti() : await promptSingle();
-    if (val !== '' || !required) return val;
+    if (val !== '' || !required) {
+      return val;
+    }
     console.log('This feedback is required and cannot be empty. Please provide a value.');
   }
 }

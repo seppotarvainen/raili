@@ -9,7 +9,9 @@
 
 export function parseExports(stdout: string, names: string[]): Record<string, string> {
   const exports: Record<string, string> = {};
-  if (!stdout || !names || names.length === 0) return exports;
+  if (!stdout || !names || names.length === 0) {
+    return exports;
+  }
 
   const lines = stdout.split(/\r?\n/);
 
@@ -17,7 +19,7 @@ export function parseExports(stdout: string, names: string[]): Record<string, st
     const re = new RegExp(`^\\s*(?:export\\s+)?${name}\\s*=\\s*(.*)\\s*$`, 'i');
     for (const line of lines) {
       const m = line.match(re);
-      if (m && m[1] !== undefined) {
+      if (m?.[1] !== undefined) {
         let v = m[1].trim();
         // strip surrounding single or double quotes
         if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {

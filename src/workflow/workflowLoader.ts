@@ -29,18 +29,34 @@ function loadYamlFile(filePath: string, isSubWorkflow: boolean): any {
 }
 
 function normalizeInputs(raw: any[] | undefined): InputDef[] | undefined {
-  if (raw === undefined) return undefined;
-  if (!Array.isArray(raw)) throw new Error('Field "inputs" must be an array');
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(raw)) {
+    throw new Error('Field "inputs" must be an array');
+  }
   return raw.map((it: any, idx: number) => {
-    if (typeof it === 'string') return { name: it, log: false };
+    if (typeof it === 'string') {
+      return { name: it, log: false };
+    }
     if (typeof it === 'object' && it !== null) {
-      if (typeof it.name !== 'string') throw new Error(`inputs[${idx}].name must be a string`);
-      if ('description' in it && it.description !== undefined && typeof it.description !== 'string')
+      if (typeof it.name !== 'string') {
+        throw new Error(`inputs[${idx}].name must be a string`);
+      }
+      if (
+        'description' in it &&
+        it.description !== undefined &&
+        typeof it.description !== 'string'
+      ) {
         throw new Error(`inputs[${idx}].description must be a string when provided`);
-      if ('log' in it && typeof it.log !== 'boolean')
+      }
+      if ('log' in it && typeof it.log !== 'boolean') {
         throw new Error(`inputs[${idx}].log must be a boolean when provided`);
+      }
       const res: any = { name: it.name, log: typeof it.log === 'boolean' ? it.log : false };
-      if (typeof it.description === 'string') res.description = it.description;
+      if (typeof it.description === 'string') {
+        res.description = it.description;
+      }
       return res as InputDef;
     }
     throw new Error(
@@ -93,7 +109,7 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
       const subInputs = normalizeInputs(sub.inputs) || undefined;
       if (subInputs) {
         for (const si of subInputs) {
-          if (normalizedInputs && normalizedInputs.some((i) => i.name === si.name)) {
+          if (normalizedInputs?.some((i) => i.name === si.name)) {
             throw new Error(
               `Duplicate input key '${si.name}' found in sub-workflow '${subPath}' and parent workflow`,
             );
@@ -179,7 +195,9 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
       groupProxyIds.add(stateId);
 
       // Merge flattened states into parentStates
-      for (const [k, v] of Object.entries(newStates)) parentStates[k] = v;
+      for (const [k, v] of Object.entries(newStates)) {
+        parentStates[k] = v;
+      }
     }
   }
 
@@ -188,7 +206,9 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
     states: parentStates,
     inputs: normalizedInputs,
   };
-  if (main.error) config.error = main.error;
+  if (main.error) {
+    config.error = main.error;
+  }
 
   // Final validation of merged config
   validateWorkflowConfig(config);
@@ -244,13 +264,17 @@ export function buildStateMachine(config: WorkflowConfig): StateMachine {
     // If state defines a skip target, include it in the transition set so validation can verify the target exists
     if ((stateConfig as any).skip) {
       const s = (stateConfig as any).skip as string;
-      if (!transitions.includes(s)) transitions.push(s);
+      if (!transitions.includes(s)) {
+        transitions.push(s);
+      }
     }
 
     // If state defines max_visits with a continue target, include it so validation can verify the target exists
     if ((stateConfig as any).max_visits && typeof (stateConfig as any).max_visits === 'object') {
       const cont = (stateConfig as any).max_visits.continue as string | undefined;
-      if (cont && !transitions.includes(cont)) transitions.push(cont);
+      if (cont && !transitions.includes(cont)) {
+        transitions.push(cont);
+      }
     }
 
     states[stateId] = {
@@ -289,7 +313,7 @@ export function validateStateMachine(machine: StateMachine): void {
   const stateKeys = new Set(Object.keys(machine.states));
 
   for (const [id, def] of Object.entries(machine.states)) {
-    if (!def || def.id !== id) {
+    if (def?.id !== id) {
       throw new Error(`Invalid state definition for '${id}': id mismatch`);
     }
 
@@ -358,7 +382,7 @@ export function validateStateMachine(machine: StateMachine): void {
           const keys = Object.keys(entry);
           if (keys.length !== 1 || !['output', 'var'].includes(keys[0])) {
             throw new Error(
-              `Invalid state '${id}': teach entries must be of form {output: <stateId>} or {var: "${'{VAR}'}"}`,
+              `Invalid state '${id}': teach entries must be of form {output: <stateId>} or {var: "{VAR}"}`,
             );
           }
         }
@@ -369,10 +393,14 @@ export function validateStateMachine(machine: StateMachine): void {
   // Cross-state validation: ensure teach output references exist and have output.store=true, and var refs are well-formed
   for (const [id, def] of Object.entries(machine.states)) {
     const cfg = def.config as any;
-    if (!cfg.teach) continue;
+    if (!cfg.teach) {
+      continue;
+    }
     const teach = cfg.teach as Record<string, any[]>;
     for (const [_agentId, arr] of Object.entries(teach)) {
-      if (!Array.isArray(arr)) continue;
+      if (!Array.isArray(arr)) {
+        continue;
+      }
       for (const entry of arr) {
         if ((entry as any).output) {
           const ref = (entry as any).output as string;
@@ -382,7 +410,7 @@ export function validateStateMachine(machine: StateMachine): void {
             );
           }
           const refCfg = machine.states[ref].config;
-          if (!refCfg.output || !refCfg.output.store) {
+          if (!refCfg.output?.store) {
             throw new Error(
               `Invalid state '${id}': teach output reference '${ref}' must have output.store: true`,
             );
@@ -393,7 +421,7 @@ export function validateStateMachine(machine: StateMachine): void {
           const varPattern = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
           if (!varPattern.test(raw)) {
             throw new Error(
-              `Invalid state '${id}': teach var entry '${raw}' must be in the form ${'${VAR_NAME}'} `,
+              `Invalid state '${id}': teach var entry '${raw}' must be in the form \${VAR_NAME} `,
             );
           }
         }

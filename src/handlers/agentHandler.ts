@@ -3,15 +3,17 @@ import fs from 'fs';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { resolveRegistryPath } from '../context/pathUtils';
 
-type AgentExecutionResult = {
+interface AgentExecutionResult {
   success: boolean;
   stdout: string;
   stderr: string;
-};
+}
 
 function parseFrontmatterModel(content: string): string | undefined {
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) return undefined;
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content);
+  if (!match) {
+    return undefined;
+  }
   const modelLine = match[1].split(/\r?\n/).find((l) => l.startsWith('model:'));
   return modelLine ? modelLine.replace(/^model:\s*/, '').trim() : undefined;
 }
@@ -24,7 +26,9 @@ export function executeAgent(
   prompt?: string,
 ): Promise<AgentExecutionResult> {
   const entry = registry[agentId];
-  if (!entry) throw new Error(`Agent '${agentId}' not found in registry`);
+  if (!entry) {
+    throw new Error(`Agent '${agentId}' not found in registry`);
+  }
 
   const fullPath = resolveRegistryPath(cwd, entry.path);
   if (!fs.existsSync(fullPath)) {
@@ -46,7 +50,9 @@ export function executeAgent(
   }
 
   const args = [`--agent=${agentId}`, '--prompt', resolvedPrompt, '--yolo'];
-  if (model) args.splice(1, 0, `--model=${model}`);
+  if (model) {
+    args.splice(1, 0, `--model=${model}`);
+  }
 
   return new Promise((resolve) => {
     const child = spawn('copilot', args, {

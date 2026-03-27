@@ -1,16 +1,18 @@
 import fs from 'fs';
 import path from 'path';
 
-export type AgentEntry = {
+export interface AgentEntry {
   path: string;
   model?: string;
-};
+}
 
 export type AgentRegistry = Record<string, AgentEntry>;
 
 export function loadAgentRegistry(dir: string): AgentRegistry {
   const registryPath = path.resolve(dir, '.raili', 'agent-registry.json');
-  if (!fs.existsSync(registryPath)) throw new Error(`Agent registry not found at ${registryPath}`);
+  if (!fs.existsSync(registryPath)) {
+    throw new Error(`Agent registry not found at ${registryPath}`);
+  }
   const raw = fs.readFileSync(registryPath, 'utf8');
   let parsed: any;
   try {

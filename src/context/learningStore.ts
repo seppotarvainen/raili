@@ -8,7 +8,9 @@ function normalizeForCompare(s: string): string {
 
 export function readLearnings(cwd: string, agentId: string, workflowArg?: string): string {
   const p = learningsFilePath(cwd, agentId, workflowArg);
-  if (!fs.existsSync(p)) return '';
+  if (!fs.existsSync(p)) {
+    return '';
+  }
   return fs.readFileSync(p, 'utf8');
 }
 
@@ -20,10 +22,14 @@ export function readLearnings(cwd: string, agentId: string, workflowArg?: string
  * - If no marker is present, return an empty array
  */
 export function extractLessons(content: string): string[] {
-  if (!content || !content.trim()) return [];
+  if (!content?.trim()) {
+    return [];
+  }
   const re = /lesson:/i;
   const m = re.exec(content);
-  if (!m) return [];
+  if (!m) {
+    return [];
+  }
   const start = m.index + m[0].length;
   let lesson = content.slice(start);
   // Trim surrounding whitespace
@@ -41,7 +47,9 @@ export function extractLessons(content: string): string[] {
  * line followed by the lesson body. Internal newlines of lessons are preserved.
  */
 export function stripTimestampsFromLearnings(content: string): string[] {
-  if (!content || !content.trim()) return [];
+  if (!content?.trim()) {
+    return [];
+  }
 
   // Line-oriented parser: each lesson is stored as a single physical line:
   // - [TIMESTAMP] [OPTIONAL_SOURCE] <lesson-with-\\n-escapes>
@@ -50,7 +58,9 @@ export function stripTimestampsFromLearnings(content: string): string[] {
   const re = /^- \[([^\]]+)\](?: \[([^\]]+)\])? (.*)$/;
   for (const line of lines) {
     const m = re.exec(line);
-    if (!m) continue;
+    if (!m) {
+      continue;
+    }
     // const source = m[2];
     let lessonEscaped = m[3] || '';
     lessonEscaped = lessonEscaped.trim();
@@ -76,7 +86,9 @@ export function stripTimestampsFromLearnings(content: string): string[] {
 export function readLearningsForPrompt(cwd: string, agentId: string, workflowArg?: string): string {
   const raw = readLearnings(cwd, agentId, workflowArg);
   const entries = stripTimestampsFromLearnings(raw);
-  if (!entries.length) return '';
+  if (!entries.length) {
+    return '';
+  }
   return entries.join('\n\n');
 }
 
@@ -92,16 +104,22 @@ export function appendUniqueLearning(
   content: string,
   workflowArg?: string,
 ): boolean {
-  if (!content || !content.trim()) return false;
+  if (!content?.trim()) {
+    return false;
+  }
 
   const lessons = extractLessons(content);
-  if (!lessons.length) return false; // nothing to store
+  if (!lessons.length) {
+    return false;
+  } // nothing to store
 
   const p = learningsFilePath(cwd, agentId, workflowArg);
 
   // Ensure directory exists
   const dir = path.dirname(p);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 
   let appendedAny = false;
   const timestamp = new Date().toISOString();
@@ -122,12 +140,16 @@ export function appendManualLearning(
   content: string,
   workflowArg?: string,
 ): boolean {
-  if (!content || !content.trim()) return false;
+  if (!content?.trim()) {
+    return false;
+  }
 
   const p = learningsFilePath(cwd, agentId, workflowArg);
 
   const dir = path.dirname(p);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 
   const timestamp = new Date().toISOString();
   // Escape internal newlines as literal "\\n" so each lesson is one physical line

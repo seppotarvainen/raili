@@ -56,7 +56,7 @@ test('persists success:true for terminal engine state', async () => {
   await runner.run();
 
   const calls = contextModule.addStateToHistory.mock.calls;
-  expect(calls.some((c: any[]) => c[1] === 'start' && c[2] && c[2].success === true)).toBe(true);
+  expect(calls.some((c: any[]) => c[1] === 'start' && c[2]?.success === true)).toBe(true);
   expect(contextModule.saveContext).toHaveBeenCalled();
 });
 
@@ -68,6 +68,6 @@ test('persists success:null when success omitted for terminal engine state', asy
   await runner.run();
 
   const calls = contextModule.addStateToHistory.mock.calls;
-  expect(calls.some((c: any[]) => c[1] === 'start' && c[2] && c[2].success === null)).toBe(true);
+  expect(calls.some((c: any[]) => c[1] === 'start' && c[2]?.success === null)).toBe(true);
   expect(contextModule.saveContext).toHaveBeenCalled();
 });

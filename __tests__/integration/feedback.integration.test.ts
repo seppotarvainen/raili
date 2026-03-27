@@ -60,7 +60,7 @@ states:
       if (cmd === 'sh' && Array.isArray(args) && typeof args[1] === 'string') {
         const invoked = args[1] as string;
         if (invoked.includes('echo')) {
-          const val = opts && opts.env ? opts.env['RAILI_VAR_NOTE'] : undefined;
+          const val = opts?.env ? opts.env['RAILI_VAR_NOTE'] : undefined;
           return fakeChild((val ? String(val) : '') + '\n', '', 0);
         }
       }

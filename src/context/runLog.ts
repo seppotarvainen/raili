@@ -8,8 +8,12 @@ function humanDuration(ms: number): string {
   const hours = Math.floor(s / 3600);
   const mins = Math.floor((s % 3600) / 60);
   const secs = s % 60;
-  if (hours > 0) return `${hours}h${mins}m${secs}s`;
-  if (mins > 0) return `${mins}m${secs}s`;
+  if (hours > 0) {
+    return `${hours}h${mins}m${secs}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m${secs}s`;
+  }
   return `${secs}s`;
 }
 
@@ -48,12 +52,16 @@ export function appendRunLog(
 
   let loops = 0;
   for (const v of Object.values(visits)) {
-    if (v > 1) loops += v - 1;
+    if (v > 1) {
+      loops += v - 1;
+    }
   }
 
   let approvalFailures = 0;
   for (const e of entries) {
-    if (e.meta && e.meta.approval && e.meta.approval.chosen === 'FAILED') approvalFailures++;
+    if (e.meta?.approval?.chosen === 'FAILED') {
+      approvalFailures++;
+    }
   }
 
   const terminalEntry = entries[entries.length - 1] ?? null;
@@ -70,10 +78,9 @@ export function appendRunLog(
 
   // Only include success if the engine recorded an explicit success value
   if (
-    terminalEntry &&
-    terminalEntry.meta &&
-    terminalEntry.meta.success !== null &&
-    terminalEntry.meta.success !== undefined
+    terminalEntry != null &&
+    terminalEntry.meta?.success !== null &&
+    terminalEntry.meta?.success !== undefined
   ) {
     output.success = !!terminalEntry.meta.success;
   }

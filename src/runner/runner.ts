@@ -14,7 +14,10 @@ import { handleFeedbackPrompt } from '../handlers/manualHandler';
 import { Presenter } from '../presenter';
 
 /** Result returned by every state runner: outcome and optional exports */
-export type StateResult = { outcome: string; exports?: Record<string, string> };
+export interface StateResult {
+  outcome: string;
+  exports?: Record<string, string>;
+}
 
 export interface RunnerConfig {
   stateMachine: StateMachine;
@@ -75,7 +78,9 @@ export class Runner {
   /** Add a state entry (with optional meta) to history and persist. */
   private record(stateId: string, meta?: any): void {
     const newCtx = addStateToHistory(this.context, stateId, meta);
-    if (newCtx) this.context = newCtx;
+    if (newCtx) {
+      this.context = newCtx;
+    }
     this.persist();
   }
 
@@ -86,7 +91,9 @@ export class Runner {
    */
   private handleSkip(stateId: string, stateDef: StateDef): string | null {
     const skip = (stateDef.config as any).skip;
-    if (!skip) return null;
+    if (!skip) {
+      return null;
+    }
 
     const target = skip as string;
     if (!(target in this.stateMachine.states)) {
@@ -171,11 +178,17 @@ export class Runner {
     // e.g. ${STATEID_FAILED} are present in context during the state's lifecycle. Values
     // will be filled in by handleApproval when the decision is made.
     if (config.approval) {
-      if (!this.context.vars) this.context.vars = {};
+      if (!this.context.vars) {
+        this.context.vars = {};
+      }
       const passedKey = `${stateId}_PASSED`.toUpperCase();
       const failedKey = `${stateId}_FAILED`.toUpperCase();
-      if (!(passedKey in this.context.vars)) this.context.vars[passedKey] = '';
-      if (!(failedKey in this.context.vars)) this.context.vars[failedKey] = '';
+      if (!(passedKey in this.context.vars)) {
+        this.context.vars[passedKey] = '';
+      }
+      if (!(failedKey in this.context.vars)) {
+        this.context.vars[failedKey] = '';
+      }
       this.persist();
     }
 
@@ -224,7 +237,9 @@ export class Runner {
     const { config } = stateDef;
 
     if (config.expose && config.expose.length > 0) {
-      if (!this.context.vars) this.context.vars = {};
+      if (!this.context.vars) {
+        this.context.vars = {};
+      }
       for (const name of config.expose) {
         const val = result.exports?.[name];
         if (val === undefined || val === null || String(val).trim() === '') {
@@ -236,7 +251,9 @@ export class Runner {
       }
       this.persist();
     } else if (result.exports && Object.keys(result.exports).length > 0) {
-      if (!this.context.vars) this.context.vars = {};
+      if (!this.context.vars) {
+        this.context.vars = {};
+      }
       for (const [k, v] of Object.entries(result.exports)) {
         this.context.vars[k] = v;
       }
@@ -271,7 +288,9 @@ export class Runner {
         notify: approvalOutcome.notify ?? undefined,
       },
     };
-    if (typeof approvalOutcome.waitMs === 'number') approvalMeta.waitMs = approvalOutcome.waitMs;
+    if (typeof approvalOutcome.waitMs === 'number') {
+      approvalMeta.waitMs = approvalOutcome.waitMs;
+    }
     // Present approval exit summary with resolved next
     try {
       const enteredAt = this.currentPresenter?.entry?.enteredAt;
@@ -287,8 +306,12 @@ export class Runner {
 
     this.record(stateId, approvalMeta);
 
-    if (!this.context.approvals) this.context.approvals = {};
-    if (!this.context.vars) this.context.vars = {};
+    if (!this.context.approvals) {
+      this.context.approvals = {};
+    }
+    if (!this.context.vars) {
+      this.context.vars = {};
+    }
     if (
       approvalOutcome.chosen === 'FAILED' &&
       approvalOutcome.reason &&
@@ -314,18 +337,24 @@ export class Runner {
    */
   private async handleFeedback(stateId: string, stateDef: StateDef): Promise<string | null> {
     const fb = (stateDef.config as any).feedback as any;
-    if (!fb) return null;
+    if (!fb) {
+      return null;
+    }
 
     const fbStart = Date.now();
     const val = await handleFeedbackPrompt(fb);
     const fbWait = Date.now() - fbStart;
 
-    if (!this.context.vars) this.context.vars = {};
+    if (!this.context.vars) {
+      this.context.vars = {};
+    }
     this.context.vars[fb.expose_var] = val;
     this.persist();
 
     const meta: any = { feedback: { name: fb.expose_var, value: val } };
-    if (stateDef.config.approval) meta.waitMs = fbWait;
+    if (stateDef.config.approval) {
+      meta.waitMs = fbWait;
+    }
     this.record(stateId, meta);
 
     if (stateDef.config.transitions && (stateDef.config.transitions as any).next) {
@@ -352,14 +381,20 @@ export class Runner {
   private async handleTeach(stateId: string, stateDef: StateDef): Promise<void> {
     const cfg: any = stateDef.config;
     const teach = cfg.teach as Record<string, any[]> | undefined;
-    if (!teach) return;
+    if (!teach) {
+      return;
+    }
 
-    const recorded: Array<{ agent: string; source: string }> = [];
+    const recorded: { agent: string; source: string }[] = [];
 
     for (const [agentId, arr] of Object.entries(teach)) {
-      if (!Array.isArray(arr)) continue;
+      if (!Array.isArray(arr)) {
+        continue;
+      }
       for (const entry of arr as any[]) {
-        if (!entry || typeof entry !== 'object') continue;
+        if (!entry || typeof entry !== 'object') {
+          continue;
+        }
         if ('output' in entry) {
           const ref = String(entry.output);
           const content = readLatestRun(this.cwd, ref, this.workflowArg);
@@ -375,13 +410,15 @@ export class Runner {
             content,
             this.workflowArg,
           );
-          if (appended) recorded.push({ agent: agentId, source: `output:${ref}` });
+          if (appended) {
+            recorded.push({ agent: agentId, source: `output:${ref}` });
+          }
         } else if ('var' in entry) {
           const raw = String(entry.var);
           const m = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(raw);
           if (!m) {
             throw new Error(
-              `State '${stateId}': teach var entry '${raw}' must be in the form ${'${VAR_NAME}'}`,
+              `State '${stateId}': teach var entry '${raw}' must be in the form \${VAR_NAME}`,
             );
           }
           const varName = m[1];
@@ -397,7 +434,9 @@ export class Runner {
               val,
               this.workflowArg,
             );
-            if (appended) recorded.push({ agent: agentId, source: `var:${varName}` });
+            if (appended) {
+              recorded.push({ agent: agentId, source: `var:${varName}` });
+            }
           }
         }
       }
@@ -435,7 +474,9 @@ export class Runner {
    * Route to the declared error state (if any). Returns true if handled.
    */
   private async handleError(err: unknown): Promise<boolean> {
-    if (!this.stateMachine.error) return false;
+    if (!this.stateMachine.error) {
+      return false;
+    }
 
     const errStateId = this.stateMachine.error;
     const errDef = this.stateMachine.states[errStateId];
@@ -551,7 +592,9 @@ export class Runner {
         stateId = this.routeToNext(stateId, stateDef, stateResult.outcome);
       } catch (err) {
         const handled = await this.handleError(err);
-        if (handled) return;
+        if (handled) {
+          return;
+        }
         throw err;
       }
     }

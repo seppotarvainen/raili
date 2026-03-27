@@ -35,7 +35,9 @@ export function formatHelp(command?: string, topic?: string): string {
   // raili help <command>
   if (command && !topic) {
     const txt = COMMAND_HELP[command];
-    if (txt) return txt.trim();
+    if (txt) {
+      return txt.trim();
+    }
     return ('Unknown command: ' + command + '\n\n' + GLOBAL_USAGE).trim();
   }
 

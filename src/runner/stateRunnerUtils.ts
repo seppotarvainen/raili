@@ -32,9 +32,13 @@ function storeOutput(
   result: HandlerResult,
   workflowArg?: string,
 ): void {
-  if (!state.config.output) return;
+  if (!state.config.output) {
+    return;
+  }
   const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-  if (!combined) return;
+  if (!combined) {
+    return;
+  }
   saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
 }
 
@@ -43,7 +47,7 @@ function storeOutput(
  */
 function parseExposedVars(state: StateDef, stdout: string): Record<string, string> {
   const exports: Record<string, string> = {};
-  if (state.config.expose && state.config.expose.length) {
+  if (state.config.expose?.length) {
     const parsed = parseExports(stdout, state.config.expose);
     for (const [k, v] of Object.entries(parsed)) {
       exports[k] = v;

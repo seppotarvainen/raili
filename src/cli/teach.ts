@@ -20,7 +20,11 @@ export async function teachCommand(cwd: string, agentId?: string, workflowArg?: 
     }
   });
 
-  await new Promise<void>((resolve) => rl.on('close', () => resolve()));
+  await new Promise<void>((resolve) =>
+    rl.on('close', () => {
+      resolve();
+    }),
+  );
 
   const content = lines.join('\n').trim();
   if (!content) {

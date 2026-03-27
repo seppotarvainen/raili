@@ -15,9 +15,7 @@ export interface FieldSchema {
   validForTypes?: StateType[]; // If set, field is only valid for these state types
 }
 
-export interface ObjectSchema {
-  [key: string]: FieldSchema;
-}
+export type ObjectSchema = Record<string, FieldSchema>;
 
 // OutputConfig schema
 export const OutputConfigSchema: ObjectSchema = {

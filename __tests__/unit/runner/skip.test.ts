@@ -113,7 +113,7 @@ describe('skip feature', () => {
 
     // Verify addStateToHistory was called with meta containing skipped target for 'start'
     const calls = (ctx.addStateToHistory as jest.Mock).mock.calls;
-    const skipCall = calls.find((c: any) => c[1] === 'start' && c[2] && c[2].skipped && c[2].skipped.target === 'b');
+    const skipCall = calls.find((c: any) => c[1] === 'start' && c[2]?.skipped?.target === 'b');
     expect(skipCall).toBeDefined();
   });
 });

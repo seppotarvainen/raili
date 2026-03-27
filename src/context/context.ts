@@ -125,7 +125,7 @@ export function addStateToHistory(
     }
   } else {
     const last = context.stateHistory[context.stateHistory.length - 1];
-    if (last && last.state === state) {
+    if (last?.state === state) {
       return context;
     }
   }

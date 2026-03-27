@@ -11,7 +11,7 @@ export function outputPath(cwd: string, stateId: string, workflowArg?: string): 
   // Persist outputs using only the final segment (the sub-state name) so files
   // are named `<state>.md` consistently. Older parent-prefixed filenames are
   // no longer supported.
-  const base = stateId.includes('.') ? (stateId.split('.').pop() as string) : stateId;
+  const base = stateId.includes('.') ? stateId.split('.').pop()! : stateId;
   return path.join(workflowDir, OUTPUTS_DIR, `${base}.md`);
 }
 
@@ -59,7 +59,7 @@ export function filterOutput(output: string, config: OutputConfig): string {
   if (
     (marker === undefined ||
       marker === null ||
-      (typeof marker === 'string' && output.toLowerCase().indexOf(marker.toLowerCase()) === -1)) &&
+      (typeof marker === 'string' && !output.toLowerCase().includes(marker.toLowerCase()))) &&
     markerEnd &&
     typeof markerEnd === 'string'
   ) {
@@ -89,7 +89,9 @@ export function filterOutput(output: string, config: OutputConfig): string {
   }
 
   // If result is empty after trimming, return empty string so callers may skip saving
-  if (result.trim() === '') return '';
+  if (result.trim() === '') {
+    return '';
+  }
 
   return result;
 }
@@ -105,7 +107,7 @@ export function saveOutput(
   outputConfig?: OutputConfig,
   workflowArg?: string,
 ): void {
-  if (!outputConfig || !outputConfig.store) {
+  if (!outputConfig?.store) {
     return;
   }
 
@@ -147,7 +149,9 @@ export function loadAgentOutputPath(
  */
 export function readLatestRun(cwd: string, stateId: string, workflowArg?: string): string | null {
   const p = outputPath(cwd, stateId, workflowArg);
-  if (!fs.existsSync(p)) return null;
+  if (!fs.existsSync(p)) {
+    return null;
+  }
   const full = fs.readFileSync(p, 'utf8');
   const lastRunMarker = '--- Run ';
   const idx = full.lastIndexOf(lastRunMarker);

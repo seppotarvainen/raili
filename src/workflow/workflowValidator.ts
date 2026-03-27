@@ -81,7 +81,9 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
   if (config.inputs && Array.isArray(config.inputs)) {
     for (const it of config.inputs) {
       const name = typeof it === 'string' ? it : it && typeof it.name === 'string' ? it.name : '';
-      if (name) knownVars.add(name);
+      if (name) {
+        knownVars.add(name);
+      }
     }
   }
 
@@ -89,16 +91,20 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     for (const [stateId, stateConfig] of Object.entries(config.states) as [string, any][]) {
       if (Array.isArray(stateConfig?.expose)) {
         for (const v of stateConfig.expose) {
-          if (typeof v === 'string' && v) knownVars.add(v);
+          if (typeof v === 'string' && v) {
+            knownVars.add(v);
+          }
         }
       }
       const fbVar = stateConfig?.feedback?.expose_var;
-      if (typeof fbVar === 'string' && fbVar) knownVars.add(fbVar);
+      if (typeof fbVar === 'string' && fbVar) {
+        knownVars.add(fbVar);
+      }
 
       // If state declares approval, the runner will expose approval-related variable names
       // immediately (uppercase): <STATEID>_PASSED and <STATEID>_FAILED. Add these to knownVars
       // so fail-fast validation allows teach/other references to them.
-      if (stateConfig && stateConfig.approval) {
+      if (stateConfig?.approval) {
         const passedKey = `${stateId}_PASSED`.toUpperCase();
         const failedKey = `${stateId}_FAILED`.toUpperCase();
         knownVars.add(passedKey);
@@ -113,7 +119,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
       for (const varName of refs) {
         if (!knownVars.has(varName)) {
           throw new SchemaValidationError(
-            `State '${stateId}' references undeclared variable '${'${'}${varName}${'}'}'`,
+            `State '${stateId}' references undeclared variable '\${${varName}}'`,
             `state '${stateId}'. Available vars: [${[...knownVars].join(', ')}]`,
           );
         }

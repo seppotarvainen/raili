@@ -3,7 +3,11 @@ import fs from 'fs';
 import { ScriptRegistry } from '../registry/scriptRegistry';
 import { resolveRegistryPath } from '../context/pathUtils';
 
-type ScriptExecutionResult = { success: boolean; stdout: string; stderr: string };
+interface ScriptExecutionResult {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+}
 
 export function executeScript(
   registry: ScriptRegistry,
@@ -13,7 +17,9 @@ export function executeScript(
   envOverrides: Record<string, string> = {},
 ): Promise<ScriptExecutionResult> {
   const entry = registry[scriptId];
-  if (!entry) throw new Error(`Script '${scriptId}' not found in registry`);
+  if (!entry) {
+    throw new Error(`Script '${scriptId}' not found in registry`);
+  }
 
   const fullPath = resolveRegistryPath(cwd, entry.path);
   if (!fs.existsSync(fullPath)) {

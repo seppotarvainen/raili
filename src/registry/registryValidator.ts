@@ -9,10 +9,13 @@ export function validateAgentRegistry(dir: string): AgentRegistry {
   // ensure each referenced file exists and is a regular file
   for (const [id, entry] of Object.entries(reg)) {
     const full = resolveRegistryPath(dir, entry.path);
-    if (!fs.existsSync(full)) throw new Error(`Agent '${id}' references missing file: ${full}`);
+    if (!fs.existsSync(full)) {
+      throw new Error(`Agent '${id}' references missing file: ${full}`);
+    }
     const stat = fs.statSync(full);
-    if (!stat.isFile())
+    if (!stat.isFile()) {
       throw new Error(`Agent '${id}' references a path that is not a file: ${full}`);
+    }
   }
   return reg;
 }
@@ -21,10 +24,13 @@ export function validateScriptRegistry(dir: string): ScriptRegistry {
   const reg = loadScriptRegistry(dir);
   for (const [id, entry] of Object.entries(reg)) {
     const full = resolveRegistryPath(dir, entry.path);
-    if (!fs.existsSync(full)) throw new Error(`Script '${id}' references missing file: ${full}`);
+    if (!fs.existsSync(full)) {
+      throw new Error(`Script '${id}' references missing file: ${full}`);
+    }
     const stat = fs.statSync(full);
-    if (!stat.isFile())
+    if (!stat.isFile()) {
       throw new Error(`Script '${id}' references a path that is not a file: ${full}`);
+    }
   }
   return reg;
 }
@@ -113,11 +119,15 @@ export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: s
   for (const cfg of Object.values(workflow.states)) {
     // on
     if (cfg.on) {
-      for (const t of Object.values(cfg.on)) referencedTargets.add(t);
+      for (const t of Object.values(cfg.on)) {
+        referencedTargets.add(t);
+      }
     }
     // transitions
     if (cfg.transitions) {
-      for (const t of Object.values(cfg.transitions)) referencedTargets.add(t);
+      for (const t of Object.values(cfg.transitions)) {
+        referencedTargets.add(t);
+      }
     }
     // approval
     if ((cfg as any).approval) {
@@ -125,14 +135,19 @@ export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: s
       referencedTargets.add((cfg as any).approval.FAILED);
     }
     // skip
-    if ((cfg as any).skip) referencedTargets.add((cfg as any).skip as string);
+    if ((cfg as any).skip) {
+      referencedTargets.add((cfg as any).skip as string);
+    }
     // max_visits.continue
-    if ((cfg as any).max_visits && (cfg as any).max_visits.continue)
+    if ((cfg as any).max_visits?.continue) {
       referencedTargets.add((cfg as any).max_visits.continue as string);
+    }
   }
 
   for (const [stateName, stateConfig] of Object.entries(workflow.states)) {
-    if (stateConfig.type !== 'group') continue;
+    if (stateConfig.type !== 'group') {
+      continue;
+    }
 
     if (!('group' in stateConfig) || typeof (stateConfig as any).group !== 'string') {
       throw new Error(
@@ -168,7 +183,7 @@ export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: s
     // Ensure no nested group states inside the sub-workflow
     for (const [innerId, innerCfg] of Object.entries(parsed.states)) {
       const innerCfgAny: any = innerCfg;
-      if (innerCfgAny && innerCfgAny.type === 'group') {
+      if (innerCfgAny?.type === 'group') {
         throw new Error(
           `Sub-workflow '${groupPath}' contains nested 'group' state '${innerId}' — nesting depth > 1 not allowed`,
         );
@@ -176,7 +191,7 @@ export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: s
     }
 
     // Ensure at least one state inside sub-workflow has out: true
-    const hasOut = innerIds.some((id) => parsed.states[id] && parsed.states[id].out === true);
+    const hasOut = innerIds.some((id) => parsed.states[id]?.out === true);
     if (!hasOut) {
       throw new Error(
         `Sub-workflow '${groupPath}' must declare at least one state with 'out: true'.`,

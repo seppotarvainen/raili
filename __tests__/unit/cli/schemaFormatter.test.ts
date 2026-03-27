@@ -234,7 +234,7 @@ describe('schemaFormatter', () => {
     it('should format fields with proper indentation', () => {
       const output = generateSchemaOutput();
       // Should have indented fields (start with spaces)
-      const hasIndentedContent = output.split('\n').some(line => /^  [a-z]/.test(line));
+      const hasIndentedContent = output.split('\n').some(line => /^ {2}[a-z]/.test(line));
       expect(hasIndentedContent).toBe(true);
     });
 

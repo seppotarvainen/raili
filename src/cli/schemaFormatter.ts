@@ -7,7 +7,7 @@ import { FieldSchema, ObjectSchema } from '../workflow/schemas';
 /**
  * Format a single field for display
  */
-function formatField(key: string, field: FieldSchema, indent: string = '  '): string {
+function formatField(key: string, field: FieldSchema, indent = '  '): string {
   const required = field.required ? '(REQUIRED)' : '(OPTIONAL)';
   const typeStr = field.type === 'record' ? 'object' : field.type;
 

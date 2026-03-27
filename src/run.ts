@@ -24,7 +24,7 @@ export async function runCommand(
   mode: RunMode = 'continue',
   vars: Record<string, string> = {},
   workflowPath?: string,
-  dryRun: boolean = false,
+  dryRun = false,
 ) {
   const railiDir = path.join(cwd, '.raili');
   if (!fs.existsSync(railiDir)) {

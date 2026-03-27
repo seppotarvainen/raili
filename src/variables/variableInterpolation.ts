@@ -39,7 +39,9 @@ export function interpolateString(
       if (throwOnMissing) {
         throw new Error(`Variable '${varName}' is not defined. Referenced in: "${text}"`);
       }
-      if (typeof missingValue !== 'undefined') return missingValue;
+      if (typeof missingValue !== 'undefined') {
+        return missingValue;
+      }
       return match; // leave as-is if not throwing and no missingValue provided
     }
     return vars[varName];

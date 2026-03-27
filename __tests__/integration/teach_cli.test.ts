@@ -14,11 +14,9 @@ describe('CLI teach flow', () => {
   beforeEach(() => {
     tmp = createTmpWorkspace();
     // mock process.exit to throw so we can continue
-    exitMock = jest
-      .spyOn(process, 'exit')
-      .mockImplementation((code?: string | number | null | undefined) => {
-        throw new Error('EXIT:' + (code ?? 0));
-      });
+    exitMock = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
+      throw new Error('EXIT:' + (code ?? 0));
+    });
   });
 
   afterEach(() => {

@@ -3,7 +3,7 @@ import * as path from 'path';
 // Lightweight stats command implementation without external runtime deps
 
 // Run entry type (lenient)
-export type RunEntry = {
+export interface RunEntry {
   runId?: string;
   durationMs?: number;
   duration?: number;
@@ -14,7 +14,7 @@ export type RunEntry = {
   statesVisited?: number;
   terminalState?: string;
   success?: boolean;
-};
+}
 
 export function computeMetrics(runs: RunEntry[]) {
   const n = runs.length;
@@ -46,7 +46,9 @@ export function computeMetrics(runs: RunEntry[]) {
     sumDuration += dur;
     if (typeof r.success === 'boolean') {
       successKnownCount++;
-      if (r.success) successCount++;
+      if (r.success) {
+        successCount++;
+      }
     }
   }
 
@@ -61,7 +63,9 @@ export function computeMetrics(runs: RunEntry[]) {
 }
 
 function formatPct(v: number | null) {
-  if (v === null) return 'n/a';
+  if (v === null) {
+    return 'n/a';
+  }
   return (v * 100).toFixed(1) + '%';
 }
 
@@ -83,19 +87,19 @@ export function computeComparison(prev: Metrics | null, curr: Metrics) {
       key: 'avgLoops',
       label: 'Average loops/run',
       lowerIsBetter: true,
-      format: (v) => (v as number).toFixed(2),
+      format: (v) => v!.toFixed(2),
     },
     {
       key: 'avgStates',
       label: 'Average states/run',
       lowerIsBetter: true,
-      format: (v) => (v as number).toFixed(2),
+      format: (v) => v!.toFixed(2),
     },
     {
       key: 'avgDurationMs',
       label: 'Average duration (ms)',
       lowerIsBetter: true,
-      format: (v) => Math.round(v as number).toString(),
+      format: (v) => Math.round(v!).toString(),
     },
     {
       key: 'approvalFailRate',
@@ -196,17 +200,16 @@ export function readRunLog(cwd: string, workflow = 'main') {
       parsed.push(obj as RunEntry);
     } catch (err: any) {
       // skip malformed line but warn
-      console.warn(
-        `Skipping malformed run-log line: ${err && err.message ? err.message : String(err)}`,
-      );
+      console.warn(`Skipping malformed run-log line: ${err?.message ? err.message : String(err)}`);
     }
   }
   return parsed;
 }
 
 export function statsCommand(cwd: string, workflow = 'main', latest = 10) {
-  if (!Number.isInteger(latest) || latest <= 0)
+  if (!Number.isInteger(latest) || latest <= 0) {
     throw new Error('--latest must be a positive integer');
+  }
   const runs = readRunLog(cwd, workflow);
   const window = runs.slice(-latest);
   if (window.length === 0) {

@@ -33,15 +33,15 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
   const vars: Record<string, string> = {};
   for (const entry of varsArray) {
     const [key, ...rest] = entry.split('=');
-    if (!key || rest.length === 0) continue;
+    if (!key || rest.length === 0) {continue;}
     vars[key.trim()] = rest.join('=').trim();
   }
-  const mode = parsed.clean ? 'clean' : parsed['continue'] ? 'continue' : undefined;
+  const mode = parsed.clean ? 'clean' : parsed.continue ? 'continue' : undefined;
   return { workflow: parsed.workflow, mode, vars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
 }
 
 function promptLine(rl: readline.Interface, question: string): Promise<string> {
-  return new Promise((resolve) => rl.question(question, resolve));
+  return new Promise((resolve) => { rl.question(question, resolve); });
 }
 
 export { loadVarsFile };
@@ -62,7 +62,7 @@ export async function collectVars(
         return { name: it, description: '' };
       }
       if (typeof it === 'object' && it !== null) {
-        if (typeof it.name !== 'string') throw new Error('inputs entries must have a string name');
+        if (typeof it.name !== 'string') {throw new Error('inputs entries must have a string name');}
         return {
           name: it.name,
           description: typeof it.description === 'string' ? it.description : '',
@@ -81,13 +81,13 @@ export async function collectVars(
   const merged = { ...fileVars, ...flagVars };
 
   const missingNames = declaredNames.filter((key) => !(key in merged));
-  if (missingNames.length === 0) return merged;
+  if (missingNames.length === 0) {return merged;}
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const collected: Record<string, string> = { ...merged };
   for (const name of missingNames) {
     const def = declaredInputs.find((d) => d.name === name);
-    if (def && def.description) {
+    if (def?.description) {
       // Print description before prompting (allow multiline)
       console.log(def.description);
     }
@@ -102,7 +102,7 @@ export async function promptRunMode(cwd: string, workflowPath?: string): Promise
   // missing context.json for workflow-scoped runs, malformed JSON, etc.)
   const context = loadContext(cwd, workflowPath);
   const hasExistingContext = getCurrentState(context) !== null;
-  if (!hasExistingContext) return 'clean';
+  if (!hasExistingContext) {return 'clean';}
 
   return new Promise((resolve) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -212,7 +212,7 @@ async function main() {
         // If workflow not found via parse, scan for -w/--workflow manually
         if (!workflowPath) {
           const wfIndex = runArgs.findIndex((a) => a === '-w' || a === '--workflow');
-          if (wfIndex !== -1 && runArgs[wfIndex + 1]) workflowPath = runArgs[wfIndex + 1];
+          if (wfIndex !== -1 && runArgs[wfIndex + 1]) {workflowPath = runArgs[wfIndex + 1];}
         }
         // Derive agentId as the first non-flag argument (positional)
         const agentId = runArgs.find((a) => !a.startsWith('-'));

@@ -63,7 +63,9 @@ class AgentStateRunner implements IStateRunner {
     // Store output if configured
     if (state.config.output) {
       const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-      if (combined) saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
+      if (combined) {
+        saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
+      }
     }
 
     if (state.config.on) {

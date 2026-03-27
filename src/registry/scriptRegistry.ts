@@ -1,12 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 
-export type ScriptEntry = { path: string };
+export interface ScriptEntry {
+  path: string;
+}
 export type ScriptRegistry = Record<string, ScriptEntry>;
 
 export function loadScriptRegistry(dir: string): ScriptRegistry {
   const registryPath = path.resolve(dir, '.raili', 'script-registry.json');
-  if (!fs.existsSync(registryPath)) throw new Error(`Script registry not found at ${registryPath}`);
+  if (!fs.existsSync(registryPath)) {
+    throw new Error(`Script registry not found at ${registryPath}`);
+  }
   const raw = fs.readFileSync(registryPath, 'utf8');
   let parsed: any;
   try {

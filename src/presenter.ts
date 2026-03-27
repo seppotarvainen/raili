@@ -89,7 +89,7 @@ export class Presenter {
     stateDef: StateDef,
     outcome: string,
     next?: string,
-    elapsedMs?: number | undefined,
+    elapsedMs?: number
   ): void {
     const type = stateDef.config.type ?? 'engine';
     const emoji = outcome === 'PASSED' ? '✅' : outcome === 'FAILED' ? '❌' : '➡️';
@@ -118,18 +118,18 @@ export class Presenter {
   }
 
   render(): void {
-    if (!this.entry) return;
+    if (!this.entry) {return;}
     const { lines, borderTop, borderBottom } = this.entry;
 
     const totalWidth = lines.maxLength() + 2;
     const bt = (borderTop || '').repeat(totalWidth);
     const bb = (borderBottom || '').repeat(totalWidth);
 
-    if (bt) console.log(colors.cyan(bt));
+    if (bt) {console.log(colors.cyan(bt));}
     for (const l of lines.entries) {
-      console.log(`${l.content + ' '.repeat(totalWidth - l.content.length + l.emojiCount)}`);
+      console.log(l.content + ' '.repeat(totalWidth - l.content.length + l.emojiCount));
     }
-    if (bb) console.log(colors.cyan(bb));
+    if (bb) {console.log(colors.cyan(bb));}
     console.log('');
     this.entry.lines = new Lines();
   }
@@ -141,6 +141,6 @@ function formatElapsed(ms: number): string {
   const mins = Math.floor((totalSec % 3600) / 60);
   const secs = totalSec % 60;
   if (hours > 0)
-    return `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    {return `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;}
   return `${String(mins)}:${String(secs).padStart(2, '0')}`;
 }
