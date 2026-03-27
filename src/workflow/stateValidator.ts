@@ -90,7 +90,7 @@ function collectVarRefs(obj: any, refs: Set<string>): void {
 
 export function collectFailFastVarRefs(stateConfig: any): Set<string> {
   const refs = new Set<string>();
-  const { prompt: _p, learn_from: _lf, approval, feedback, ...rest } = stateConfig as any;
+  const { prompt: _p, approval, feedback, ...rest } = stateConfig as any;
 
   collectVarRefs(rest, refs);
 

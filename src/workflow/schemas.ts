@@ -171,12 +171,12 @@ export const StateConfigSchema: ObjectSchema = {
     description: 'Optional prompt for agent',
     validForTypes: ['agent'],
   },
-  learn_from: {
+  teach: {
     required: false,
-    type: 'array',
+    type: 'record',
     description:
-      'List of sources to learn from: objects like {output: stateId} or {var: "${VAR_NAME}"}',
-    validForTypes: ['agent'],
+      'Map of <agentId> -> list of sources to teach (objects like {output: stateId} or {var: "${VAR_NAME}"})',
+    validForTypes: ['agent', 'script', 'command', 'engine', 'group'],
   },
   approval: {
     required: false,

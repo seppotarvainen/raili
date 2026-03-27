@@ -341,51 +341,61 @@ export function validateStateMachine(machine: StateMachine): void {
       );
     }
 
-    // Basic validation for learn_from entries shape (must be objects with 'output' or 'var')
-    if (config.learn_from) {
-      if (!Array.isArray(config.learn_from)) {
-        throw new Error(`Invalid state '${id}': learn_from must be an array`);
+    // Basic validation for teach entries shape (must be a mapping agentId -> array of sources)
+    if ((config as any).teach !== undefined) {
+      const teach = (config as any).teach;
+      if (teach === null || typeof teach !== 'object' || Array.isArray(teach)) {
+        throw new Error(`Invalid state '${id}': teach must be a mapping of agentId -> array`);
       }
-      for (const entry of config.learn_from) {
-        if (typeof entry !== 'object' || entry === null) {
-          throw new Error(`Invalid state '${id}': learn_from entries must be objects`);
+      for (const [agentId, arr] of Object.entries(teach)) {
+        if (!Array.isArray(arr)) {
+          throw new Error(`Invalid state '${id}': teach['${agentId}'] must be an array`);
         }
-        const keys = Object.keys(entry);
-        if (keys.length !== 1 || !['output', 'var'].includes(keys[0])) {
-          throw new Error(
-            `Invalid state '${id}': learn_from entries must be of form {output: <stateId>} or {var: "${'{VAR}'}"}`,
-          );
+        for (const entry of arr as any[]) {
+          if (typeof entry !== 'object' || entry === null) {
+            throw new Error(`Invalid state '${id}': teach entries must be objects`);
+          }
+          const keys = Object.keys(entry);
+          if (keys.length !== 1 || !['output', 'var'].includes(keys[0])) {
+            throw new Error(
+              `Invalid state '${id}': teach entries must be of form {output: <stateId>} or {var: "${'{VAR}'}"}`,
+            );
+          }
         }
       }
     }
   }
 
-  // Cross-state validation: ensure learn_from output references exist and have output.store=true
+  // Cross-state validation: ensure teach output references exist and have output.store=true, and var refs are well-formed
   for (const [id, def] of Object.entries(machine.states)) {
-    const cfg = def.config;
-    if (!cfg.learn_from) continue;
-    for (const entry of cfg.learn_from) {
-      if ((entry as any).output) {
-        const ref = (entry as any).output as string;
-        if (!stateKeys.has(ref)) {
-          throw new Error(
-            `Invalid state '${id}': learn_from references unknown state '${ref}' via output:${ref}`,
-          );
+    const cfg = def.config as any;
+    if (!cfg.teach) continue;
+    const teach = cfg.teach as Record<string, any[]>;
+    for (const [_agentId, arr] of Object.entries(teach)) {
+      if (!Array.isArray(arr)) continue;
+      for (const entry of arr) {
+        if ((entry as any).output) {
+          const ref = (entry as any).output as string;
+          if (!stateKeys.has(ref)) {
+            throw new Error(
+              `Invalid state '${id}': teach references unknown state '${ref}' via output:${ref}`,
+            );
+          }
+          const refCfg = machine.states[ref].config;
+          if (!refCfg.output || !refCfg.output.store) {
+            throw new Error(
+              `Invalid state '${id}': teach output reference '${ref}' must have output.store: true`,
+            );
+          }
         }
-        const refCfg = machine.states[ref].config;
-        if (!refCfg.output || !refCfg.output.store) {
-          throw new Error(
-            `Invalid state '${id}': learn_from output reference '${ref}' must have output.store: true`,
-          );
-        }
-      }
-      if ((entry as any).var) {
-        const raw = (entry as any).var as string;
-        const varPattern = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
-        if (!varPattern.test(raw)) {
-          throw new Error(
-            `Invalid state '${id}': learn_from var entry '${raw}' must be in the form ${'${VAR_NAME}'} `,
-          );
+        if ((entry as any).var) {
+          const raw = (entry as any).var as string;
+          const varPattern = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
+          if (!varPattern.test(raw)) {
+            throw new Error(
+              `Invalid state '${id}': teach var entry '${raw}' must be in the form ${'${VAR_NAME}'} `,
+            );
+          }
         }
       }
     }

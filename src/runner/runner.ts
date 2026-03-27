@@ -9,7 +9,7 @@ import { ApprovalOutcome, runApprovalStep } from './approveStateRunner';
 import { runGroupState } from './groupStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
 import { clearAgentOutputs, readLatestRun } from '../context/outputStore';
-import { readLearnings } from '../context/learningStore';
+import { readLearnings, appendUniqueLearning } from '../context/learningStore';
 import { resolveTransition } from './transition';
 import { handleFeedbackPrompt } from '../handlers/manualHandler';
 import { Presenter } from '../presenter';
@@ -339,6 +339,72 @@ export class Runner {
     return null;
   }
 
+  // ── Phase: Teach ────────────────────────────────────────────────────
+
+  /**
+   * Process teach mappings on a state: push lessons to agents immediately.
+   * Throws on missing variables or empty referenced outputs (fail-fast).
+   */
+  private async handleTeach(stateId: string, stateDef: StateDef): Promise<void> {
+    const cfg: any = stateDef.config;
+    const teach = cfg.teach as Record<string, any[]> | undefined;
+    if (!teach) return;
+
+    const recorded: Array<{ agent: string; source: string }> = [];
+
+    for (const [agentId, arr] of Object.entries(teach)) {
+      if (!Array.isArray(arr)) continue;
+      for (const entry of arr as any[]) {
+        if (!entry || typeof entry !== 'object') continue;
+        if ('output' in entry) {
+          const ref = String(entry.output);
+          const content = readLatestRun(this.cwd, ref, this.workflowArg);
+          if (!content || String(content).trim() === '') {
+            throw new Error(
+              `State '${stateId}': teach referenced output '${ref}' produced no content`,
+            );
+          }
+          const appended = appendUniqueLearning(
+            this.cwd,
+            agentId,
+            `output:${ref}`,
+            content,
+            this.workflowArg,
+          );
+          if (appended) recorded.push({ agent: agentId, source: `output:${ref}` });
+        } else if ('var' in entry) {
+          const raw = String(entry.var);
+          const m = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(raw);
+          if (!m) {
+            throw new Error(
+              `State '${stateId}': teach var entry '${raw}' must be in the form ${'${VAR_NAME}'}`,
+            );
+          }
+          const varName = m[1];
+          if (!this.context.vars || !(varName in this.context.vars)) {
+            throw new Error(`State '${stateId}': teach var '${varName}' not found in context`);
+          }
+          const val = this.context.vars[varName];
+          if (!val || String(val).trim() === '') {
+            throw new Error(`State '${stateId}': teach var '${varName}' is empty`);
+          }
+          const appended = appendUniqueLearning(
+            this.cwd,
+            agentId,
+            `var:${varName}`,
+            val,
+            this.workflowArg,
+          );
+          if (appended) recorded.push({ agent: agentId, source: `var:${varName}` });
+        }
+      }
+    }
+
+    if (recorded.length > 0) {
+      this.record(stateId, { teach: recorded });
+    }
+  }
+
   // ── Phase: Route ────────────────────────────────────────────────────
 
   /**
@@ -467,7 +533,12 @@ export class Runner {
           continue;
         }
 
-        // Phase 8: Route to next state
+        // Phase 8: Teach phase - process state.config.teach (push learnings to agents)
+        if ((stateDef.config as any).teach) {
+          await this.handleTeach(stateId, stateDef);
+        }
+
+        // Phase 9: Route to next state
         stateId = this.routeToNext(stateId, stateDef, stateResult.outcome);
       } catch (err) {
         const handled = await this.handleError(err);

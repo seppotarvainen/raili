@@ -56,7 +56,7 @@ export interface StateConfig {
   transitions?: Record<string, string>;
   on?: Record<string, string>;
   expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>
-  learn_from?: LearnSource[]; // Optional: declare persistent learning sources for agent states
+  teach?: Record<string, LearnSource[]>; // Optional: map agentId -> list of learning sources to append to agents
   // Group-specific property: path to sub-workflow YAML file (relative to workflow dir)
   group?: string;
   // Marks exit points inside sub-workflow fragments; required at least once inside a sub-workflow

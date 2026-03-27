@@ -74,7 +74,6 @@ describe('schemaValidator inputs referencing', () => {
           type: 'agent',
           agent: 'coder',
           prompt: '${OPTIONAL_CONTEXT}\nWork on ${title}',
-          learn_from: [{ var: '${OPTIONAL_CONTEXT}' }],
           on: { PASSED: 'done' },
         },
         done: { type: 'engine' },

@@ -7,7 +7,7 @@ import {
 import { NotifyResult, runNotify } from '../handlers/notifyHandler';
 import { interpolateString } from '../variables/variableInterpolation';
 
-export interface ApprovalStepOptions {
+interface ApprovalStepOptions {
   cwd: string;
   context?: WorkflowContext;
 }

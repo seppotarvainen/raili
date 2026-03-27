@@ -314,43 +314,43 @@ describe('workflowLoader', () => {
       expect(() => validateStateMachine(machine)).toThrow(/group type requires/i);
     });
 
-    test('throws when learn_from is not an array', () => {
+    test('throws when teach is not a mapping', () => {
       const machine: any = {
         initial: 'start',
         states: {
-          start: { id: 'start', config: { type: 'engine', learn_from: 'bad' }, transitions: [] },
+          start: { id: 'start', config: { type: 'engine', teach: 'bad' }, transitions: [] },
         },
       };
-      expect(() => validateStateMachine(machine)).toThrow(/learn_from must be an array/i);
+      expect(() => validateStateMachine(machine)).toThrow(/teach must be a mapping/i);
     });
 
-    test('throws when learn_from entry is not an object', () => {
+    test('throws when teach entry is not an object', () => {
       const machine: any = {
         initial: 'start',
         states: {
-          start: { id: 'start', config: { type: 'engine', learn_from: ['string-entry'] }, transitions: [] },
+          start: { id: 'start', config: { type: 'engine', teach: { x: ['string-entry'] } }, transitions: [] },
         },
       };
-      expect(() => validateStateMachine(machine)).toThrow(/learn_from entries must be objects/i);
+      expect(() => validateStateMachine(machine)).toThrow(/teach entries must be objects/i);
     });
 
-    test('throws when learn_from entry has invalid key', () => {
+    test('throws when teach entry has invalid key', () => {
       const machine: any = {
         initial: 'start',
         states: {
-          start: { id: 'start', config: { type: 'engine', learn_from: [{ bad: 'x' }] }, transitions: [] },
+          start: { id: 'start', config: { type: 'engine', teach: { x: [{ bad: 'x' }] } }, transitions: [] },
         },
       };
-      expect(() => validateStateMachine(machine)).toThrow(/learn_from entries must be of form/i);
+      expect(() => validateStateMachine(machine)).toThrow(/teach entries must be of form/i);
     });
 
-    test('throws when learn_from output references unknown state', () => {
+    test('throws when teach output references unknown state', () => {
       const machine: any = {
         initial: 'start',
         states: {
           start: {
             id: 'start',
-            config: { type: 'engine', learn_from: [{ output: 'nonexistent' }] },
+            config: { type: 'engine', teach: { x: [{ output: 'nonexistent' }] } },
             transitions: [],
           },
         },
@@ -358,13 +358,13 @@ describe('workflowLoader', () => {
       expect(() => validateStateMachine(machine)).toThrow(/unknown state 'nonexistent'/i);
     });
 
-    test('throws when learn_from output state has no output.store', () => {
+    test('throws when teach output state has no output.store', () => {
       const machine: any = {
         initial: 'start',
         states: {
           start: {
             id: 'start',
-            config: { type: 'engine', learn_from: [{ output: 'prev' }] },
+            config: { type: 'engine', teach: { x: [{ output: 'prev' }] } },
             transitions: ['prev'],
           },
           prev: {

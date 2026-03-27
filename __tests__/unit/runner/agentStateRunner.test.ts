@@ -79,25 +79,7 @@ test('returns FAILED on failure with on: block', async () => {
   expect(result.outcome).toBe('FAILED');
 });
 
-test('learn_from var source appends learning when var value is present', async () => {
-  const state = makeState({
-    learn_from: [{ var: '${ticket_id}' }] as any,
-    on: { PASSED: 'done', FAILED: 'code' },
-  });
-  await runAgentState(state, registry, cwd, { ticket_id: 'LESSON: fix the edge case' });
-  expect(learningStore.appendUniqueLearning).toHaveBeenCalledWith(
-    cwd, 'coder', 'var:ticket_id', expect.any(String), undefined,
-  );
-});
 
-test('learn_from var source skips when var value is absent', async () => {
-  const state = makeState({
-    learn_from: [{ var: '${missing_var}' }] as any,
-    on: { PASSED: 'done', FAILED: 'code' },
-  });
-  await runAgentState(state, registry, cwd, {});
-  expect(learningStore.appendUniqueLearning).not.toHaveBeenCalled();
-});
 
 test('throws when transitions state and agent produces no output', async () => {
   mockExecuteAgent.mockResolvedValue({ success: true, stdout: '', stderr: '' });
