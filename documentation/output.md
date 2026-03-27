@@ -18,15 +18,25 @@ Note: For group (sub-workflow) states the on-disk filename uses only the sub-sta
 
 ## Marker-based Extraction
 
-Use a marker string to capture the section of output to persist. The first case-insensitive occurrence of the marker is used and everything after it is stored. If the marker is not found, the entire stdout is persisted.
+Use optional `marker` and `marker_end` strings to capture the portion of output to persist. Searches are **case-insensitive** but slicing preserves the original casing and spacing.
+
+Rules:
+
+- If neither `marker` nor `marker_end` are provided, the **full stdout** is persisted (existing behavior).
+- If only **`marker`** is provided → the first occurrence of `marker` (case-insensitive) is located and **everything after it** is persisted.
+- If only **`marker_end`** is provided → the first occurrence of `marker_end` is located and **everything before it** is persisted.
+- If **both** `marker` and `marker_end` are provided → the engine finds the first `marker` and the first `marker_end` that occurs **after** the found start and persists the substring **between** them. If `marker_end` is not found after `marker`, the engine behaves like the `marker`-only case (everything after `marker`).
+
+YAML example (both markers):
 
 ```yaml
 output:
   store: true
-  marker: "OUTPUT:"
+  marker: "//SUMMARY//"
+  marker_end: "//SUMMARY_END//"
 ```
 
-This is useful for agent outputs that include a clear delimiter (e.g. `SUMMARY:`) followed by the structured content to keep.
+This is useful for agent outputs that include clear delimiters surrounding the structured content to persist (for example a `//SUMMARY//` block). If you previously relied on an implicit `"OUTPUT:"` default, note that there is no longer a default marker — provide `marker` explicitly when you want marker-based extraction.
 
 ## Tail (Keep Last N Lines)
 
@@ -40,16 +50,17 @@ output:
 
 ## Combined Filtering
 
-Marker extraction and tail work together:
+Marker extraction (using `marker` and/or `marker_end`) and `tail` work together.
 
 ```yaml
 output:
   store: true
   marker: "SUMMARY:"
+  marker_end: "SUMMARY_END:"
   tail: 200
 ```
 
-Process: extract content after the first marker occurrence → keep last 200 lines
+Process: first extract according to the configured markers (see rules in "Marker-based Extraction") → then apply `tail` to keep only the last N lines of the extracted content.
 
 ## Agent Memory Strategy
 

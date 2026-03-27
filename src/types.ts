@@ -8,7 +8,8 @@ export type StateType = 'agent' | 'script' | 'command' | 'engine' | 'group';
 export interface OutputConfig {
   store: boolean; // Save output to .raili/outputs/<stateId>.md
   tail?: number; // Keep only the last N lines of output
-  marker?: string; // Optional marker string to locate the start of the stored output; default: "OUTPUT:"
+  marker?: string; // Optional marker string to locate the start of the stored output (case-insensitive)
+  marker_end?: string; // Optional marker string to locate the end of the stored output (first occurrence, case-insensitive)
 }
 
 export interface ApprovalConfig {

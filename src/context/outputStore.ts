@@ -17,19 +17,56 @@ export function outputPath(cwd: string, stateId: string, workflowArg?: string): 
 
 /**
  * Filter output based on OutputConfig settings.
- * Behavior: If a marker (default "OUTPUT:") is specified, find the first case-insensitive occurrence
- * and extract everything after it. If marker not found, use full output. Then trim leading/trailing
- * blank lines and apply tail if configured.
+ * New behavior supports optional marker and marker_end fields. Searches are case-insensitive
+ * but slicing preserves original case/spacing.
+ * Rules:
+ * - If neither marker nor marker_end provided => keep full output
+ * - If only marker provided => return everything after first occurrence of marker
+ * - If only marker_end provided => return everything before first occurrence of marker_end
+ * - If both provided => find first marker and the first marker_end after it; return the substring between them.
+ *   If marker_end occurs before marker or no marker_end after marker is found, behave as marker-only (everything after marker).
+ * After extraction trim leading/trailing blank lines and apply tail if configured.
  */
 export function filterOutput(output: string, config: OutputConfig): string {
   let result = output;
+  const marker = config.marker;
+  const markerEnd = config.marker_end;
 
-  const marker = config.marker ?? 'OUTPUT:';
   if (marker && typeof marker === 'string') {
-    const lower = result.toLowerCase();
-    const idx = lower.indexOf(marker.toLowerCase());
-    if (idx !== -1) {
-      result = result.slice(idx + marker.length);
+    const lowerFull = output.toLowerCase();
+    const lowerMarker = marker.toLowerCase();
+    const startIdx = lowerFull.indexOf(lowerMarker);
+    if (startIdx !== -1) {
+      const contentStart = startIdx + marker.length;
+      // Default to everything after the marker
+      result = output.slice(contentStart);
+
+      // If marker_end provided, look for it after the contentStart index
+      if (markerEnd && typeof markerEnd === 'string') {
+        const lowerMarkerEnd = markerEnd.toLowerCase();
+        const endIdx = lowerFull.indexOf(lowerMarkerEnd, contentStart);
+        if (endIdx !== -1) {
+          // Extract between start and end (preserve original casing)
+          result = output.slice(contentStart, endIdx);
+        }
+        // If endIdx not found after start, keep everything after marker (marker-only behavior)
+      }
+    }
+    // If marker not found, fallthrough to other cases
+  }
+
+  // If marker was not provided or not found, but marker_end is provided, extract before first marker_end
+  if (
+    (marker === undefined ||
+      marker === null ||
+      (typeof marker === 'string' && output.toLowerCase().indexOf(marker.toLowerCase()) === -1)) &&
+    markerEnd &&
+    typeof markerEnd === 'string'
+  ) {
+    const lowerFull = output.toLowerCase();
+    const endIdx = lowerFull.indexOf(markerEnd.toLowerCase());
+    if (endIdx !== -1) {
+      result = output.slice(0, endIdx);
     }
   }
 
@@ -50,6 +87,9 @@ export function filterOutput(output: string, config: OutputConfig): string {
       result = parts.slice(-config.tail).join('\n');
     }
   }
+
+  // If result is empty after trimming, return empty string so callers may skip saving
+  if (result.trim() === '') return '';
 
   return result;
 }
