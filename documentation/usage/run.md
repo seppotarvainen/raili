@@ -8,6 +8,7 @@
 raili run                              # Resume or start the main workflow
 raili run --clean                      # Force a clean run (clears context, re-prompts for inputs)
 raili run --continue                   # Resume from last state
+raili run --dry-run                    # Validate workflow and registries without executing
 raili run --var key=value              # Supply workflow inputs
 raili run --workflow <name>            # Run a named workflow (e.g. .raili/dev/)
 raili run --workflow <name> --clean    # Start a named workflow fresh
@@ -73,6 +74,20 @@ Each workflow directory keeps its own isolated artifacts:
     ├── vars.yaml
     ├── context.json           # dev run state (independent)
     └── outputs/
+```
+
+## Dry-run mode
+
+The `--dry-run` flag performs the full startup validation without entering the runner execution loop. It verifies workflow YAML/schema, builds and validates the state machine, loads and validates shared registries (`agent-registry.json`, `script-registry.json`), resolves referenced agent/script files, and (for `--clean`) reads declared inputs from `.raili/<workflow>/vars.yaml` and merges CLI flags. Dry-run is non-interactive: it implicitly accepts any skip confirmations and will not prompt for missing inputs. No on-disk artifacts are modified — context, outputs, and the run-log are not written.
+
+Example:
+
+```bash
+# Validate using vars.yaml and flags, but do not execute handlers
+raili run --dry-run
+
+# Validate a named workflow with an inline var
+raili run --workflow main --dry-run --var ticket_id=123
 ```
 
 ## Execution Flow

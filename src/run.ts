@@ -24,6 +24,7 @@ export async function runCommand(
   mode: RunMode = 'continue',
   vars: Record<string, string> = {},
   workflowPath?: string,
+  dryRun: boolean = false,
 ) {
   const railiDir = path.join(cwd, '.raili');
   if (!fs.existsSync(railiDir)) {
@@ -53,20 +54,25 @@ export async function runCommand(
     const list = skipped.join(', ');
     const question = `You have 'skip' enabled in the following states: [${list}]. Are you sure you want to skip these steps?`;
 
-    // If running in non-interactive environment (no TTY) and no RAILI_MANUAL_CHOICE provided,
-    // default to accepting the skip so tests and CI won't hang on a prompt.
-    const hasTTY = !!(process.stdin && (process.stdin as any).isTTY);
-    if (!hasTTY && !process.env.RAILI_MANUAL_CHOICE) {
-      // Default to accept in non-interactive contexts
+    // Dry-run should be non-interactive and implicitly accept skip confirmations
+    if (dryRun) {
+      // treat as accepted
     } else {
-      const result = await handleManualTransition({
-        question,
-        options: { PASSED: 'PROCEED', FAILED: 'CANCEL' },
-      });
-      if (result.chosen === 'FAILED') {
-        console.log('Run cancelled: skip confirmation declined. No states executed.');
-        process.exit(1);
-        return;
+      // If running in non-interactive environment (no TTY) and no RAILI_MANUAL_CHOICE provided,
+      // default to accepting the skip so tests and CI won't hang on a prompt.
+      const hasTTY = !!(process.stdin && (process.stdin as any).isTTY);
+      if (!hasTTY && !process.env.RAILI_MANUAL_CHOICE) {
+        // Default to accept in non-interactive contexts
+      } else {
+        const result = await handleManualTransition({
+          question,
+          options: { PASSED: 'PROCEED', FAILED: 'CANCEL' },
+        });
+        if (result.chosen === 'FAILED') {
+          console.log('Run cancelled: skip confirmation declined. No states executed.');
+          process.exit(1);
+          return;
+        }
       }
     }
   }
@@ -96,7 +102,10 @@ export async function runCommand(
 
   // Clear persisted context for a clean run
   if (mode === 'clean') {
-    clearContext(cwd, workflowPath);
+    // In dry-run mode, do not modify on-disk context or outputs; only simulate the clear.
+    if (!dryRun) {
+      clearContext(cwd, workflowPath);
+    }
   }
 
   // When doing a clean run, load vars file filtered to declared inputs and merge with supplied vars (flags override file)
@@ -127,6 +136,11 @@ export async function runCommand(
   }
 
   const runStart = new Date().toISOString();
+
+  if (dryRun) {
+    console.log('Dry-run validation succeeded: no execution performed.');
+    return;
+  }
 
   const runner = new Runner({
     stateMachine,
