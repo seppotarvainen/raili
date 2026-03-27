@@ -6,7 +6,6 @@ import { runAgentState } from './agentStateRunner';
 import { runScriptState } from './scriptStateRunner';
 import { runCommandState } from './commandStateRunner';
 import { ApprovalOutcome, runApprovalStep } from './approveStateRunner';
-import { runGroupState } from './groupStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
 import { clearAgentOutputs, readLatestRun } from '../context/outputStore';
 import { readLearnings, appendUniqueLearning } from '../context/learningStore';
@@ -210,14 +209,7 @@ export class Runner {
     } else if (config.type === 'command') {
       return runCommandState(stateDef, this.cwd, this.context?.vars, this.workflowArg);
     } else if (config.type === 'group') {
-      return runGroupState(
-        stateDef,
-        this.cwd,
-        this.context?.vars,
-        this.workflowArg,
-        this.agentRegistry,
-        this.scriptRegistry,
-      );
+      throw new Error('groups must be flattened before execution');
     }
     return { outcome: 'PASSED' };
   }
