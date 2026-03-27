@@ -53,13 +53,15 @@ Only keys declared in `inputs:` are read from these files.
 
 ### Interactive Prompt
 
-On a clean run with missing inputs:
+On a clean run with missing inputs the CLI will prompt for any values not supplied via flags or `vars.yaml`:
 
 ```
 ticket_id: PROJ-123
 branch: main
 description: Fix login bug
 ```
+
+Note: `--dry-run` is non-interactive. When `--dry-run` is used the engine will not prompt for missing inputs — it will merge values from the workflow `vars.yaml` (if present) with CLI flags and perform validation only. Use `--dry-run` in CI to validate workflows without human interaction.
 
 ## Using Variables in YAML
 

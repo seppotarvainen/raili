@@ -124,4 +124,5 @@ export interface RailiRunArgs {
   mode?: 'clean' | 'continue';
   vars: Record<string, string>;
   help?: boolean;
+  dryRun?: boolean;
 }

@@ -26,6 +26,7 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     { name: 'continue', type: Boolean },
     { name: 'var', type: String, multiple: true, defaultValue: [] },
     { name: 'help', alias: 'h', type: Boolean },
+    { name: 'dry-run', type: Boolean },
   ];
   const parsed: any = commandLineArgs(optionDefinitions, { argv });
   const varsArray: string[] = (parsed.var as string[]) || [];
@@ -36,7 +37,7 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     vars[key.trim()] = rest.join('=').trim();
   }
   const mode = parsed.clean ? 'clean' : parsed['continue'] ? 'continue' : undefined;
-  return { workflow: parsed.workflow, mode, vars, help: !!parsed.help };
+  return { workflow: parsed.workflow, mode, vars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
 }
 
 function promptLine(rl: readline.Interface, question: string): Promise<string> {
@@ -140,17 +141,34 @@ async function main() {
       const workflowPath = parsed.workflow ? parsed.workflow : undefined;
 
       let mode: RunMode;
-      if (parsed.mode) {
+      if (parsed.dryRun) {
+        // Non-interactive dry-run should default to clean when mode not provided
+        mode = parsed.mode ? parsed.mode : 'clean';
+      } else if (parsed.mode) {
         mode = parsed.mode;
       } else {
         mode = await promptRunMode(process.cwd(), workflowPath);
       }
 
       const flagVars = parsed.vars || {};
-      const vars =
-        mode === 'clean' ? await collectVars(process.cwd(), flagVars, workflowPath) : flagVars;
+      let vars: Record<string, string>;
+      if (parsed.dryRun) {
+        if (mode === 'clean') {
+          const wf = loadWorkflowConfig(process.cwd(), workflowPath);
+          const declaredRaw = wf.inputs ?? [];
+          const declaredNames: string[] = (declaredRaw as any[])
+            .map((it: any) => (typeof it === 'string' ? it : it && typeof it.name === 'string' ? it.name : ''))
+            .filter(Boolean);
+          const fileVars = loadVarsFile(process.cwd(), declaredNames, workflowPath);
+          vars = { ...fileVars, ...flagVars };
+        } else {
+          vars = flagVars;
+        }
+      } else {
+        vars = mode === 'clean' ? await collectVars(process.cwd(), flagVars, workflowPath) : flagVars;
+      }
 
-      await runCommand(process.cwd(), mode, vars, workflowPath);
+      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun);
     } else if (command.help) {
       // raili help [topic]
       const topic = runArgs[0];
