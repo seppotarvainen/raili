@@ -120,3 +120,26 @@ test('teach appends learning from exposed variable produced by state', async () 
 
   expect(mockAppend).toHaveBeenCalledWith('/tmp', 'test_agent', 'var:token', 'abc123', undefined);
 });
+
+test('teach runs after approval and uses approval-failure var on same state', async () => {
+  // Mock approval to return FAILED with a reason
+  mockRunApproval.mockResolvedValue({ chosen: 'FAILED', target: 'rework', reason: 'Bad reason', question: 'Q' } as any);
+
+  const runner = makeRunner({
+    check_done: {
+      id: 'check_done',
+      config: {
+        type: 'engine',
+        approval: { PASSED: 'done', FAILED: 'rework', question: 'Q' },
+        teach: { 'raili-coding': [{ var: '${CHECK_DONE_FAILED}' }] },
+      },
+      transitions: ['done'],
+    },
+    rework: { id: 'rework', config: { type: 'engine' }, transitions: [] },
+    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+  }, 'check_done');
+
+  await runner.run();
+
+  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'raili-coding', 'var:CHECK_DONE_FAILED', 'Bad reason', undefined);
+});

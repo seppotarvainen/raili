@@ -86,7 +86,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
   }
 
   if (config.states && typeof config.states === 'object') {
-    for (const stateConfig of Object.values(config.states) as any[]) {
+    for (const [stateId, stateConfig] of Object.entries(config.states) as [string, any][]) {
       if (Array.isArray(stateConfig?.expose)) {
         for (const v of stateConfig.expose) {
           if (typeof v === 'string' && v) knownVars.add(v);
@@ -94,6 +94,16 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
       }
       const fbVar = stateConfig?.feedback?.expose_var;
       if (typeof fbVar === 'string' && fbVar) knownVars.add(fbVar);
+
+      // If state declares approval, the runner will expose approval-related variable names
+      // immediately (uppercase): <STATEID>_PASSED and <STATEID>_FAILED. Add these to knownVars
+      // so fail-fast validation allows teach/other references to them.
+      if (stateConfig && stateConfig.approval) {
+        const passedKey = `${stateId}_PASSED`.toUpperCase();
+        const failedKey = `${stateId}_FAILED`.toUpperCase();
+        knownVars.add(passedKey);
+        knownVars.add(failedKey);
+      }
     }
   }
 

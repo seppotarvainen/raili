@@ -73,6 +73,10 @@ Learnings (opt-in): States may declare a `teach:` mapping to push lessons to age
 
 Note: when injecting learnings into agent prompts, source tags (e.g., `[var:...]`, `[manual]`, `[output:state]`) are removed; only the lesson bodies are included as bullet-prefixed items to reduce token usage and improve readability.
 
+Interaction with approvals
+
+When an approval is answered with a typed reason (FAILED), Raili mirrors that reason into `context.vars` using the key `<STATE>_<OUTCOME>` (uppercased). The Runner now processes a state's `teach:` mappings after approvals are handled and approval-exposed variables are available, so `teach:` can reference approval-produced variables (for example `${REVIEW_FAILED}`) declared on the same state. This ensures learnings can be created directly from user-provided approval reasons in the originating state.
+
 ## Common Patterns
 
 ### Test state — capture failures
