@@ -7,7 +7,9 @@
 
 A `group` state references an external YAML file containing a sub-workflow fragment. At load time, Raili flattens the
 sub-workflow states into the parent workflow using deterministic ID prefixing (`<groupId>.<subStateId>`). The runner
-sees a single flat state machine — groups are a composition mechanism, not a runtime concept.
+sees a single flat state machine — groups are a composition mechanism, not a runtime concept. If a `type: group` state 
+is somehow encountered at runtime the runner fails fast and throws an error. This enforces the architectural invariant 
+that groups are a load-time composition only.
 
 ```yaml
 do_review:

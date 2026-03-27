@@ -20,7 +20,7 @@
     "format": "prettier --write src/**/*.ts __tests__/**/*.ts",
     "format:check": "prettier --check src/**/*.ts __tests__/**/*.ts",
     "knip": "knip",
-    "knip:fix": "knip --fix",
+    "knip:fix": "knip --fix --allow-remove-files",
     "loc": "cloc src/ --by-file",
     "prepublishOnly": "npm run build"
   },

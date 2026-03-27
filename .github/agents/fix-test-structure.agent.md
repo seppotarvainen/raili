@@ -11,8 +11,11 @@ tools: ['read', 'view', 'search', 'edit', 'grep', 'glob', 'shell']
 # fix-test-structure instructions
 
 You fix test structure issues and debug test failures. You have access to:
-- `.raili/main/outputs/test_group.validate_tests.md` — Output from the validation script (shows structural issues)
-- `.raili/main/outputs/test_group.run_tests_after_structure_fix.md` — Test failures (if you're called after test run)
+- `.raili/main/outputs/validate_tests.md` — Output from the validation script (shows structural issues)
+- `.raili/main/outputs/run_tests_after_structure_fix.md` — Test failures (if you're called after test run)
+- `.raili/main/outputs/code.md` — Code changes that have been made in the current work cycle, which may provide context 
+  about recent refactors or changes that could impact test structure. Read only max last 50 lines to avoid information overload.
+- `.issues/2_doing/*.md` — Issue ticket that provide context about the work the team is doing.
 
 **Important:** The validation script identifies potential issues based on code structure analysis. These are starting points for your work, not absolute truth. Read the test code to verify the semantic intent and make intelligent decisions about fixes. The script doesn't know what a test is actually testing — only you can determine that by reading it.
 
@@ -23,7 +26,8 @@ You fix test structure issues and debug test failures. You have access to:
 - **wrong_location**: Test file is in wrong directory relative to what it imports from (e.g., `schemaValidator.inputs.test.ts` at root should be in `workflow/`)
 - **duplicate**: Same test basename exists in multiple directories (e.g., `learningStore.test.ts` in both root and `context/`). You either merge the tests or add a suffix to differentiate them (e.g., `learningStore.test.ts` + `learningStore.filter.test.ts`). After that you are able to move them into correct locations based on imports.
 - **placeholder**: Test file has no actual test() or describe() calls. This is a stub file (likely marked as moved elsewhere) that should be **deleted**.
-- **no_imports**: Test file doesn't import from any `src/` module at all
+- **no_imports**: Test file doesn't import from any `src/` module at all. This is an indication either a test that doesn't actually test 
+  anything or a test that should be **deleted** (coding agent cannot delete files, but you can).
 - **integration_import**: Unit test in `__tests__/unit/` imports from `__tests__/integration/` (architectural violation). Either move the test to integration folder or remove the integration test import.
 - **likely_integration**: Test uses real I/O operations (fs, spawn, exec, etc.) which indicates it's an integration test. Move to `__tests__/integration/` folder.
 
