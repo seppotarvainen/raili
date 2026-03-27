@@ -397,17 +397,16 @@ export class Runner {
             throw new Error(`State '${stateId}': teach var '${varName}' not found in context`);
           }
           const val = this.context.vars[varName];
-          if (!val || String(val).trim() === '') {
-            throw new Error(`State '${stateId}': teach var '${varName}' is empty`);
+          if (val && String(val).trim()) {
+            const appended = appendUniqueLearning(
+              this.cwd,
+              agentId,
+              `var:${varName}`,
+              val,
+              this.workflowArg,
+            );
+            if (appended) recorded.push({ agent: agentId, source: `var:${varName}` });
           }
-          const appended = appendUniqueLearning(
-            this.cwd,
-            agentId,
-            `var:${varName}`,
-            val,
-            this.workflowArg,
-          );
-          if (appended) recorded.push({ agent: agentId, source: `var:${varName}` });
         }
       }
     }
