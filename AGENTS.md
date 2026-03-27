@@ -25,7 +25,7 @@ src/
     railiCommand.ts           # CLI command parser (init, run, docs, schema, stats, help)
     help.ts                   # Help text printer (topic-aware)
     docs.ts                   # Built-in docs command
-    generatedDocs.ts         # Auto-generated documentation content
+    generatedDocs.ts          # DO NOT LOOK AT THIS FILE, IT ONLY FILLS UP YOUR CONTEXT WINDOW!!! Auto-generated documentation content
     schema.ts                 # Prints workflow YAML schema reference
     schemaFormatter.ts       # Formats schema definitions for display
     stats.ts                  # Run statistics (avg loops, success rate, etc.)
@@ -243,7 +243,7 @@ output:
   - Test illegal transitions (throw error immediately)
   - Test `max_visits` enforcement
   - Test `reset_outputs`, `notify` entry actions
-  - Test `skip`, `expose`, `feedback`, `success` flag, `learn_from` behaviors
+  - Test `skip`, `expose`, `feedback`, `success` flag, `teach` behaviors
 - **Mock all external side effects** (`jest.mock()`)
   - Never call real copilot CLI
   - Never spawn real shell processes
@@ -311,7 +311,7 @@ Keep integration tests focused on control-flow and I/O boundaries (context, outp
 | Change approval flow | `runner/approveStateRunner.ts`, `handlers/manualHandler.ts` |
 | Modify output filtering | `context/outputStore.ts` (tail/regex logic) |
 | Change feedback collection | `handlers/manualHandler.ts` (handleFeedbackPrompt), `runner/runner.ts` (handleFeedback phase) |
-| Add/modify agent learnings | `context/learningStore.ts`, `runner/agentStateRunner.ts` (learn_from processing) |
+| Add/modify agent learnings | `context/learningStore.ts`, `runner/agentStateRunner.ts` (teach processing) |
 | Change run statistics | `cli/stats.ts` (computeMetrics), `context/runLog.ts` (appendRunLog) |
 | Change variable export parsing | `variables/variableExports.ts` (parseExports), `runner/stateRunnerUtils.ts` (parseExposedVars) |
 

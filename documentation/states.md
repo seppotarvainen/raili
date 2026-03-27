@@ -24,7 +24,7 @@ analyze:
     # if transitions.default is present it will be used as a catch-all. If default is absent the engine fails fast.
 ```
 
-Agents may declare a `learn_from:` array to opt-in to persistent learnings accumulated across runs. Learnings are stored under `.raili/learnings/<agentId>.md` and injected into the prompt under a header `## Learnings from previous runs` before agent execution. See documentation/output.md for storage semantics.
+States may declare a `teach:` mapping to push lessons to agents. Learnings are stored under `.raili/learnings/<agentId>.md` and injected into the prompt under a header `## Learnings from previous runs` before agent execution. See documentation/output.md for storage semantics.
 
 **Fields:**
 

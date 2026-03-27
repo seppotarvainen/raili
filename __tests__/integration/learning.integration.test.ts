@@ -43,14 +43,15 @@ states:
       Details about it"
     output:
       store: true
+    teach:
+      test_agent:
+        - output: produce
     on:
       PASSED: analyze
   analyze:
     type: agent
     agent: test_agent
     prompt: "Review"
-    learn_from:
-      - output: produce
     transitions:
       done: done
   done:
