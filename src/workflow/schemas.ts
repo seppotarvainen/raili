@@ -35,7 +35,13 @@ export const OutputConfigSchema: ObjectSchema = {
     required: false,
     type: 'string',
     description:
-      "Marker string to locate the start of the stored output; first occurrence (case-insensitive) is used; default: 'OUTPUT:'",
+      'Marker string to locate the start of the stored output; first occurrence (case-insensitive) is used.',
+  },
+  marker_end: {
+    required: false,
+    type: 'string',
+    description:
+      'Optional marker string to locate the end of the stored output (first occurrence, case-insensitive). When both marker and marker_end are provided the substring between them is extracted.',
   },
 };
 

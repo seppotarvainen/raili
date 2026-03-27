@@ -104,7 +104,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
         if (!knownVars.has(varName)) {
           throw new SchemaValidationError(
             `State '${stateId}' references undeclared variable '${'${'}${varName}${'}'}'`,
-            `state '${stateId}'`,
+            `state '${stateId}'. Available vars: [${[...knownVars].join(', ')}]`,
           );
         }
       }
