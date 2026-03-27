@@ -403,8 +403,8 @@ states:
 
     await runCommand(tmpDir, 'clean', {});
 
-    // Output is stored prefixed by the parent group state id: groupx.produce.md
-    const outPath = path.join(tmpDir, '.raili', 'main', 'outputs', 'groupx.produce.md');
+    // Output is stored under the sub-state filename: produce.md (no parent prefix)
+    const outPath = path.join(tmpDir, '.raili', 'main', 'outputs', 'produce.md');
     expect(fs.existsSync(outPath)).toBe(true);
 
     const content = fs.readFileSync(outPath, 'utf8');
