@@ -5,9 +5,14 @@ import { resolveWorkflowDir } from './pathUtils';
 
 const OUTPUTS_DIR = 'outputs';
 
-function outputPath(cwd: string, stateId: string, workflowArg?: string): string {
+export function outputPath(cwd: string, stateId: string, workflowArg?: string): string {
   const workflowDir = resolveWorkflowDir(cwd, workflowArg);
-  return path.join(workflowDir, OUTPUTS_DIR, `${stateId}.md`);
+  // For group sub-states the runtime uses virtual ids like "group.sub".
+  // Persist outputs using only the final segment (the sub-state name) so files
+  // are named `<state>.md` consistently. Older parent-prefixed filenames are
+  // no longer supported.
+  const base = stateId.includes('.') ? (stateId.split('.').pop() as string) : stateId;
+  return path.join(workflowDir, OUTPUTS_DIR, `${base}.md`);
 }
 
 /**

@@ -180,7 +180,7 @@ Parent and sub-workflow states share a single flat context:
 
 - **Variables** — All inputs are merged at startup. Sub-workflow prompts can use `${parent_var}` and vice versa.
   Sub-workflow inputs are declared in the sub-workflow YAML and merged into the parent's `inputs` list.
-- **Outputs** — Stored under `.raili/<workflow>/outputs/<groupId>.<subStateId>.md` (the prefixed ID).
+- **Outputs** — Stored under `.raili/<workflow>/outputs/<subStateId>.md` (the sub-state; no parent prefix).
 - **Learnings** — Stored in the shared `.raili/<workflow>/learnings/` directory.
 - **State history** — `context.json` records flattened sequential entries: the proxy state, then each sub-state.
 
@@ -264,7 +264,7 @@ states:
     out: true
 ```
 
-Outputs are stored at `.raili/<workflow>/outputs/<groupId>.analyze.md`.
+Outputs are stored at `.raili/<workflow>/outputs/analyze.md` (no parent prefix).
 
 ## Important Notes
 

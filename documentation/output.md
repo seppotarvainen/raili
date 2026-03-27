@@ -14,6 +14,8 @@ output:
 
 Output saved to `.raili/<workflow>/outputs/<stateId>.md` with run separators.
 
+Note: For group (sub-workflow) states the on-disk filename uses only the sub-state name (the final segment of the virtual state id). For example a sub-state with virtual id `groupx.produce` is stored as `produce.md` (no parent prefix).
+
 ## Marker-based Extraction
 
 Use a marker string to capture the section of output to persist. The first case-insensitive occurrence of the marker is used and everything after it is stored. If the marker is not found, the entire stdout is persisted.

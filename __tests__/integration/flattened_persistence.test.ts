@@ -78,8 +78,8 @@ describe('integration: flattened persistence across group/sub-workflow', () => {
 
     await runCommand(tmpDir, 'clean', {});
 
-    const outFile = path.join(tmpDir, '.raili', 'main', 'outputs', 'do_group.deploy.md');
-    // GroupStateRunner prefixes sub-states with parent id (virtualId). Ensure the file exists.
+    const outFile = path.join(tmpDir, '.raili', 'main', 'outputs', 'deploy.md');
+    // Outputs from sub-workflows are stored using the sub-state name only (no parent prefix). Ensure the file exists.
     expect(fs.existsSync(outFile)).toBe(true);
 
     const content = fs.readFileSync(outFile, 'utf8');
