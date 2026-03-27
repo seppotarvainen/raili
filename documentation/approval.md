@@ -171,5 +171,9 @@ When a user declines an approval and supplies a typed reason, Raili persists tha
 - `context.vars`: the same key/value is mirrored into the vars map so existing notify/command logic can access the reason via the environment variable mapping (e.g. `$RAILI_VAR_REVIEW_FAILED`).
 
 Only non-empty typed reasons are persisted. PASSED approvals do not create empty entries. This keeps approval metadata separate from declared inputs while preserving env-compatible access for shell hooks.
+
+## Interaction with `teach:` mappings
+
+When a state declares `teach:`, any approval-exposed variables (e.g. `REVIEW_FAILED`) are now written to `context.vars` before the state's `teach:` mappings are processed. This means a `teach:` entry on the same state can reference approval-produced variables such as `${REVIEW_FAILED}`. This ordering ensures learnings can be created from the user's approval reason within the originating state (fail-fast errors for missing variables are avoided in this scenario).
 ```
 

@@ -168,6 +168,18 @@ export class Runner {
       this.record(stateId, { notify: notifyMeta });
     }
 
+    // Expose approval variable names immediately (empty values) so teach entries referencing
+    // e.g. ${STATEID_FAILED} are present in context during the state's lifecycle. Values
+    // will be filled in by handleApproval when the decision is made.
+    if (config.approval) {
+      if (!this.context.vars) this.context.vars = {};
+      const passedKey = `${stateId}_PASSED`.toUpperCase();
+      const failedKey = `${stateId}_FAILED`.toUpperCase();
+      if (!(passedKey in this.context.vars)) this.context.vars[passedKey] = '';
+      if (!(failedKey in this.context.vars)) this.context.vars[failedKey] = '';
+      this.persist();
+    }
+
     return null;
   }
 
@@ -522,7 +534,13 @@ export class Runner {
 
         // Phase 6: Approval flow (if configured)
         if (config.approval) {
-          stateId = await this.handleApproval(stateId, stateDef);
+          const next = await this.handleApproval(stateId, stateDef);
+          // Process any teach mappings after approval so approval-exposed variables
+          // are available to teach entries declared on the same state.
+          if ((stateDef.config as any).teach) {
+            await this.handleTeach(stateId, stateDef);
+          }
+          stateId = next;
           continue;
         }
 

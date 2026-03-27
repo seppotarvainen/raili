@@ -26,6 +26,8 @@ analyze:
 
 States may declare a `teach:` mapping to push lessons to agents. Learnings are stored under `.raili/learnings/<agentId>.md` and injected into the prompt under a header `## Learnings from previous runs` before agent execution. See documentation/output.md for storage semantics.
 
+When a state declares `teach:` and also uses `approval:`, approval-exposed variables (for example `CHECK_DONE_FAILED` or `REVIEW_FAILED`) are written into `context.vars` before the state's `teach:` mappings are processed. This allows `teach:` entries on the same state to reference approval-produced variables (e.g. `${REVIEW_FAILED}`) so learnings can be created directly from user-provided approval reasons in the originating state.
+
 **Fields:**
 
 - `agent` (required) — Agent ID from agent-registry.json
