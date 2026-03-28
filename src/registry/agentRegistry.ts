@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import path from 'path';
 
 export interface AgentEntry {
@@ -9,6 +9,7 @@ export interface AgentEntry {
 export type AgentRegistry = Record<string, AgentEntry>;
 
 export function loadAgentRegistry(dir: string): AgentRegistry {
+  const fs = getFileSystem();
   const registryPath = path.resolve(dir, '.raili', 'agent-registry.json');
   if (!fs.existsSync(registryPath)) {
     throw new Error(`Agent registry not found at ${registryPath}`);

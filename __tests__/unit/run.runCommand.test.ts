@@ -1,16 +1,26 @@
 import { runCommand } from '../../src/run';
 import { loadWorkflowConfig } from '../../src/workflow/workflowLoader';
-import * as fs from 'fs';
+
 import {
   validateAgentRegistry,
   validateScriptRegistry,
   validateWorkflowReferences,
 } from '../../src/registry/registryValidator';
+
+const mockFs: any = {
+  existsSync: jest.fn(),
+  statSync: jest.fn(),
+  readFileSync: jest.fn(),
+  appendFileSync: jest.fn(),
+};
+
+jest.mock('../../src/infrastructure/fileSystemProvider', () => ({
+  getFileSystem: () => mockFs,
+}));
 import { clearContext, initializeContext, loadContext } from '../../src/context/context';
 import { Runner } from '../../src/runner/runner';
 
 jest.mock('../../src/workflow/workflowLoader');
-jest.mock('fs');
 jest.mock('../../src/registry/registryValidator');
 jest.mock('../../src/context/context');
 jest.mock('../../src/runner/runner');
@@ -18,8 +28,8 @@ jest.mock('../../src/runner/runner');
 describe('runCommand', () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    (fs.existsSync as jest.Mock).mockImplementation((p: string) => true);
-    (fs.statSync as jest.Mock).mockImplementation(() => ({ isDirectory: () => true }));
+    (mockFs.existsSync as jest.Mock).mockImplementation((p: string) => true);
+    (mockFs.statSync as jest.Mock).mockImplementation(() => ({ isDirectory: () => true }));
     (loadWorkflowConfig as jest.Mock).mockReturnValue({ initial: 'start', states: {} });
     (validateAgentRegistry as jest.Mock).mockReturnValue({});
     (validateScriptRegistry as jest.Mock).mockReturnValue({});
@@ -45,9 +55,9 @@ describe('runCommand', () => {
       inputs: ['ticket_id', 'secret'],
     });
 
-    // Mock fs to indicate vars file exists and contains YAML
-    (fs.existsSync as jest.Mock).mockImplementation((p: string) => true);
-    (fs.readFileSync as unknown as jest.Mock).mockImplementation(
+    // Mock provider fs to indicate vars file exists and contains YAML
+    (mockFs.existsSync as jest.Mock).mockImplementation((p: string) => true);
+    (mockFs.readFileSync as unknown as jest.Mock).mockImplementation(
       (p: string) => 'ticket_id: T1\nsecret: X\n',
     );
 

@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 // Lightweight stats command implementation without external runtime deps
 
@@ -183,6 +183,7 @@ function printComparison(prev: Metrics | null, curr: Metrics) {
 }
 
 export function readRunLog(cwd: string, workflow = 'main') {
+  const fs = getFileSystem();
   const runLogPath = path.join(cwd, '.raili', workflow, 'run-log.jsonl');
   if (!fs.existsSync(runLogPath)) {
     throw new Error(`Run log not found: ${runLogPath}`);

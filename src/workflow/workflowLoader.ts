@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { StateDef, StateMachine, WorkflowConfig, StateConfig, InputDef } from '../types';
@@ -6,6 +6,7 @@ import { validateWorkflowConfig } from './schemaValidator';
 import { resolveWorkflowDir } from '../context/pathUtils';
 
 function loadYamlFile(filePath: string, isSubWorkflow: boolean): any {
+  const fs = getFileSystem();
   if (!fs.existsSync(filePath)) {
     throw new Error(`Workflow file not found: ${filePath}`);
   }
@@ -66,6 +67,7 @@ function normalizeInputs(raw: any[] | undefined): InputDef[] | undefined {
 }
 
 export function loadWorkflowConfig(cwd: string, workflowPath?: string): WorkflowConfig {
+  const fs = getFileSystem();
   const workflowDir = resolveWorkflowDir(cwd, workflowPath);
   const resolvedPath = path.join(workflowDir, 'workflow.yaml');
   const main = loadYamlFile(resolvedPath, false);

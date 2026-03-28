@@ -1,6 +1,6 @@
 import os from 'os';
-import fs from 'fs';
 import path from 'path';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 
 /**
  * Resolves a path that might contain a tilde (~) to an absolute path.
@@ -34,6 +34,7 @@ export function resolveWorkflowDir(cwd: string, workflowArg?: string): string {
 
   if (!workflowArg) {
     const mainCandidate = path.join(railiRoot, 'main');
+    const fs = getFileSystem();
     if (fs.existsSync(mainCandidate)) {
       return mainCandidate;
     }
@@ -47,6 +48,7 @@ export function resolveWorkflowDir(cwd: string, workflowArg?: string): string {
     !workflowArg.startsWith('../')
   ) {
     const candidate = path.join(railiRoot, workflowArg);
+    const fs = getFileSystem();
     if (fs.existsSync(candidate)) {
       return candidate;
     }

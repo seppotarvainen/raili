@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import path from 'path';
 
 export interface ScriptEntry {
@@ -7,6 +7,7 @@ export interface ScriptEntry {
 export type ScriptRegistry = Record<string, ScriptEntry>;
 
 export function loadScriptRegistry(dir: string): ScriptRegistry {
+  const fs = getFileSystem();
   const registryPath = path.resolve(dir, '.raili', 'script-registry.json');
   if (!fs.existsSync(registryPath)) {
     throw new Error(`Script registry not found at ${registryPath}`);

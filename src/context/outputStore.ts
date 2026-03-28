@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 import { OutputConfig } from '../types';
 import { resolveWorkflowDir } from './pathUtils';
@@ -111,6 +111,8 @@ export function saveOutput(
     return;
   }
 
+  const fs = getFileSystem();
+
   // Filter output based on config
   const filteredOutput = filterOutput(output, outputConfig);
 
@@ -139,6 +141,7 @@ export function loadAgentOutputPath(
   stateId: string,
   workflowArg?: string,
 ): string | null {
+  const fs = getFileSystem();
   const p = outputPath(cwd, stateId, workflowArg);
   return fs.existsSync(p) ? p : null;
 }
@@ -148,6 +151,7 @@ export function loadAgentOutputPath(
  * Returns null if no file exists or no content found.
  */
 export function readLatestRun(cwd: string, stateId: string, workflowArg?: string): string | null {
+  const fs = getFileSystem();
   const p = outputPath(cwd, stateId, workflowArg);
   if (!fs.existsSync(p)) {
     return null;
@@ -170,6 +174,7 @@ export function readLatestRun(cwd: string, stateId: string, workflowArg?: string
  * Silent if files do not exist.
  */
 export function clearAgentOutputs(cwd: string, stateIds: string[], workflowArg?: string): void {
+  const fs = getFileSystem();
   for (const stateId of stateIds) {
     const p = outputPath(cwd, stateId, workflowArg);
     if (fs.existsSync(p)) {
@@ -183,6 +188,7 @@ export function clearAgentOutputs(cwd: string, stateIds: string[], workflowArg?:
  * Silent if the directory does not exist.
  */
 export function clearAllOutputs(cwd: string, workflowArg?: string): void {
+  const fs = getFileSystem();
   const workflowDir = resolveWorkflowDir(cwd, workflowArg);
   const outputsDir = path.join(workflowDir, OUTPUTS_DIR);
   if (fs.existsSync(outputsDir)) {

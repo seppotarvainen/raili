@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 import { StateHistoryEntry, WorkflowConfig } from '../types';
 import { loadContext } from './context';
@@ -23,6 +23,7 @@ export function appendRunLog(
   runStartISO: string,
   workflowConfig: WorkflowConfig,
 ): void {
+  const fs = getFileSystem();
   // Resolve workflow directory path deterministically
   const workflowDir = path.join(cwd, '.raili', workflowArg || 'main');
 

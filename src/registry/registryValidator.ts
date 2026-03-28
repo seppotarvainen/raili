@@ -1,10 +1,11 @@
-import fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import { AgentRegistry, loadAgentRegistry } from './agentRegistry';
 import { loadScriptRegistry, ScriptRegistry } from './scriptRegistry';
 import { WorkflowConfig } from '../types';
 import { resolveRegistryPath } from '../context/pathUtils';
 
 export function validateAgentRegistry(dir: string): AgentRegistry {
+  const fs = getFileSystem();
   const reg = loadAgentRegistry(dir);
   // ensure each referenced file exists and is a regular file
   for (const [id, entry] of Object.entries(reg)) {
@@ -21,6 +22,7 @@ export function validateAgentRegistry(dir: string): AgentRegistry {
 }
 
 export function validateScriptRegistry(dir: string): ScriptRegistry {
+  const fs = getFileSystem();
   const reg = loadScriptRegistry(dir);
   for (const [id, entry] of Object.entries(reg)) {
     const full = resolveRegistryPath(dir, entry.path);
@@ -111,6 +113,7 @@ export function validateWorkflowReferences(
  * inner state IDs of the sub-workflow directly (must route to the group state only).
  */
 export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: string): void {
+  const fs = getFileSystem();
   const yaml = require('js-yaml');
   const path = require('path');
 

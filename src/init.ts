@@ -1,7 +1,8 @@
-import fs from 'fs';
+import { getFileSystem } from './infrastructure/fileSystemProvider';
 import path from 'path';
 
 export async function initCommand(cwd: string) {
+  const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
   if (fs.existsSync(railiDir)) {
     // Do not overwrite existing files

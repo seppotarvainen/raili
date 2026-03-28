@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 import { StateHistoryEntry, WorkflowContext } from '../types';
 import { clearAllOutputs } from './outputStore';
@@ -10,6 +10,7 @@ import { resolveWorkflowDir } from './pathUtils';
  * Backwards-compatible: accepts entries without `meta` fields.
  */
 export function loadContext(cwd: string, workflowArg?: string): WorkflowContext {
+  const fs = getFileSystem();
   const workflowDir = resolveWorkflowDir(cwd, workflowArg);
   const contextPath = path.join(workflowDir, 'context.json');
 
@@ -45,6 +46,7 @@ export function loadContext(cwd: string, workflowArg?: string): WorkflowContext 
  * Save workflow context to workflowDir/context.json
  */
 export function saveContext(cwd: string, context: WorkflowContext, workflowArg?: string): void {
+  const fs = getFileSystem();
   const workflowDir = resolveWorkflowDir(cwd, workflowArg);
 
   // Ensure .raili/ (or workflowDir) exists
@@ -147,6 +149,7 @@ export function addStateToHistory(
  * Clear the persisted context file and all output files (used for a clean run)
  */
 export function clearContext(cwd: string, workflowArg?: string): void {
+  const fs = getFileSystem();
   const workflowDir = resolveWorkflowDir(cwd, workflowArg);
   const contextPath = path.join(workflowDir, 'context.json');
   if (fs.existsSync(contextPath)) {
