@@ -1,12 +1,18 @@
 import {loadContext} from '../../../src/context/context';
 import * as pathUtils from '../../../src/context/pathUtils';
-import fs from 'fs';
 
 jest.mock('../../../src/context/pathUtils');
-jest.mock('fs');
+
+const mockFs: any = {
+  existsSync: jest.fn(),
+  readFileSync: jest.fn(),
+};
+
+jest.mock('../../../src/infrastructure/fileSystemProvider', () => ({
+  getFileSystem: () => mockFs,
+}));
 
 const mockedResolve = pathUtils.resolveWorkflowDir as unknown as jest.Mock;
-const mockedFs = fs as unknown as { existsSync: jest.Mock; readFileSync: jest.Mock };
 
 describe('loadContext', () => {
   beforeEach(() => {
@@ -15,8 +21,8 @@ describe('loadContext', () => {
 
   test('parses context.json when file exists and valid', () => {
     mockedResolve.mockReturnValue('/repo/.raili/test');
-    mockedFs.existsSync.mockReturnValue(true);
-    mockedFs.readFileSync.mockReturnValue(JSON.stringify({ stateHistory: [], vars: { a: 'b' }, approvals: {} }));
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(JSON.stringify({ stateHistory: [], vars: { a: 'b' }, approvals: {} }));
 
     const ctx = loadContext(process.cwd(), 'test');
     expect(ctx.stateHistory).toEqual([]);
@@ -25,8 +31,8 @@ describe('loadContext', () => {
 
   test('throws for malformed JSON in context.json', () => {
     mockedResolve.mockReturnValue('/repo/.raili/test');
-    mockedFs.existsSync.mockReturnValue(true);
-    mockedFs.readFileSync.mockReturnValue('{ not valid json }');
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('{ not valid json }');
 
     expect(() => loadContext(process.cwd(), 'test')).toThrow();
   });

@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import colors from 'colors/safe';
@@ -10,6 +10,7 @@ export function loadVarsFile(
   declared: string[],
   workflowPath?: string,
 ): Record<string, string> {
+  const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
 
   function readAndFilter(filePath: string): Record<string, string> {

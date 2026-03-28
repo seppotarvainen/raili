@@ -1,11 +1,19 @@
-import fs from 'fs';
 import {appendRunLog} from '../../../src/context/runLog';
 import * as contextModule from '../../../src/context/context';
 
-jest.mock('fs');
+import { IFileSystem } from '../../../src/infrastructure/fileSystem';
+
+const mockFs: Partial<IFileSystem> = {
+  appendFileSync: jest.fn(),
+  readFileSync: jest.fn(),
+} as any;
+
+jest.mock('../../../src/infrastructure/fileSystemProvider', () => ({
+  getFileSystem: () => mockFs,
+}));
 
 describe('runLog.appendRunLog', () => {
-  const mockedAppend = (fs.appendFileSync as jest.MockedFunction<any>);
+  const mockedAppend = (mockFs.appendFileSync as jest.MockedFunction<any>);
 
   beforeEach(() => {
     mockedAppend.mockReset();

@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { resolveRegistryPath } from '../context/pathUtils';
 
@@ -25,6 +25,7 @@ export function executeAgent(
   previousOutputPath?: string | null,
   prompt?: string,
 ): Promise<AgentExecutionResult> {
+  const fs = getFileSystem();
   const entry = registry[agentId];
   if (!entry) {
     throw new Error(`Agent '${agentId}' not found in registry`);

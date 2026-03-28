@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 import { learningsFilePath } from './pathUtils';
 
@@ -7,6 +7,7 @@ function normalizeForCompare(s: string): string {
 }
 
 export function readLearnings(cwd: string, agentId: string, workflowArg?: string): string {
+  const fs = getFileSystem();
   const p = learningsFilePath(cwd, agentId, workflowArg);
   if (!fs.existsSync(p)) {
     return '';
@@ -117,6 +118,7 @@ export function appendUniqueLearning(
 
   // Ensure directory exists
   const dir = path.dirname(p);
+  const fs = getFileSystem();
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -147,6 +149,7 @@ export function appendManualLearning(
   const p = learningsFilePath(cwd, agentId, workflowArg);
 
   const dir = path.dirname(p);
+  const fs = getFileSystem();
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }

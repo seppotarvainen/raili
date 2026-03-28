@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import * as fs from 'fs';
+import { getFileSystem } from './infrastructure/fileSystemProvider';
 import * as path from 'path';
 import {
   buildStateMachine,
@@ -26,6 +26,7 @@ export async function runCommand(
   workflowPath?: string,
   dryRun = false,
 ) {
+  const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
   if (!fs.existsSync(railiDir)) {
     throw new Error('.raili/ directory not found. Run `raili init` first.');

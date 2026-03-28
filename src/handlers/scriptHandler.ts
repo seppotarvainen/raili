@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import fs from 'fs';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import { ScriptRegistry } from '../registry/scriptRegistry';
 import { resolveRegistryPath } from '../context/pathUtils';
 
@@ -16,6 +16,7 @@ export function executeScript(
   args: string[] = [],
   envOverrides: Record<string, string> = {},
 ): Promise<ScriptExecutionResult> {
+  const fs = getFileSystem();
   const entry = registry[scriptId];
   if (!entry) {
     throw new Error(`Script '${scriptId}' not found in registry`);
