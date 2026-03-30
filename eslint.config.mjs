@@ -82,6 +82,16 @@ export default tseslint.config(
       "@typescript-eslint/no-unnecessary-type-assertion": "error",
       "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
 
+      // ── Infrastructure boundary: fs only via src/infrastructure/ ──
+      "no-restricted-imports": ["error", {
+        patterns: [
+          {
+            group: ["fs", "node:fs", "fs/promises", "node:fs/promises"],
+            message: "Do not import fs directly. Use src/infrastructure/fileSystem.ts instead."
+          }
+        ]
+      }],
+
       // ── No console (use presenter for output) ──
       "no-console": ["warn", { allow: ["error"] }],
 
@@ -94,6 +104,14 @@ export default tseslint.config(
         },
       ],
     },
+  },
+
+  // ── Infrastructure layer: allowed to import fs directly ──
+  {
+    files: ["src/infrastructure/**/*.ts"],
+    rules: {
+      "no-restricted-imports": "off"
+    }
   },
 
   // ── Test file overrides (relaxed) ──
