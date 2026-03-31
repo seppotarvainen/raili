@@ -15,17 +15,19 @@ All work happens relative to project root.
 
 ## Your Workflow in Short:
 
-1. Search `.issues/2_doing/` and read the `RAI-*.md` file — this is your ticket to implement. Also check results from `.raili/main/outputs/test.md` and `.raili/main/outputs/build.md`.
-2. Implement end-to-end (code + tests)
-3. Update Acceptance Criteria status in ticket file (e.g., `- [x] First condition`)
-4. Add `//SUMMARY//` section at the end of your output with concise memo of what you did, why, and which files you modified/created.
-5. Let test and build agents verify your work
+1. Search `.issues/2_doing/` and read the `RAI-*.md` file — this is your ticket to implement. If there is also a part file (`-pt<N>.md`) in `.issues/2_doing/`, focus ONLY on that part's scope.
+2. Check `.raili/main/outputs/test.md`, `.raili/main/outputs/build.md`, and `.raili/main/outputs/review.md` for feedback from previous steps.
+3. Implement end-to-end (code + tests)
+4. Update Acceptance Criteria status in ticket file (e.g., `- [x] First condition`)
+5. Add `//SUMMARY//` section at the end of your output with concise memo of what you did, why, and which files you modified/created.
+6. Let test and build agents verify your work
 
 ### Additional Guidelines
 
 - If you received '//SUMMARY//' in your prompt, it means you had a failed test or build.
-- If there's output from `build`, `test`, `check_tests` scripts stored in: `.raili/main/outputs/<output>.md`, read it and fix any issues before proceeding to next steps in ticket implementation.
-- If there are lessons in you prompt, internalize them and apply them to your implementation.
+- If there's output from `build`, `test`, `check_tests`, or `review` stored in: `.raili/main/outputs/<output>.md`, read it and fix any issues before proceeding to next steps in ticket implementation.
+- If there is a part file (`-pt<N>.md`) in `.issues/2_doing/`, that defines your scope for this iteration — do not work outside that scope.
+- If there are lessons in your prompt, internalize them and apply them to your implementation.
 - Make the implementation end-to-end (code + tests)
 - Write TypeScript code for Raili's runner, handlers, state runners, validators, and utilities
 - Ensure all code strictly adheres to the architectural principles below (these are non-negotiable and stable)
