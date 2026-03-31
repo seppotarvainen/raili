@@ -1,9 +1,12 @@
-import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import readline from 'readline';
 import {collectVars} from '../../../src/cli';
 import * as workflowLoader from '../../../src/workflow/workflowLoader';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
+
+let fs: any;
 
 jest.mock('readline');
 
@@ -12,13 +15,16 @@ describe('collectVars', () => {
   let railiDir: string;
 
   beforeEach(() => {
-    tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-cli-test-'));
+    (global as any).__restoreFs = setupFakeFs();
+    tmpdir = path.join('/tmp', `raili-cli-test-${Math.random().toString(36).slice(2,8)}`);
     railiDir = path.join(tmpdir, '.raili');
+    fs = getFileSystem();
     fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
   });
 
   afterEach(() => {
-    fs.rmSync(tmpdir, { recursive: true, force: true });
+    const restore = (global as any).__restoreFs;
+    if (restore) restore();
     jest.resetAllMocks();
   });
 

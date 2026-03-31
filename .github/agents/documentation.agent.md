@@ -26,17 +26,18 @@ You will receive:
 ## Decision Process
 
 1. Read the issue ticket to understand what was changed and why
-2. Read the git diff to understand the exact scope of code changes
-3. Search and read the existing documentation files in `documentation/` to understand current state
-4. Determine if documentation needs updating. Documentation updates are needed when:
+2. **Check the ticket type.** Read the `**Ticket type:**` field from the issue file. Only `feature`, `improvement`, and `fix` tickets may require documentation updates. If the ticket type is `chore` (or any other type), output `no_changes_needed` immediately — do not read the diff or documentation files.
+3. Read the git diff to understand the exact scope of code changes
+4. Search and read the existing documentation files in `documentation/` to understand current state
+5. Determine if documentation needs updating. Documentation updates are needed when:
    - A new feature or state type was added
    - Existing behavior was changed (routing rules, validation, field semantics)
    - New configuration fields were introduced
    - Error messages or fail-fast behavior changed
    - New CLI commands or flags were added
    - Variable handling or interpolation rules changed
-5. If updates are needed, make targeted edits to the relevant files
-6. If no updates are needed, explain why
+6. If updates are needed, make targeted edits to the relevant files
+7. If no updates are needed, explain why
 
 ## Documentation Structure
 

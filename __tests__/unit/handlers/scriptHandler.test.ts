@@ -1,16 +1,19 @@
-import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import {EventEmitter} from 'events';
 import {loadScriptRegistry} from '../../../src/registry/scriptRegistry';
 import {executeScript} from '../../../src/handlers/scriptHandler';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');
 
-let TMP: string;
-beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-shandler-')); });
-afterAll(() => { if (fs.existsSync(TMP)) fs.rmSync(TMP, { recursive: true }); });
+const TMP = '/tmp';
+let restoreFs: () => void;
+
+beforeEach(() => { restoreFs = setupFakeFs(); });
+
+afterEach(() => { restoreFs(); });
 
 function fakeChild(stdoutData: string, stderrData: string, exitCode: number) {
   const child = new EventEmitter() as any;
@@ -25,11 +28,13 @@ function fakeChild(stdoutData: string, stderrData: string, exitCode: number) {
 }
 
 function setupRegistry() {
+  const fs = getFileSystem();
   const raidir = path.join(TMP, '.raili');
-  if (!fs.existsSync(raidir)) fs.mkdirSync(raidir);
+  if (!fs.existsSync(raidir)) fs.mkdirSync(raidir, { recursive: true } as any);
   const scriptFile = path.join(TMP, 'scripts', 'archive.sh');
-  fs.mkdirSync(path.dirname(scriptFile), { recursive: true });
-  fs.writeFileSync(scriptFile, 'echo hello', { mode: 0o755 });
+  fs.mkdirSync(path.dirname(scriptFile), { recursive: true } as any);
+  fs.writeFileSync(scriptFile, 'echo hello');
+  fs.chmodSync(scriptFile, 0o755);
   const reg = { 'archive-part': { path: './scripts/archive.sh' } };
   fs.writeFileSync(path.join(raidir, 'script-registry.json'), JSON.stringify(reg));
   return loadScriptRegistry(TMP);

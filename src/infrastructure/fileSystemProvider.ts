@@ -9,5 +9,3 @@ export function getFileSystem(): IFileSystem {
 export function setFileSystem(fs: IFileSystem): void {
   currentFs = fs;
 }
-
-;

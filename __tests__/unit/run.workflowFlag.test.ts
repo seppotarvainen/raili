@@ -1,7 +1,10 @@
-import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { runCommand } from '../../src/run';
+import { setupFakeFs } from './infrastructure/fsFake.util';
+import { getFileSystem } from '../../src/infrastructure/fileSystemProvider';
+
+let fs: any;
 
 jest.mock('../../src/registry/registryValidator');
 jest.mock('../../src/runner/runner');
@@ -14,14 +17,18 @@ describe('runCommand with workflow path', () => {
   let railiDir: string;
 
   beforeEach(() => {
-    tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-run-'));
+    const restoreFs = setupFakeFs();
+    (global as any).__restoreFs = restoreFs;
+    tmpdir = path.join('/tmp', `raili-run-${Math.random().toString(36).slice(2, 8)}`);
     railiDir = path.join(tmpdir, '.raili');
+    fs = getFileSystem();
     jest.resetAllMocks();
     Runner.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
 
   afterEach(() => {
-    fs.rmSync(tmpdir, { recursive: true, force: true });
+    const restore = (global as any).__restoreFs;
+    if (restore) restore();
   });
 
   test('loads named workflow and runs engine (clean mode)', async () => {

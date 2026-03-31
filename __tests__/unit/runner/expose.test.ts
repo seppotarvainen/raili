@@ -92,4 +92,52 @@ describe('expose variables feature', () => {
 
     mockRunScript.mockRestore();
   });
+
+  test('engine does not throw when optional expose (?) is not produced', async () => {
+    const mockRunScript = jest.spyOn(require('../../../src/runner/scriptStateRunner'), 'runScriptState')
+      .mockResolvedValue({ outcome: 'PASSED', exports: {} });
+
+    const stateMachine = {
+      initial: 's1',
+      states: {
+        s1: { id: 's1', config: { type: 'script', script: 'x', expose: ['next_part?'], on: { PASSED: 'end' } }, transitions: ['end'] },
+        end: { id: 'end', config: { type: 'engine' }, transitions: [] }
+      }
+    } as any;
+
+    const engine = new Runner({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context: { stateHistory: [] }, cwd: '/tmp' });
+
+    await expect(engine.run()).resolves.not.toThrow();
+
+    mockRunScript.mockRestore();
+  });
+
+  test('engine stores optional expose under base name when produced', async () => {
+    const mockRunScript = jest.spyOn(require('../../../src/runner/scriptStateRunner'), 'runScriptState')
+      .mockResolvedValue({ outcome: 'PASSED', exports: { next_part: 'pt2' } });
+
+    const stateMachine = {
+      initial: 's1',
+      states: {
+        s1: { id: 's1', config: { type: 'script', script: 'x', expose: ['next_part?'], on: { PASSED: 'end' } }, transitions: ['end'] },
+        end: { id: 'end', config: { type: 'engine' }, transitions: [] }
+      }
+    } as any;
+
+    const context: any = { stateHistory: [], vars: {} };
+    const engine = new Runner({ stateMachine, agentRegistry: {}, scriptRegistry: {}, context, cwd: '/tmp' });
+
+    await engine.run();
+
+    expect(context.vars['next_part']).toBe('pt2');
+
+    mockRunScript.mockRestore();
+  });
+
+  test('parseExports strips ? suffix before matching', () => {
+    const { parseExports } = require('../../../src/variables/variableExports');
+    const result = parseExports('next_part=pt3\n', ['next_part?']);
+    expect(result['next_part']).toBe('pt3');
+    expect(result['next_part?']).toBeUndefined();
+  });
 });

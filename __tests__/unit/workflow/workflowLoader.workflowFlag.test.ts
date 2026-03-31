@@ -1,42 +1,41 @@
-import fs from 'fs';
 import path from 'path';
-import os from 'os';
-import {loadWorkflowConfig} from '../../../src/workflow/workflowLoader';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
+import { loadWorkflowConfig } from '../../../src/workflow/workflowLoader';
 
-describe('loadWorkflowConfig with workflow path', () => {
-  let tmpdir: string;
+const TMP = '/tmp';
+let restoreFs: () => void;
 
-  beforeEach(() => {
-    tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-wf-'));
-  });
+beforeEach(() => {
+  restoreFs = setupFakeFs();
+});
 
-  afterEach(() => {
-    fs.rmSync(tmpdir, { recursive: true, force: true });
-  });
+afterEach(() => {
+  restoreFs();
+});
 
   test('loads workflow from .raili/<name>/ directory', () => {
-    const devDir = path.join(tmpdir, '.raili', 'dev');
-    fs.mkdirSync(devDir, { recursive: true });
+    const devDir = path.join(TMP, '.raili', 'dev');
+    getFileSystem().mkdirSync(devDir, { recursive: true } as any);
     const workflow = ['initial: init', 'states:', '  init:', "    type: engine", '  done:', '    type: engine'].join('\n');
-    fs.writeFileSync(path.join(devDir, 'workflow.yaml'), workflow);
+    getFileSystem().writeFileSync(path.join(devDir, 'workflow.yaml'), workflow);
 
-    const config = loadWorkflowConfig(tmpdir, 'dev');
+    const config = loadWorkflowConfig(TMP, 'dev');
     expect(config.initial).toBe('init');
   });
 
   test('throws when named workflow directory does not exist', () => {
-    const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+    const railiDir = path.join(TMP, '.raili');
+    getFileSystem().mkdirSync(railiDir);
 
-    expect(() => loadWorkflowConfig(tmpdir, 'nonexistent')).toThrow(
+    expect(() => loadWorkflowConfig(TMP, 'nonexistent')).toThrow(
       'Unable to resolve workflow directory',
     );
   });
 
   test('throws when workflow.yaml missing in named directory', () => {
-    const devDir = path.join(tmpdir, '.raili', 'dev');
-    fs.mkdirSync(devDir, { recursive: true });
+    const devDir = path.join(TMP, '.raili', 'dev');
+    getFileSystem().mkdirSync(devDir, { recursive: true } as any);
 
-    expect(() => loadWorkflowConfig(tmpdir, 'dev')).toThrow('Workflow file not found');
+    expect(() => loadWorkflowConfig(TMP, 'dev')).toThrow('Workflow file not found');
   });
-});
