@@ -1,30 +1,32 @@
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+import * as path from 'path';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 import {clearAgentOutputs, clearAllOutputs, loadAgentOutputPath, saveOutput} from '../../../src/context/outputStore';
 
 let tmpdir: string;
+let restoreFs: () => void;
 
 beforeEach(() => {
-  tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-output-'));
-  fs.mkdirSync(path.join(tmpdir, '.raili', 'main'), { recursive: true });
+  restoreFs = setupFakeFs();
+  tmpdir = '/tmp/test-workspace';
+  getFileSystem().mkdirSync(path.join(tmpdir, '.raili', 'main'), { recursive: true } as any);
 });
 
 afterEach(() => {
-  fs.rmSync(tmpdir, { recursive: true, force: true });
+  restoreFs();
 });
 
 test('saveOutput creates outputs dir and writes file on first run', () => {
   saveOutput(tmpdir, 'code', 'agent was here', { store: true });
   const p = path.join(tmpdir, '.raili', 'main', 'outputs', 'code.md');
-  expect(fs.existsSync(p)).toBe(true);
-  expect(fs.readFileSync(p, 'utf8')).toBe('agent was here');
+  expect(getFileSystem().existsSync(p)).toBe(true);
+  expect(getFileSystem().readFileSync(p, 'utf8')).toBe('agent was here');
 });
 
 test('saveOutput appends with separator on subsequent runs', () => {
   saveOutput(tmpdir, 'code', 'first run', { store: true });
   saveOutput(tmpdir, 'code', 'second run', { store: true });
-  const content = fs.readFileSync(path.join(tmpdir, '.raili', 'main', 'outputs', 'code.md'), 'utf8');
+  const content = getFileSystem().readFileSync(path.join(tmpdir, '.raili', 'main', 'outputs', 'code.md'), 'utf8');
   expect(content).toContain('first run');
   expect(content).toContain('second run');
   expect(content).toContain('--- Run ');
@@ -34,7 +36,7 @@ test('saveOutput accumulates all runs in order', () => {
   saveOutput(tmpdir, 'code', 'run one', { store: true });
   saveOutput(tmpdir, 'code', 'run two', { store: true });
   saveOutput(tmpdir, 'code', 'run three', { store: true });
-  const content = fs.readFileSync(path.join(tmpdir, '.raili', 'main', 'outputs', 'code.md'), 'utf8');
+  const content = getFileSystem().readFileSync(path.join(tmpdir, '.raili', 'main', 'outputs', 'code.md'), 'utf8');
   expect(content.indexOf('run one')).toBeLessThan(content.indexOf('run two'));
   expect(content.indexOf('run two')).toBeLessThan(content.indexOf('run three'));
 });
@@ -76,11 +78,11 @@ test('clearAllOutputs removes entire outputs directory', () => {
   saveOutput(tmpdir, 'plan', 'output 3', { store: true });
 
   const outputsDir = path.join(tmpdir, '.raili', 'main', 'outputs');
-  expect(fs.existsSync(outputsDir)).toBe(true);
+  expect(getFileSystem().existsSync(outputsDir)).toBe(true);
 
   clearAllOutputs(tmpdir);
 
-  expect(fs.existsSync(outputsDir)).toBe(false);
+  expect(getFileSystem().existsSync(outputsDir)).toBe(false);
   expect(loadAgentOutputPath(tmpdir, 'code')).toBeNull();
   expect(loadAgentOutputPath(tmpdir, 'analyze')).toBeNull();
   expect(loadAgentOutputPath(tmpdir, 'plan')).toBeNull();

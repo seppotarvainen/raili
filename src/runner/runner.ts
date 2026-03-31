@@ -241,13 +241,18 @@ export class Runner {
         this.context.vars = {};
       }
       for (const name of config.expose) {
-        const val = result.exports?.[name];
+        const optional = name.endsWith('?');
+        const baseName = optional ? name.slice(0, -1) : name;
+        const val = result.exports?.[baseName];
         if (val === undefined || val === null || String(val).trim() === '') {
+          if (optional) {
+            continue;
+          }
           throw new Error(
-            `State '${stateId}': exposed variable '${name}' was not produced by the state`,
+            `State '${stateId}': exposed variable '${baseName}' was not produced by the state`,
           );
         }
-        this.context.vars[name] = String(val);
+        this.context.vars[baseName] = String(val);
       }
       this.persist();
     } else if (result.exports && Object.keys(result.exports).length > 0) {

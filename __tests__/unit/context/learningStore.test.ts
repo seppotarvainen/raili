@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 import {
     appendUniqueLearning,
     extractLessons,
@@ -52,14 +52,16 @@ describe('learningStore appendUniqueLearning', () => {
     let cwd: string;
     let learningsDir: string;
 
+    let restoreFs: () => void;
     beforeEach(() => {
-        cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-ls-test-'));
+        restoreFs = setupFakeFs();
+        cwd = '/tmp/test-workspace';
         learningsDir = path.join(cwd, '.raili', 'main', 'learnings');
-        fs.mkdirSync(learningsDir, {recursive: true});
+        getFileSystem().mkdirSync(learningsDir, {recursive: true} as any);
     });
 
     afterEach(() => {
-        if (fs.existsSync(cwd)) fs.rmSync(cwd, {recursive: true, force: true});
+        restoreFs();
     });
 
     test('does not persist unmarked content', () => {

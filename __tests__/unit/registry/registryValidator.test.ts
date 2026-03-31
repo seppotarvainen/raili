@@ -1,6 +1,6 @@
-import fs from 'fs';
-import os from 'os';
 import path from 'path';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 import {
     validateAgentRegistry,
     validateScriptRegistry,
@@ -8,26 +8,27 @@ import {
 } from '../../../src/registry/registryValidator';
 import {WorkflowConfig} from '../../../src/types';
 
-let TMP: string;
-beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-regval-')); });
-afterAll(() => { if (fs.existsSync(TMP)) fs.rmSync(TMP, { recursive: true }); });
+const TMP = '/tmp';
+let restoreFs: () => void;
+beforeAll(() => { restoreFs = setupFakeFs(); });
+afterAll(() => { restoreFs(); });
 
 test('validates agent registry and files exist', () => {
   const raildir = path.join(TMP, '.raili');
-  fs.mkdirSync(raildir);
+  getFileSystem().mkdirSync(raildir);
   const agentFile = path.join(TMP, 'agents', 'a.md');
-  fs.mkdirSync(path.dirname(agentFile), { recursive: true });
-  fs.writeFileSync(agentFile, 'content');
+  getFileSystem().mkdirSync(path.dirname(agentFile), { recursive: true } as any);
+  getFileSystem().writeFileSync(agentFile, 'content');
   const reg = { 'a.agent': { path: './agents/a.md' } };
-  fs.writeFileSync(path.join(raildir, 'agent-registry.json'), JSON.stringify(reg));
+  getFileSystem().writeFileSync(path.join(raildir, 'agent-registry.json'), JSON.stringify(reg));
   expect(() => validateAgentRegistry(TMP)).not.toThrow();
 });
 
 test('throws when script file missing', () => {
   const raildir = path.join(TMP, '.raili');
-  fs.mkdirSync(raildir, { recursive: true });
+  getFileSystem().mkdirSync(raildir, { recursive: true } as any);
   const reg = { 's.part': { path: './scripts/missing.sh' } };
-  fs.writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
+  getFileSystem().writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
   expect(() => validateScriptRegistry(TMP)).toThrow();
 });
 
@@ -155,10 +156,12 @@ import { validateWorkflowNesting } from '../../../src/registry/registryValidator
 describe('validateWorkflowNesting', () => {
   let tmpDir: string;
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-rvn-'));
+    // use fake fs for nested workflow file tests
+    tmpDir = '/tmp/rvn';
+    getFileSystem().mkdirSync(tmpDir, { recursive: true } as any);
   });
   afterEach(() => {
-    if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true });
+    try { getFileSystem().rmSync(tmpDir, { recursive: true } as any); } catch (e) { }
   });
 
   test('missing sub-workflow file throws', () => {
@@ -176,7 +179,7 @@ describe('validateWorkflowNesting', () => {
   test('sub-workflow contains nested group -> throws', () => {
     const subPath = path.join(tmpDir, 'sub.yaml');
     const subYaml = `states:\n  inner:\n    type: group\n    group: ./nested.yaml\n`;
-    fs.writeFileSync(subPath, subYaml, 'utf8');
+    getFileSystem().writeFileSync(subPath, subYaml, 'utf8');
 
     const wf: WorkflowConfig = {
       initial: 'start',
@@ -192,7 +195,7 @@ describe('validateWorkflowNesting', () => {
   test('main workflow references inner state -> throws', () => {
     const subPath = path.join(tmpDir, 'sub.yaml');
     const subYaml = `states:\n  a:\n    type: engine\n  b:\n    type: engine\n    out: true\n`;
-    fs.writeFileSync(subPath, subYaml, 'utf8');
+    getFileSystem().writeFileSync(subPath, subYaml, 'utf8');
 
     const wf: WorkflowConfig = {
       initial: 'start',
@@ -208,7 +211,7 @@ describe('validateWorkflowNesting', () => {
   test('sub-workflow with no out:true -> throws', () => {
     const subPath = path.join(tmpDir, 'sub.yaml');
     const subYaml = `states:\n  a:\n    type: engine\n`;
-    fs.writeFileSync(subPath, subYaml, 'utf8');
+    getFileSystem().writeFileSync(subPath, subYaml, 'utf8');
 
     const wf: WorkflowConfig = {
       initial: 'start',
@@ -224,7 +227,7 @@ describe('validateWorkflowNesting', () => {
   test('valid group passes validation', () => {
     const subPath = path.join(tmpDir, 'sub.yaml');
     const subYaml = `states:\n  prepare:\n    type: agent\n  done:\n    type: engine\n    out: true\n`;
-    fs.writeFileSync(subPath, subYaml, 'utf8');
+    getFileSystem().writeFileSync(subPath, subYaml, 'utf8');
 
     const wf: WorkflowConfig = {
       initial: 'start',
@@ -242,22 +245,22 @@ describe('validateWorkflowNesting', () => {
 
 test('throws when agent registry entry points to a directory not a file', () => {
   const raildir = path.join(TMP, '.raili');
-  fs.mkdirSync(raildir, { recursive: true });
+  getFileSystem().mkdirSync(raildir, { recursive: true } as any);
   // Create a DIRECTORY where the agent file is expected
   const agentDir = path.join(TMP, 'agents', 'dir-agent');
-  fs.mkdirSync(agentDir, { recursive: true });
+  getFileSystem().mkdirSync(agentDir, { recursive: true } as any);
   const reg = { 'dir.agent': { path: './agents/dir-agent' } };
-  fs.writeFileSync(path.join(raildir, 'agent-registry.json'), JSON.stringify(reg));
+  getFileSystem().writeFileSync(path.join(raildir, 'agent-registry.json'), JSON.stringify(reg));
   expect(() => validateAgentRegistry(TMP)).toThrow(/not a file/);
 });
 
 test('throws when script registry entry points to a directory not a file', () => {
   const raildir = path.join(TMP, '.raili');
-  fs.mkdirSync(raildir, { recursive: true });
+  getFileSystem().mkdirSync(raildir, { recursive: true } as any);
   const scriptDir = path.join(TMP, 'scripts', 'dir-script');
-  fs.mkdirSync(scriptDir, { recursive: true });
+  getFileSystem().mkdirSync(scriptDir, { recursive: true } as any);
   const reg = { 'dir.script': { path: './scripts/dir-script' } };
-  fs.writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
+  getFileSystem().writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
   expect(() => validateScriptRegistry(TMP)).toThrow(/not a file/);
 });
 

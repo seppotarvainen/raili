@@ -133,7 +133,7 @@ Guidelines for Each Section:
 - **Acceptance Criteria**: Make criteria specific and testable. Each should be independently verifiable. Use checklist format.
 
 Quality Control:
-- Ensure the type accurately reflects the nature of the change
+- Ensure the `**Ticket type:**` field accurately reflects the nature of the change and matches the filename `<type>` segment
 - Confirm all documentation references exist in the `documentation` folder
 - Verify code references point to actual files in the repository
 - Check that acceptance criteria are specific, measurable, and achievable

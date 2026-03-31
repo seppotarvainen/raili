@@ -16,7 +16,9 @@ export function parseExports(stdout: string, names: string[]): Record<string, st
   const lines = stdout.split(/\r?\n/);
 
   for (const name of names) {
-    const re = new RegExp(`^\\s*(?:export\\s+)?${name}\\s*=\\s*(.*)\\s*$`, 'i');
+    // Strip optional marker — matching and storage always use the base name
+    const baseName = name.endsWith('?') ? name.slice(0, -1) : name;
+    const re = new RegExp(`^\\s*(?:export\\s+)?${baseName}\\s*=\\s*(.*)\\s*$`, 'i');
     for (const line of lines) {
       const m = line.match(re);
       if (m?.[1] !== undefined) {
@@ -25,7 +27,7 @@ export function parseExports(stdout: string, names: string[]): Record<string, st
         if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
           v = v.slice(1, -1);
         }
-        exports[name] = v.trim();
+        exports[baseName] = v.trim();
         break;
       }
     }

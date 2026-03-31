@@ -1,95 +1,67 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import path from 'path';
+import { setupFakeFs } from './infrastructure/fsFake.util';
+import { getFileSystem } from '../../src/infrastructure/fileSystemProvider';
+import { runCommand } from '../../src/run';
 
-// Use isolateModules and manual mocks to ensure module imports occur after mocks are applied
+// Hoisted mocks — must come before any require() calls
+jest.mock('../../src/workflow/workflowLoader', () => {
+  const actual = jest.requireActual('../../src/workflow/workflowLoader');
+  return {
+    loadWorkflowConfig: jest.fn().mockReturnValue({
+      initial: 'start',
+      states: {
+        start: { type: 'engine', skip: 'done' },
+        done: { type: 'engine' },
+      },
+    }),
+    buildStateMachine: actual.buildStateMachine,
+    validateStateMachine: actual.validateStateMachine,
+  };
+});
+
+jest.mock('../../src/registry/registryValidator');
+jest.mock('../../src/runner/runner');
+
+const { Runner } = require('../../src/runner/runner');
+
 describe('runCommand skip confirmation', () => {
   let tmp: string;
+  let restoreFs: () => void;
 
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-test-'));
-    fs.mkdirSync(path.join(tmp, '.raili'));
-    fs.mkdirSync(path.join(tmp, '.raili', 'main'));
+    restoreFs = setupFakeFs();
+    tmp = path.join('/tmp', `raili-test-${Math.random().toString(36).slice(2, 8)}`);
+    const fs = getFileSystem();
+    fs.mkdirSync(path.join(tmp, '.raili'), { recursive: true });
+    fs.mkdirSync(path.join(tmp, '.raili', 'main'), { recursive: true });
     fs.writeFileSync(path.join(tmp, '.raili', 'agent-registry.json'), '{}');
     fs.writeFileSync(path.join(tmp, '.raili', 'script-registry.json'), '{}');
+    jest.clearAllMocks();
+    Runner.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
 
   afterEach(() => {
-    try {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    } catch (err) {
-      // ignore
-    }
+    restoreFs();
     delete process.env.RAILI_MANUAL_CHOICE;
   });
 
   test('aborts run when user declines skip via RAILI_MANUAL_CHOICE', async () => {
-    // Arrange: mock workflowLoader to return a simple workflow with skip
-    jest.resetModules();
     process.env.RAILI_MANUAL_CHOICE = 'FAILED';
+    const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {}) as any);
 
-    jest.doMock('../../src/workflow/workflowLoader', () => {
-      const actual = jest.requireActual('../../src/workflow/workflowLoader');
-      return {
-        loadWorkflowConfig: () => ({
-          initial: 'start',
-          states: {
-            start: { type: 'engine', skip: 'done' },
-            done: { type: 'engine' },
-          },
-        }),
-        buildStateMachine: actual.buildStateMachine,
-        validateStateMachine: actual.validateStateMachine,
-      };
-    });
-
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: number) => {
-      // noop
-    }) as any);
-
-    const { runCommand } = require('../../src/run');
-    const { Runner } = require('../../src/runner/runner');
-    const runSpy = jest.spyOn(Runner.prototype, 'run').mockImplementation(async () => {});
-
-    // Act
     await runCommand(tmp, 'clean', {}, undefined);
 
-    // Assert
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(runSpy).not.toHaveBeenCalled();
+    expect(Runner).not.toHaveBeenCalled();
 
-    // Cleanup
     exitSpy.mockRestore();
-    runSpy.mockRestore();
   });
 
   test('continues run when user accepts skip via RAILI_MANUAL_CHOICE', async () => {
-    jest.resetModules();
     process.env.RAILI_MANUAL_CHOICE = 'PASSED';
-
-    jest.doMock('../../src/workflow/workflowLoader', () => {
-      const actual = jest.requireActual('../../src/workflow/workflowLoader');
-      return {
-        loadWorkflowConfig: () => ({
-          initial: 'start',
-          states: {
-            start: { type: 'engine', skip: 'done' },
-            done: { type: 'engine' },
-          },
-        }),
-        buildStateMachine: actual.buildStateMachine,
-        validateStateMachine: actual.validateStateMachine,
-      };
-    });
-
-    const { runCommand } = require('../../src/run');
-    const { Runner } = require('../../src/runner/runner');
-    const runSpy = jest.spyOn(Runner.prototype, 'run').mockImplementation(async () => {});
 
     await runCommand(tmp, 'clean', {}, undefined);
 
-    expect(runSpy).toHaveBeenCalled();
-
-    runSpy.mockRestore();
+    expect(Runner).toHaveBeenCalled();
   });
 });

@@ -4,6 +4,8 @@
 #   1. Direct mutation of module properties instead of jest.spyOn
 #   2. Missing mock cleanup (spyOn without restoreAllMocks/mockRestore)
 #   3. process.env assignments without cleanup
+#   4. jest.resetModules() in unit tests (breaks fake FS injection)
+#   5. setupFakeFs() without a restore call in the same file
 
 set -euo pipefail
 
@@ -71,6 +73,35 @@ while IFS= read -r file; do
     fi
   fi
 done < <(grep -rl 'beforeAll' __tests__/ --include="*.ts" 2>/dev/null || true)
+
+# ── 5. jest.resetModules() combined with fake FS in unit tests ───────────────
+# jest.resetModules() inside a unit test breaks fake FS injection when the same
+# file also uses setupFakeFs()/getFileSystem() — the re-required module gets a
+# fresh fileSystemProvider with NodeFileSystem, not the installed fake.
+# (Legitimate uses of jest.resetModules() without fake FS are allowed.)
+while IFS= read -r file; do
+  if grep -q 'setupFakeFs\|getFileSystem' "$file"; then
+    echo ""
+    echo "❌ FAIL: $file uses jest.resetModules() alongside fake FS injection."
+    echo "   This breaks the fake: re-required modules load a fresh NodeFileSystem."
+    echo "   Use top-level jest.mock() + static imports instead. See run.test.ts."
+    ERRORS=$((ERRORS + 1))
+  fi
+done < <(grep -rl 'jest\.resetModules' __tests__/unit/ --include="*.ts" 2>/dev/null || true)
+
+# ── 6. setupFakeFs() without restore ─────────────────────────────────────────
+# Every file that CALLS setupFakeFs() must also call restoreFs (or equivalent)
+# in afterEach/afterAll. Excludes the definition file itself.
+while IFS= read -r file; do
+  # skip the definition file
+  [[ "$file" == *"fsFake.util.ts" ]] && continue
+  if ! grep -q 'restoreFs\|restore()' "$file"; then
+    echo ""
+    echo "❌ FAIL: $file calls setupFakeFs() but has no restore call."
+    echo "   Add: afterEach(() => restoreFs());"
+    ERRORS=$((ERRORS + 1))
+  fi
+done < <(grep -rl 'setupFakeFs' __tests__/unit/ --include="*.ts" 2>/dev/null || true)
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""

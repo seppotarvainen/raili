@@ -1,5 +1,12 @@
 import { computeComparison, computeMetrics, readRunLog, RunEntry, statsCommand } from '../../../src/cli/stats';
-import fs from 'fs';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
+
+let fs: any;
+beforeEach(() => {
+  (global as any).__restoreFs = setupFakeFs();
+  fs = getFileSystem();
+});
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -8,6 +15,7 @@ function makeLog(...runs: RunEntry[]): string {
 }
 
 function mockFs(log: string | null) {
+  const fs = getFileSystem();
   jest.spyOn(fs, 'existsSync').mockReturnValue(log !== null);
   if (log !== null) {
     jest.spyOn(fs, 'readFileSync').mockReturnValue(log as any);
@@ -16,6 +24,8 @@ function mockFs(log: string | null) {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  const restore = (global as any).__restoreFs;
+  if (restore) restore();
 });
 
 // ─── computeMetrics ─────────────────────────────────────────────────────────

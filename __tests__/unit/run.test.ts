@@ -1,7 +1,10 @@
-import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { setupFakeFs } from './infrastructure/fsFake.util';
+import { getFileSystem } from '../../src/infrastructure/fileSystemProvider';
 import { runCommand } from '../../src/run';
+
+let fs: any;
 
 jest.mock('../../src/registry/registryValidator');
 jest.mock('../../src/runner/runner');
@@ -15,14 +18,19 @@ describe('runCommand', () => {
   let mainDir: string;
 
   beforeEach(() => {
-    tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-test-'));
+    const restoreFs = setupFakeFs();
+    // store restore on this to cleanup in afterEach
+    (global as any).__restoreFs = restoreFs;
+    tmpdir = path.join('/tmp', `raili-test-${Math.random().toString(36).slice(2, 8)}`);
+    fs = getFileSystem();
     railiDir = path.join(tmpdir, '.raili');
     mainDir = path.join(railiDir, 'main');
     jest.resetAllMocks();
     Runner.mockImplementation(() => ({ run: jest.fn().mockResolvedValue(undefined) }));
   });
   afterEach(() => {
-    fs.rmSync(tmpdir, { recursive: true, force: true });
+    const restore = (global as any).__restoreFs;
+    if (restore) restore();
   });
 
   test('fails if .raili missing', async () => {

@@ -10,7 +10,7 @@ export interface IFileSystem {
   unlinkSync(path: string): void;
   rmSync(path: string, opts?: fs.RmOptions): void;
   chmodSync(path: string, mode: number): void;
-  readdirSync?(path: string): string[];
+  readdirSync(path: string): string[];
 }
 
 export class NodeFileSystem implements IFileSystem {
@@ -72,5 +72,3 @@ export class NodeFileSystem implements IFileSystem {
     return fs.readdirSync(path);
   }
 }
-
-

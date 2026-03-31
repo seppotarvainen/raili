@@ -1,14 +1,15 @@
-import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 import { outputPath, saveOutput, readLatestRun, loadAgentOutputPath } from '../../../src/context/outputStore';
 
 describe('outputStore filename rules', () => {
   it('outputPath strips parent prefix for group.sub ids', () => {
-    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-op-'));
+    const restoreFs = setupFakeFs();
+    const cwd = '/tmp/test-workspace';
     const workflow = 'main';
     const outputsDir = path.join(cwd, '.raili', workflow, 'outputs');
-    fs.mkdirSync(outputsDir, { recursive: true });
+    getFileSystem().mkdirSync(outputsDir, { recursive: true } as any);
 
     const p1 = outputPath(cwd, 'group.sub', workflow);
     expect(path.basename(p1)).toBe('sub.md');
@@ -17,14 +18,15 @@ describe('outputStore filename rules', () => {
     expect(path.basename(p2)).toBe('plain.md');
 
     // cleanup
-    if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });
+    restoreFs();
   });
 
   it('saveOutput/readLatestRun/loadAgentOutputPath use canonical filename', () => {
-    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-op-'));
+    const restoreFs = setupFakeFs();
+    const cwd = '/tmp/test-workspace';
     const workflow = 'main';
     const outputsDir = path.join(cwd, '.raili', workflow, 'outputs');
-    fs.mkdirSync(outputsDir, { recursive: true });
+    getFileSystem().mkdirSync(outputsDir, { recursive: true } as any);
 
     saveOutput(cwd, 'group.produce', 'OUTPUT:\nhello world\n', { store: true, marker: 'OUTPUT:' }, workflow);
 
@@ -36,6 +38,6 @@ describe('outputStore filename rules', () => {
     expect(latest).toContain('hello world');
 
     // cleanup
-    if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });
+    restoreFs();
   });
 });

@@ -1,45 +1,46 @@
-import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 import {buildStateMachine, loadWorkflowConfig, validateStateMachine} from '../../../src/workflow/workflowLoader';
 
-describe('workflowLoader', () => {
-  let tmpdir: string;
+const TMP = '/tmp';
+const tmpdir = path.join(TMP, 'wf');
+let restoreFs: () => void;
 
-  beforeEach(() => {
-    tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-wf-test-'));
-  });
+beforeEach(() => {
+  restoreFs = setupFakeFs();
+});
 
-  afterEach(() => {
-    fs.rmSync(tmpdir, { recursive: true, force: true });
-  });
+afterEach(() => {
+  restoreFs();
+});
 
   describe('loadWorkflowConfig', () => {
     test('throws if workflow.yaml does not exist', () => {
-      const railiDir = path.join(tmpdir, '.raili');
-      fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
-      expect(() => loadWorkflowConfig(tmpdir)).toThrow('Workflow file not found');
+      const railiDir = path.join(TMP, '.raili');
+      getFileSystem().mkdirSync(path.join(railiDir, 'main'), { recursive: true } as any);
+      expect(() => loadWorkflowConfig(TMP)).toThrow('Workflow file not found');
     });
 
     test('throws if workflow.yaml is invalid', () => {
-      const railiDir = path.join(tmpdir, '.raili');
-      fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
-      fs.writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), 'not: [valid');
+      const railiDir = path.join(TMP, '.raili');
+      getFileSystem().mkdirSync(path.join(railiDir, 'main'), { recursive: true } as any);
+      getFileSystem().writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), 'not: [valid');
 
-      expect(() => loadWorkflowConfig(tmpdir)).toThrow();
+      expect(() => loadWorkflowConfig(TMP)).toThrow();
     });
 
     test('throws if initial state is missing', () => {
-      const railiDir = path.join(tmpdir, '.raili');
-      fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
-      fs.writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), 'states:\n  init:\n    type: engine\n');
+      const railiDir = path.join(TMP, '.raili');
+      getFileSystem().mkdirSync(path.join(railiDir, 'main'), { recursive: true } as any);
+      getFileSystem().writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), 'states:\n  init:\n    type: engine\n');
 
-      expect(() => loadWorkflowConfig(tmpdir)).toThrow('Required field \'initial\' is missing');
+      expect(() => loadWorkflowConfig(TMP)).toThrow('Required field \'initial\' is missing');
     });
 
     test('loads valid workflow config', () => {
-      const railiDir = path.join(tmpdir, '.raili');
-      fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
+      const railiDir = path.join(TMP, '.raili');
+      getFileSystem().mkdirSync(path.join(railiDir, 'main'), { recursive: true } as any);
       const workflow = [
         'initial: init',
         'states:',
@@ -48,16 +49,16 @@ describe('workflowLoader', () => {
         '  done:',
         '    type: engine',
       ].join('\n');
-      fs.writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), workflow);
+      getFileSystem().writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), workflow);
 
-      const config = loadWorkflowConfig(tmpdir);
+      const config = loadWorkflowConfig(TMP);
       expect(config.initial).toBe('init');
       expect(config.states.init.type).toBe('engine');
     });
 
     test('parses inputs declared as objects', () => {
-      const railiDir = path.join(tmpdir, '.raili');
-      fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
+      const railiDir = path.join(TMP, '.raili');
+      getFileSystem().mkdirSync(path.join(railiDir, 'main'), { recursive: true } as any);
       const workflow = [
         'initial: init',
         'inputs:',
@@ -69,9 +70,9 @@ describe('workflowLoader', () => {
         '  init:',
         '    type: engine',
       ].join('\n');
-      fs.writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), workflow);
+      getFileSystem().writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), workflow);
 
-      const config = loadWorkflowConfig(tmpdir);
+      const config = loadWorkflowConfig(TMP);
       expect(config.inputs).toBeDefined();
       // normalized to objects
       expect(Array.isArray(config.inputs)).toBe(true);
@@ -85,8 +86,8 @@ describe('workflowLoader', () => {
     });
 
     test('parses inputs declared as strings (shorthand)', () => {
-      const railiDir = path.join(tmpdir, '.raili');
-      fs.mkdirSync(path.join(railiDir, 'main'), { recursive: true });
+      const railiDir = path.join(TMP, '.raili');
+      getFileSystem().mkdirSync(path.join(railiDir, 'main'), { recursive: true } as any);
       const workflow = [
         'initial: init',
         'inputs:',
@@ -96,9 +97,9 @@ describe('workflowLoader', () => {
         '  init:',
         '    type: engine',
       ].join('\n');
-      fs.writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), workflow);
+      getFileSystem().writeFileSync(path.join(railiDir, 'main', 'workflow.yaml'), workflow);
 
-      const config = loadWorkflowConfig(tmpdir);
+      const config = loadWorkflowConfig(TMP);
       expect(config.inputs).toBeDefined();
       expect(Array.isArray(config.inputs)).toBe(true);
       expect((config.inputs as any[])[0].name).toBe('ticket_id');
@@ -406,8 +407,8 @@ describe('workflowLoader', () => {
   describe('buildStateMachine advanced paths', () => {
     function writeWf(dir: string, yaml: string) {
       const p = path.join(dir, '.raili', 'main');
-      fs.mkdirSync(p, { recursive: true });
-      fs.writeFileSync(path.join(p, 'workflow.yaml'), yaml);
+      getFileSystem().mkdirSync(p, { recursive: true } as any);
+      getFileSystem().writeFileSync(path.join(p, 'workflow.yaml'), yaml);
     }
 
     test('sets machine.error when workflow declares error state', () => {
@@ -458,8 +459,8 @@ describe('workflowLoader', () => {
   describe('loadWorkflowConfig inputs validation', () => {
     function writeWf(dir: string, yaml: string) {
       const p = path.join(dir, '.raili', 'main');
-      fs.mkdirSync(p, { recursive: true });
-      fs.writeFileSync(path.join(p, 'workflow.yaml'), yaml);
+      getFileSystem().mkdirSync(p, { recursive: true } as any);
+      getFileSystem().writeFileSync(path.join(p, 'workflow.yaml'), yaml);
     }
 
     test('throws when inputs is not an array', () => {
@@ -467,5 +468,4 @@ describe('workflowLoader', () => {
       expect(() => loadWorkflowConfig(tmpdir)).toThrow();
     });
   });
-});
 

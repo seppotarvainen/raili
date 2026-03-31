@@ -9,7 +9,7 @@ export async function initCommand(cwd: string) {
     throw new Error('.raili/ already exists. Initialization aborted.');
   }
 
-  fs.mkdirSync(railiDir);
+  fs.mkdirSync(railiDir, { recursive: true });
 
   // Create a default workflow directory 'main' for scoped artifacts
   const mainWorkflowDir = path.join(railiDir, 'main');

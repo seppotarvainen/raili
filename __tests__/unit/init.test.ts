@@ -1,19 +1,24 @@
 /// <reference types="node" />
 /// <reference types="jest" />
 
-import * as fs from 'fs';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
 import { initCommand } from '../../src/init';
+import { setupFakeFs } from './infrastructure/fsFake.util';
+import { getFileSystem } from '../../src/infrastructure/fileSystemProvider';
 
 describe('initCommand', () => {
   let tmpdir: string;
+  let fs: any;
   beforeEach(() => {
-    tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-test-'));
+    const restoreFs = setupFakeFs();
+    (global as any).__restoreFs = restoreFs;
+    tmpdir = path.join('/tmp', `raili-test-${Math.random().toString(36).slice(2, 8)}`);
+    fs = getFileSystem();
   });
   afterEach(() => {
-    // remove tmpdir recursively
-    fs.rmSync(tmpdir, { recursive: true, force: true });
+    const restore = (global as any).__restoreFs;
+    if (restore) restore();
   });
 
   test('creates .raili with template files', async () => {
@@ -27,7 +32,7 @@ describe('initCommand', () => {
 
   test('fails if .raili already exists', async () => {
     const railiDir = path.join(tmpdir, '.raili');
-    fs.mkdirSync(railiDir);
+    fs.mkdirSync(railiDir, { recursive: true });
     await expect(initCommand(tmpdir)).rejects.toThrow('.raili/ already exists');
   });
 });

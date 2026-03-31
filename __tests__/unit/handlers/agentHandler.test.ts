@@ -1,16 +1,19 @@
-import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import {EventEmitter} from 'events';
 import {loadAgentRegistry} from '../../../src/registry/agentRegistry';
 import {executeAgent} from '../../../src/handlers/agentHandler';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');
 
-let TMP: string;
-beforeAll(() => { TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'raili-handler-')); });
-afterAll(() => { if (fs.existsSync(TMP)) fs.rmSync(TMP, { recursive: true }); });
+const TMP = '/tmp';
+let restoreFs: () => void;
+
+beforeEach(() => { restoreFs = setupFakeFs(); });
+
+afterEach(() => { restoreFs(); });
 
 /** Creates a fake child process that emits stdout/stderr data then closes */
 function fakeChild(stdoutData: string, stderrData: string, exitCode: number) {
@@ -27,10 +30,11 @@ function fakeChild(stdoutData: string, stderrData: string, exitCode: number) {
 }
 
 function setupAgent(model?: string, frontmatterModel?: string) {
+  const fs = getFileSystem();
   const agentDir = path.join(TMP, '.raili');
-  if (!fs.existsSync(agentDir)) fs.mkdirSync(agentDir);
+  if (!fs.existsSync(agentDir)) fs.mkdirSync(agentDir, { recursive: true } as any);
   const agentFile = path.join(TMP, 'agents', 'analyzer.agent.md');
-  fs.mkdirSync(path.dirname(agentFile), { recursive: true });
+  fs.mkdirSync(path.dirname(agentFile), { recursive: true } as any);
   const frontmatter = frontmatterModel ? `---\nmodel: ${frontmatterModel}\n---\n` : '';
   fs.writeFileSync(agentFile, `${frontmatter}Agent instructions here`);
   const entry: any = { path: './agents/analyzer.agent.md' };
@@ -108,7 +112,7 @@ test('uses default prompt when no previousOutputPath given', async () => {
 test('injects previous output content into prompt when previousOutputPath is provided', async () => {
   const registry = setupAgent();
   const prevFile = path.join(TMP, 'previous.md');
-  fs.writeFileSync(prevFile, 'I already did X');
+  getFileSystem().writeFileSync(prevFile, 'I already did X');
 
   await executeAgent(registry, 'analyzer.agent', TMP, prevFile);
 
@@ -142,7 +146,7 @@ test('uses default prompt when previousOutputPath points to nonexistent file', a
 test('injects only the last run when history file has multiple runs', async () => {
   const registry = setupAgent();
   const historyFile = path.join(TMP, 'history.md');
-  fs.writeFileSync(
+  getFileSystem().writeFileSync(
     historyFile,
     'first run output\n\n--- Run 2026-01-01T00:00:00.000Z ---\n\nsecond run output\n\n--- Run 2026-02-01T00:00:00.000Z ---\n\nthird run output',
   );
@@ -169,7 +173,7 @@ test('uses custom prompt when prompt param is provided', async () => {
 test('appends previous output to custom prompt when both are provided', async () => {
   const registry = setupAgent();
   const prevFile = path.join(TMP, 'prev_custom.md');
-  fs.writeFileSync(prevFile, 'previous work');
+  getFileSystem().writeFileSync(prevFile, 'previous work');
 
   await executeAgent(registry, 'analyzer.agent', TMP, prevFile, 'Do the thing');
 
