@@ -211,6 +211,12 @@ export const StateConfigSchema: ObjectSchema = {
     type: 'string',
     description: 'Optional state id to immediately route to without executing this state',
   },
+  continue: {
+    required: false,
+    type: 'string',
+    description:
+      "Optional unconditional next state id. Mutually exclusive with 'on', 'transitions', and 'approval'",
+  },
   transitions: {
     required: false,
     type: 'record',

@@ -60,7 +60,7 @@ approval:
 
 ## Terminal State
 
-No `on`, `transitions`, or `approval` defined. Workflow stops here.
+No `on`, `transitions`, `approval`, or `continue` defined. Workflow stops here.
 
 ```yaml
 done:
@@ -112,4 +112,32 @@ states:
 - Variables can be used in approval questions with `${variable_name}` syntax
 - `skip` may be used to bypass a state and immediately route to another state without running handlers. Use with care to avoid hiding important checks.
 - **Group states** define routing on the parent group (`on:`, `transitions:`, or `approval:`). The sub-workflow's `out: true` state inherits this routing. See `documentation/groups.md` for details.
+
+## Unconditional Routing (continue:)
+
+Raili supports an unconditional routing option `continue:` that, when present, will route to the specified state immediately after the state's handler phase, regardless of the outcome or exit code. This is useful when a state performs side-effectful work but the next step should not depend on its result.
+
+Key points:
+
+- `continue` is mutually exclusive with `on:`, `transitions:`, and `approval:` — workflows must declare exactly one routing mechanism per state.
+- For `script` and `command` states, `continue` ignores the exit code (both success and failure will route to the `continue` target).
+- For `agent` states, `continue` ignores the agent's reported outcome and routes unconditionally.
+- If the `continue` target references an unknown state ID this is a workflow validation error (fail-fast during load/build).
+
+Example usage:
+
+```yaml
+states:
+  build:
+    type: script
+    script: run_build
+    continue: test
+
+  analyze:
+    type: agent
+    agent: analyzer
+    continue: review
+```
+
+Use `continue` sparingly; when you actually need branching based on results prefer `on:` or `transitions:` to keep workflows explicit and deterministic.
 
