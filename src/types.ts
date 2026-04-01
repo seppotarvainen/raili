@@ -54,6 +54,7 @@ export interface StateConfig {
   success?: boolean | null;
   // Optional skip target: when set the engine will bypass this state and immediately route to the given state id
   skip?: string;
+  continue?: string;
   transitions?: Record<string, string>;
   on?: Record<string, string>;
   expose?: string[]; // Names to extract from stdout and export as RAILI_VAR_<UPPERCASE>

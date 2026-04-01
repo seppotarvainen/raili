@@ -137,6 +137,29 @@ done:
 
 ## Type: group
 
+## Continue vs Terminal states
+
+Raili supports an unconditional routing option `continue:` that can be declared on any state. When present, the engine will route to the specified target state immediately after the state's handler phase, ignoring exit codes or reported outcomes.
+
+Key distinctions:
+
+- `continue` is unconditional and routes regardless of success/failure or reported outcome.
+- A terminal state defines no routing (`on:`, `transitions:`, or `approval:` absent) — the workflow stops there.
+- `continue` is mutually exclusive with `on:`, `transitions:`, and `approval:`. Workflow validation will fail if multiple routing mechanisms are present on the same state.
+
+Example:
+
+```yaml
+check:
+  type: script
+  script: health_check
+  continue: finish
+
+finish:
+  type: engine
+```
+
+
 Embeds a sub-workflow YAML file as a single state. The sub-workflow is flattened into the parent at load time — the runner sees a single flat state machine. Nesting is limited to one level.
 
 ```yaml
@@ -205,13 +228,13 @@ Metadata is optional and extensible; older context files lacking `meta` continue
 
 ## State Transitions Summary
 
-| Type    | Routing Options                        | Exit Code               |
-|---------|----------------------------------------|-------------------------|
-| agent   | transitions (named)                    | Always 0                |
-| script  | on (binary) or transitions (named)     | 0 = PASSED, ≠0 = FAILED |
-| command | on (binary) or transitions (named)     | 0 = PASSED, ≠0 = FAILED |
-| engine  | on, transitions, approval, or terminal | Always PASSED           |
-| group   | on, transitions, or approval           | From out:true sub-state |
+| Type    | Routing Options                                         | Exit Code               |
+|---------|---------------------------------------------------------|-------------------------|
+| agent   | `transitions:` (named) or `continue:` (unconditional)   | Always 0                |
+| script  | `on:` (binary), `transitions:` (named), or `continue:`  | 0 = PASSED, ≠0 = FAILED |
+| command | `on:` (binary), `transitions:` (named), or `continue:`  | 0 = PASSED, ≠0 = FAILED |
+| engine  | `on:`, `transitions:`, `approval:`, `continue:`, or terminal | Always PASSED     |
+| group   | `on:`, `transitions:`, `approval:`, or `continue:`      | From out:true sub-state |
 
 **Note:** Agents may use `on`, but agent handlers currently always return `PASSED`; for multi-outcome use `transitions`.
 

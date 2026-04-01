@@ -18,9 +18,9 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
       throw new SchemaValidationError(`Error state '${config.error}' does not exist in states`);
     }
     const errState = config.states[config.error];
-    if (errState.on || errState.transitions || errState.approval) {
+    if (errState.on || errState.transitions || errState.approval || errState.continue) {
       throw new SchemaValidationError(
-        `Error state '${config.error}' must be terminal and must not have 'on', 'transitions', or 'approval'`,
+        `Error state '${config.error}' must be terminal and must not have 'on', 'transitions', 'approval', or 'continue'`,
       );
     }
   }

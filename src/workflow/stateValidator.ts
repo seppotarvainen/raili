@@ -9,6 +9,28 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
 
   validateObject(config, StateConfigSchema, context, config.type);
 
+  // 'continue' is an unconditional routing target and must be mutually exclusive with other routing fields
+  if (config.continue !== undefined && config.continue !== null) {
+    if (typeof config.continue !== 'string' || config.continue === '') {
+      throw new SchemaValidationError(`Field 'continue' must be a non-empty string`, context);
+    }
+    if (config.on) {
+      throw new SchemaValidationError(`State cannot have both 'continue' and 'on' fields`, context);
+    }
+    if (config.transitions) {
+      throw new SchemaValidationError(
+        `State cannot have both 'continue' and 'transitions' fields`,
+        context,
+      );
+    }
+    if (config.approval) {
+      throw new SchemaValidationError(
+        `State cannot have both 'continue' and 'approval' fields`,
+        context,
+      );
+    }
+  }
+
   if (config.on && config.transitions) {
     throw new SchemaValidationError(
       `State cannot have both 'on' and 'transitions' fields`,

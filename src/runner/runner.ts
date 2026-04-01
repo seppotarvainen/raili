@@ -458,6 +458,24 @@ export class Runner {
    * Determine the next state from routing (on: or transitions:) and outcome.
    */
   private routeToNext(stateId: string, stateDef: StateDef, outcome: string): string {
+    // If state defines 'continue', route unconditionally to it.
+    const cont = (stateDef.config as any).continue as string | undefined;
+    if (cont) {
+      if (!(cont in this.stateMachine.states)) {
+        throw new Error(`State '${stateId}': continue target '${cont}' not found in state machine`);
+      }
+      const nextStateId = cont;
+      try {
+        const enteredAt = this.currentPresenter?.entry?.enteredAt;
+        const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
+        this.currentPresenter?.appendStateExit(stateDef, 'CONTINUE', nextStateId, elapsedMs);
+        this.currentPresenter?.render();
+      } catch {}
+
+      this.record(nextStateId);
+      return nextStateId;
+    }
+
     const routing = stateDef.config.on ?? stateDef.config.transitions!;
     const nextStateId = resolveNextState(stateId, routing, outcome);
 
@@ -548,7 +566,15 @@ export class Runner {
 
         // Phase 3: Terminal check
         const { config } = stateDef;
-        if (!config.on && !config.transitions && !config.approval) {
+        // Consider stateDef.transitions (built by workflowLoader) when determining terminal states.
+        // A state with no routing in config but with transitions added during build (e.g., continue)
+        // must NOT be treated as terminal.
+        if (
+          !config.on &&
+          !config.transitions &&
+          !config.approval &&
+          stateDef.transitions.length === 0
+        ) {
           const successValue = config.success === undefined ? null : !!config.success;
           this.record(stateId, { success: successValue });
 

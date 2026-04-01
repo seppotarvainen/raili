@@ -1,6 +1,12 @@
 # Ideas
 
 ```yaml
+title: Add `continue` transition for states
+intent: |
+   Quite often I have a situation where I want to execute some code, then regardless of the outcome, continue to the next state. Currently I have do workarounds (on: PASSED, FAILED leading to the same state or using transitions: default: next_state) but it would be nice to have a built in way to do this. I propose adding a `continue` transition that always triggers after state execution, regardless of the outcome. `continue` is already used in max_visits, but it would be nice to have it as a general transition option for any state.
+```
+
+```yaml
 title: GUI to follow the state machine execution
 intent: |
     It would be great to have a simple GUI that shows the state machine execution in real time
@@ -9,50 +15,6 @@ intent: |
     Usage: `raili run --dashboard` would start the workflow execution and open the dashboard in the browser. The dashboard would show the current state, the history of transitions, and the outputs of each state.
 ```
 
-```yaml
-title: 'Remove timestamps from learnings when injecting into prompt'
-intent: |
-    Currently agents get the full learnings file content injected into their prompt, including timestamps. This adds noise and takes up valuable token space. The agent doesn't need to know exactly when a learning was recorded, just the content of the feedback.
-```
-
-```yaml
-title: 'Add command `raili teach` to manually add learnings'
-intent: |
-    In addition to auto-capturing learnings from output and variables, it would be useful to have a manual command for adding learnings. This allows the user to curate the learnings file with important insights that may not be captured automatically.
-    
-    Usage: `raili teach <agentId>` opens a multiline prompt:
-    "Write a lesson to the agent '<agentId>'. End with /q."
-    The user can write any text as a learning, and it will be appended to `.raili/<workflow>/learnings/<agentId>.md` with a timestamp and a [manual] tag:
-    - [2026-03-20T12:00:00Z] [manual] Remember to check edge cases in input validation.
-
-    User can give workflow as -w flag to specify which workflow's learnings to update. If not given, defaults to current `main`.
-```
-
-```yaml
-title: 'Update output store to behave like learnings store'
-intent: |
-  Currently user can set pattern which lines to include into the output.
-  This wasn't useful and it should work similar to learnings, which simply picks up
-  everything after "LESSON:"-marker.
-   
-  User should be able to set the marker for output store, but change behaviour so that it
-  picks up everything after the first marker, instead of picking up lines matching the
-  pattern.
-   
-  Usage:
-   
-  ```yaml
-  code:
-    type: agent
-    agent: raili-coding
-    prompt: "work according to your rules."
-    output:
-      store: true
-      marker: 'SUMMARY:' # optional, defaults to "OUTPUT:"
-      # tail (if present) is applied after like it is currently      
-    on:
-      PASSED: format
-```
 
 
 # Plan: Agent Learning System for Raili

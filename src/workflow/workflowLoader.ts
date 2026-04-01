@@ -279,6 +279,14 @@ export function buildStateMachine(config: WorkflowConfig): StateMachine {
       }
     }
 
+    // If state defines a top-level 'continue' transition, include it so validation can verify the target exists
+    if ((stateConfig as any).continue) {
+      const c = (stateConfig as any).continue as string;
+      if (!transitions.includes(c)) {
+        transitions.push(c);
+      }
+    }
+
     states[stateId] = {
       id: stateId,
       config: stateConfig,
