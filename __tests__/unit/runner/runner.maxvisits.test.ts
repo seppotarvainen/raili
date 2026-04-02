@@ -2,6 +2,7 @@ import { Runner, RunnerConfig } from '../../../src/runner/runner';
 import * as commandStateRunner from '../../../src/runner/commandStateRunner';
 import * as notifyHandler from '../../../src/handlers/notifyHandler';
 import { StateMachine, WorkflowContext } from '../../../src/types';
+import { buildStateMachine, validateStateMachine } from '../../../src/workflow/workflowLoader';
 
 jest.mock('../../../src/runner/commandStateRunner');
 jest.mock('../../../src/handlers/notifyHandler');
@@ -35,7 +36,7 @@ function makeRunner(states: StateMachine['states'], initial = 'start') {
 }
 
 beforeEach(() => {
-  jest.resetAllMocks();
+  jest.clearAllMocks();
   (notifyHandler.runNotify as jest.Mock).mockResolvedValue(undefined);
 });
 
@@ -66,4 +67,61 @@ test('routes to continue target when max_visits exceeded and continue provided',
   expect(mockRunCommand).toHaveBeenCalledTimes(1);
 
   // No exception should be thrown and run completes (implicit by resolves above).
+});
+
+test('validation fails when reset_max_visits references unknown state', () => {
+  const cfg: any = {
+    initial: 'start',
+    states: {
+      start: { type: 'engine', reset_max_visits: ['nowhere'] },
+    },
+  };
+
+  const machine = buildStateMachine(cfg as any);
+  expect(() => validateStateMachine(machine)).toThrow(/unknown state 'nowhere'/);
+});
+
+// New test: ensure reset_max_visits clears visitCounts in-memory so inner loops can reuse their budget per outer iteration
+test('reset_max_visits resets visit counter for specified states', async () => {
+  // Plan: outer resets inner's visit counter; inner has max_visits.count = 2
+  // Sequence of inner command outcomes across the run: FAILED, PASSED, FAILED, TERMINATE
+  mockRunCommand
+    .mockResolvedValueOnce({ outcome: 'FAILED' })
+    .mockResolvedValueOnce({ outcome: 'PASSED' })
+    .mockResolvedValueOnce({ outcome: 'FAILED' })
+    .mockResolvedValueOnce({ outcome: 'TERMINATE' });
+
+  const { runner, context } = makeRunner(
+    {
+      outer: {
+        id: 'outer',
+        config: {
+          type: 'engine',
+          reset_max_visits: ['inner'],
+          on: { PASSED: 'inner' },
+        },
+        transitions: ['inner'],
+      },
+      inner: {
+        id: 'inner',
+        config: {
+          type: 'command',
+          command: 'do',
+          max_visits: { count: 2 },
+          transitions: { FAILED: 'inner', PASSED: 'outer', TERMINATE: 'end' },
+        },
+        transitions: ['inner', 'outer', 'end'],
+      },
+      end: { id: 'end', config: { type: 'engine' }, transitions: [] },
+    },
+    'outer',
+  );
+
+  await expect(runner.run()).resolves.not.toThrow();
+
+  // Inner should have been invoked 4 times (2 per outer iteration)
+  expect(mockRunCommand).toHaveBeenCalledTimes(4);
+
+  // Final recorded state should be 'end'
+  expect(context.stateHistory[context.stateHistory.length - 1].state).toBe('end');
 });

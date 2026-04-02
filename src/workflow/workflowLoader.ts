@@ -279,6 +279,18 @@ export function buildStateMachine(config: WorkflowConfig): StateMachine {
       }
     }
 
+    // If state defines reset_max_visits, include targets so validation verifies they exist
+    if (
+      (stateConfig as any).reset_max_visits &&
+      Array.isArray((stateConfig as any).reset_max_visits)
+    ) {
+      for (const t of (stateConfig as any).reset_max_visits as string[]) {
+        if (!transitions.includes(t)) {
+          transitions.push(t);
+        }
+      }
+    }
+
     // If state defines a top-level 'continue' transition, include it so validation can verify the target exists
     if ((stateConfig as any).continue) {
       const c = (stateConfig as any).continue as string;

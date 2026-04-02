@@ -135,6 +135,18 @@ export class Runner {
       this.visitCounts.set(stateId, visits);
     }
 
+    // After updating this state's visit counter, perform any configured resets of other states' visit counters
+    // Reset affects only in-memory visitCounts (per requirements) and is deterministic.
+    if (
+      Array.isArray((config as any).reset_max_visits) &&
+      (config as any).reset_max_visits.length > 0
+    ) {
+      for (const target of (config as any).reset_max_visits as string[]) {
+        // Only delete known state ids from the visitCounts map; existence validation is done at build/validate time.
+        this.visitCounts.delete(target);
+      }
+    }
+
     this.record(stateId);
 
     if (config.reset_outputs?.length) {

@@ -126,6 +126,12 @@ export const StateConfigSchema: ObjectSchema = {
     type: 'array',
     description: 'Clear saved outputs for these state IDs on entry',
   },
+  reset_max_visits: {
+    required: false,
+    type: 'array',
+    description:
+      'List of state IDs whose max_visits counter should be reset when this state is entered',
+  },
   max_visits: {
     required: false,
     type: 'object',
