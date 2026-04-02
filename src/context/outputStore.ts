@@ -170,6 +170,73 @@ export function readLatestRun(cwd: string, stateId: string, workflowArg?: string
 }
 
 /**
+ * Read the latest N runs for a state output file and concatenate them.
+ *
+ * Behavior:
+ * - If file missing: return null
+ * - If n is undefined or null: return all runs concatenated (oldest->newest)
+ * - If n <= 0: return empty string
+ * - If n provided: return the latest n runs in chronological order (oldest->newest)
+ * - Preserve run separators (`--- Run ...`) as they appear in the file
+ */
+export function readLatestNRuns(
+  cwd: string,
+  stateId: string,
+  n?: number | null,
+  workflowArg?: string,
+): string | null {
+  const fs = getFileSystem();
+  const p = outputPath(cwd, stateId, workflowArg);
+  if (!fs.existsSync(p)) {
+    return null;
+  }
+
+  const full = fs.readFileSync(p, 'utf8');
+
+  // Per contract, non-positive n returns empty string
+  if (n !== undefined && n !== null && n <= 0) {
+    return '';
+  }
+
+  const lastRunMarker = '--- Run ';
+  const indices: number[] = [];
+  let idx = full.indexOf(lastRunMarker);
+  while (idx !== -1) {
+    indices.push(idx);
+    idx = full.indexOf(lastRunMarker, idx + 1);
+  }
+
+  let runs: string[] = [];
+  if (indices.length === 0) {
+    // Entire file is a single run
+    runs = [full];
+  } else {
+    // Include the initial part before the first marker as the first run
+    const firstMarker = indices[0];
+    const before = full.slice(0, firstMarker);
+    runs.push(before);
+
+    // Each subsequent run includes the marker line and the content until the next marker
+    for (let i = 0; i < indices.length; i++) {
+      const start = indices[i];
+      const end = i + 1 < indices.length ? indices[i + 1] : full.length;
+      runs.push(full.slice(start, end));
+    }
+  }
+
+  // If caller requested all runs
+  if (n === undefined || n === null) {
+    const res = runs.join('').trim();
+    return res === '' ? null : res;
+  }
+
+  // n is positive (handled <=0 above)
+  const selected = runs.slice(-n);
+  const res = selected.join('').trim();
+  return res === '' ? null : res;
+}
+
+/**
  * Delete saved output files for the given state IDs.
  * Silent if files do not exist.
  */

@@ -64,10 +64,11 @@ Process: first extract according to the configured markers (see rules in "Marker
 
 ## Agent Memory Strategy
 
-Only the **last run** is appended to the agent's prompt on next invocation (not full history). This keeps context
-bounded while maintaining iterative memory.
+Full history is always stored on disk for audit trail. Use `use_latest` to control how many of the most recent stored runs are injected into the agent prompt.
 
-Full history is always stored on disk for audit trail.
+- Omitted (default): **all** stored outputs are injected into the agent prompt.
+- `use_latest: 5`: inject only the most recent 5 stored runs (useful for bounding context on long-running workflows).
+- `use_latest: 1`: inject only the latest stored run.
 
 Learnings (opt-in): States may declare a `teach:` mapping to push lessons to agents from outputs or variables. Learnings are stored at `.raili/<workflow>/learnings/<agentId>.md` and are injected into the agent prompt under `## Learnings from previous runs` before execution. Learnings are deduplicated on append to avoid loops.
 
@@ -153,7 +154,7 @@ The complete history file contains all runs with separators:
 [output from third run]
 ```
 
-On disk for audit trail, but only last run injected into agent prompt (bounded context).
+On disk for audit trail. By default Raili injects **all** stored outputs into the agent prompt; use `use_latest` to limit how many recent runs are injected to bound context.
 
 ### Run log JSONL
 

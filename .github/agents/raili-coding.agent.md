@@ -46,30 +46,15 @@ Print a concise memo at the end of your response to preserve context for the nex
   - src/runner/runner.ts (added skipState phase)
   - src/runner/stateRunnerUtils.ts (new resolveSkipTarget helper)
   - __tests__/unit/runner/skip.test.ts (new test file)
+//SUMMARY_END//
 ```
 
 **Guidelines:**
-- Always include a //SUMMARY// at the end of your output, even if you think it's obvious. That string is used as a marker and critical for maintaining context across workflow rounds.
+- Always include a //SUMMARY//...//SUMMARY_END// section at the end of your output, even if you think it's obvious. That string is used as a marker and critical for maintaining context across workflow rounds.
 - Keep **What** to 1 line; use present tense
 - Keep **Why** to 1–2 sentences; connect to architecture
 - List only files you **modified or created** (not read-only files)
 - Use relative paths from project root
-- Note if you **added to a previous summary** (paste previous summary, then append new work)
-- Keep **each round's memo** as small as possible to avoid token bloat per round (accumulated summaries across multiple rounds will naturally grow)
-
-**Example with continuation (if you received a summary and did another round this is what you print at the end):**
-```
-//SUMMARY//
-**What:** Implemented skip routing with skipState phase in runner.ts; fixed state history append order bug
-**Why:** Allow workflows to jump states on demand; ensure audit trail correctness
-**Files:**
-  - src/runner/runner.ts (added skipState phase; fixed stateHistory.push to use unshift for new entries)
-  - src/runner/stateRunnerUtils.ts (new resolveSkipTarget helper)
-  - __tests__/unit/runner/skip.test.ts (skip resolution, illegal skip, state history tests, added off-by-one regression test)
-===
-**Round 2 additions:**
-Fixed stateHistory append bug where entries were added in reverse order. Updated tests to catch regression.
-```
 
 ## Architecture Principles (Non-Negotiable)
 

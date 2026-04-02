@@ -10,6 +10,7 @@ export interface FieldSchema {
   type: FieldType;
   enum?: string[]; // For restricted value sets
   description?: string;
+  min?: number;
   validate?: 'mutual-exclusive-with-transitions' | 'on-requires-passed' | 'record-keys-enum'; // Custom validation rule
   recordKeyEnum?: string[]; // If type is 'record', restrict allowed keys to these values
   validForTypes?: StateType[]; // If set, field is only valid for these state types
@@ -40,6 +41,12 @@ export const OutputConfigSchema: ObjectSchema = {
     type: 'string',
     description:
       'Optional marker string to locate the end of the stored output (first occurrence, case-insensitive). When both marker and marker_end are provided the substring between them is extracted.',
+  },
+  use_latest: {
+    required: false,
+    type: 'number',
+    min: 1,
+    description: 'Number of latest runs to inject (omit to use all)',
   },
 };
 
