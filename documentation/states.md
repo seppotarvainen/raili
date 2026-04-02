@@ -251,3 +251,40 @@ code:
 
 Engine throws immediately on exceeding limit (before any side effects).
 
+### Resetting max_visits for nested loops
+
+When designing nested loops (an inner loop inside an outer loop), you may want the inner state's visit counter to reset each time the outer loop runs. Use `reset_max_visits` on the outer state to list downstream state IDs whose in-memory visit counters should be cleared when the outer state is entered.
+
+Example:
+
+```yaml
+initial: loop_outer
+states:
+  loop_outer:
+    type: command
+    command: echo "Outer loop iteration"
+    reset_max_visits:
+      - loop_inner
+    on:
+      PASSED: loop_inner
+      FAILED: error_state
+
+  loop_inner:
+    type: command
+    command: echo "Inner loop iteration"
+    max_visits:
+      count: 3
+    on:
+      PASSED: loop_inner  # loops back, resets after 3 attempts
+      FAILED: loop_outer
+
+  error_state:
+    type: engine
+```
+
+Expected behavior: each time `loop_outer` is entered it clears the visit counter for `loop_inner`, allowing `loop_inner` to run up to its `max_visits` limit per outer iteration.
+
+Validation: targets listed in `reset_max_visits` are verified at workflow load time. If a listed state ID does not exist the loader will fail-fast with a validation error (for example: `unknown state 'nowhere'`).
+
+Persistence: `reset_max_visits` clears only in-memory visit counters maintained during a run. Visit counts are not persisted to `.raili/context.json`, so on workflow resume visit counters are naturally reset.
+

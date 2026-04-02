@@ -44,6 +44,7 @@ export interface StateConfig {
   notify?: string; // Optional shell command to run when this state is entered
   output?: OutputConfig; // Structured output configuration
   reset_outputs?: string[]; // Clear saved outputs for these state IDs on entry
+  reset_max_visits?: string[]; // List of state IDs whose max_visits counter should be reset when this state is entered
   max_visits?: { count: number; continue?: string }; // Max visits: object with count and optional continue target (route when exceeded)
   agent?: string; // For type: agent
   script?: string; // For type: script

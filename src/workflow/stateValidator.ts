@@ -80,6 +80,18 @@ export function validateStateConfig(config: any, stateId: string): StateConfig {
     }
   }
 
+  if (config.reset_max_visits !== undefined && config.reset_max_visits !== null) {
+    if (
+      !Array.isArray(config.reset_max_visits) ||
+      config.reset_max_visits.some((v: any) => typeof v !== 'string' || v === '')
+    ) {
+      throw new SchemaValidationError(
+        `Field 'reset_max_visits' must be an array of non-empty strings`,
+        context,
+      );
+    }
+  }
+
   if (config.expose !== undefined && config.expose !== null) {
     if (!config.type || !['script', 'command'].includes(config.type)) {
       throw new SchemaValidationError(
