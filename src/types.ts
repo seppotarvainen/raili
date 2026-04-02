@@ -10,6 +10,11 @@ export interface OutputConfig {
   tail?: number; // Keep only the last N lines of output
   marker?: string; // Optional marker string to locate the start of the stored output (case-insensitive)
   marker_end?: string; // Optional marker string to locate the end of the stored output (first occurrence, case-insensitive)
+  /**
+   * Number of latest runs' stored outputs to inject into prompts. Must be >= 1.
+   * When omitted, all stored outputs are considered.
+   */
+  use_latest?: number;
 }
 
 export interface ApprovalConfig {

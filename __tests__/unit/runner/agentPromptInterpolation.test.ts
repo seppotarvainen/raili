@@ -45,7 +45,9 @@ describe('variable interpolation in agent prompts', () => {
       'analyzer.agent',
       '/tmp',
       null,
-      'Analyze ticket PROJ-456 from branch feature/login'
+      'Analyze ticket PROJ-456 from branch feature/login',
+      undefined,
+      undefined
     );
   });
 
@@ -74,7 +76,9 @@ describe('variable interpolation in agent prompts', () => {
       'analyzer.agent',
       '/tmp',
       null,
-      'Analyze PROJ-456 in '
+      'Analyze PROJ-456 in ',
+      undefined,
+      undefined
     );
   });
 
@@ -103,7 +107,9 @@ describe('variable interpolation in agent prompts', () => {
       'analyzer.agent',
       '/tmp',
       null,
-      'Price: $100, var: value'
+      'Price: $100, var: value',
+      undefined,
+      undefined
     );
   });
 
@@ -132,7 +138,9 @@ describe('variable interpolation in agent prompts', () => {
       'analyzer.agent',
       '/tmp',
       null,
-      'static prompt'
+      'static prompt',
+      undefined,
+      undefined
     );
   });
 
@@ -156,7 +164,9 @@ describe('variable interpolation in agent prompts', () => {
       'analyzer.agent',
       '/tmp',
       null,
-      'static prompt'
+      'static prompt',
+      undefined,
+      undefined
     );
   });
 
@@ -185,7 +195,9 @@ describe('variable interpolation in agent prompts', () => {
       'analyzer.agent',
       '/tmp',
       null,
-      'Find pattern: .*+?[]{}()'
+      'Find pattern: .*+?[]{}()',
+      undefined,
+      undefined
     );
   });
 });

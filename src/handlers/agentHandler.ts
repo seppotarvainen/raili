@@ -1,7 +1,9 @@
 import { spawn } from 'child_process';
+import * as path from 'path';
 import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { resolveRegistryPath } from '../context/pathUtils';
+import { readLatestNRuns } from '../context/outputStore';
 
 interface AgentExecutionResult {
   success: boolean;
@@ -24,6 +26,8 @@ export function executeAgent(
   cwd: string,
   previousOutputPath?: string | null,
   prompt?: string,
+  useLatest?: number | null,
+  workflowArg?: string,
 ): Promise<AgentExecutionResult> {
   const fs = getFileSystem();
   const entry = registry[agentId];
@@ -41,13 +45,22 @@ export function executeAgent(
   const model = entry.model ?? frontmatterModel;
 
   let resolvedPrompt = prompt ?? 'Work according to your rules';
+
   if (previousOutputPath && fs.existsSync(previousOutputPath)) {
-    const fullHistory = fs.readFileSync(previousOutputPath, 'utf8');
-    const lastRunMarker = '--- Run ';
-    const lastMarkerIdx = fullHistory.lastIndexOf(lastRunMarker);
-    const lastRun =
-      lastMarkerIdx !== -1 ? fullHistory.slice(lastMarkerIdx).trim() : fullHistory.trim();
-    resolvedPrompt = `${resolvedPrompt}\n\nYour previous output was:\n${lastRun}`;
+    // Prefer using the outputStore helper which understands run separators and n-selection
+
+    const stateId = path.basename(previousOutputPath, path.extname(previousOutputPath));
+    const history = readLatestNRuns(cwd, stateId, useLatest, workflowArg);
+    // If readLatestNRuns returned null (no runs found), fall back to reading the whole file
+    const finalHistory = history ?? fs.readFileSync(previousOutputPath, 'utf8').trim();
+    if (finalHistory) {
+      resolvedPrompt = `${resolvedPrompt}\n\nYour previous output(s):\n${finalHistory}`;
+    }
+  }
+
+  // Ensure resolvedPrompt is never an empty string. Use default fallback when trimmed blank.
+  if (!resolvedPrompt || resolvedPrompt.toString().trim() === '') {
+    resolvedPrompt = 'Work according to your rules';
   }
 
   const args = [`--agent=${agentId}`, '--prompt', resolvedPrompt, '--yolo'];

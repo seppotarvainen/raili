@@ -33,6 +33,8 @@ function setupAgent(model?: string, frontmatterModel?: string) {
   const fs = getFileSystem();
   const agentDir = path.join(TMP, '.raili');
   if (!fs.existsSync(agentDir)) fs.mkdirSync(agentDir, { recursive: true } as any);
+  // Create .raili/main/outputs/ so resolveWorkflowDir succeeds when readLatestNRuns is called
+  fs.mkdirSync(path.join(agentDir, 'main', 'outputs'), { recursive: true } as any);
   const agentFile = path.join(TMP, 'agents', 'analyzer.agent.md');
   fs.mkdirSync(path.dirname(agentFile), { recursive: true } as any);
   const frontmatter = frontmatterModel ? `---\nmodel: ${frontmatterModel}\n---\n` : '';
@@ -111,7 +113,7 @@ test('uses default prompt when no previousOutputPath given', async () => {
 
 test('injects previous output content into prompt when previousOutputPath is provided', async () => {
   const registry = setupAgent();
-  const prevFile = path.join(TMP, 'previous.md');
+  const prevFile = path.join(TMP, '.raili', 'main', 'outputs', 'previous.md');
   getFileSystem().writeFileSync(prevFile, 'I already did X');
 
   await executeAgent(registry, 'analyzer.agent', TMP, prevFile);
@@ -143,9 +145,9 @@ test('uses default prompt when previousOutputPath points to nonexistent file', a
   );
 });
 
-test('injects only the last run when history file has multiple runs', async () => {
+test('injects all runs when history file has multiple runs (default behavior)', async () => {
   const registry = setupAgent();
-  const historyFile = path.join(TMP, 'history.md');
+  const historyFile = path.join(TMP, '.raili', 'main', 'outputs', 'history.md');
   getFileSystem().writeFileSync(
     historyFile,
     'first run output\n\n--- Run 2026-01-01T00:00:00.000Z ---\n\nsecond run output\n\n--- Run 2026-02-01T00:00:00.000Z ---\n\nthird run output',
@@ -156,9 +158,9 @@ test('injects only the last run when history file has multiple runs', async () =
   const spawnArgs = spawn.mock.calls[0][1] as string[];
   const promptIndex = spawnArgs.indexOf('--prompt');
   const prompt = spawnArgs[promptIndex + 1];
+  expect(prompt).toContain('first run output');
+  expect(prompt).toContain('second run output');
   expect(prompt).toContain('third run output');
-  expect(prompt).not.toContain('first run output');
-  expect(prompt).not.toContain('second run output');
 });
 
 test('uses custom prompt when prompt param is provided', async () => {
@@ -172,7 +174,7 @@ test('uses custom prompt when prompt param is provided', async () => {
 
 test('appends previous output to custom prompt when both are provided', async () => {
   const registry = setupAgent();
-  const prevFile = path.join(TMP, 'prev_custom.md');
+  const prevFile = path.join(TMP, '.raili', 'main', 'outputs', 'prev_custom.md');
   getFileSystem().writeFileSync(prevFile, 'previous work');
 
   await executeAgent(registry, 'analyzer.agent', TMP, prevFile, 'Do the thing');

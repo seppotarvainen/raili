@@ -52,12 +52,15 @@ class AgentStateRunner implements IStateRunner {
       assembledPrompt = `${learningsIntro}\n${fullLearnings}\n---\n\n## Current prompt\n\n${assembledPrompt}`;
     }
 
+    const useLatest = state.config.output?.use_latest;
     const result = await executeAgent(
       this.registry,
       agentId,
       cwd,
       previousOutputPath,
       assembledPrompt,
+      useLatest,
+      workflowArg,
     );
 
     // Store output if configured
