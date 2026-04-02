@@ -10,8 +10,8 @@ const outputFile = path.join(__dirname, '..', 'src', 'cli', 'generatedDocs.ts');
 const usage = {};
 const sections = {};
 
-// Process root-level files (feature sections)
-const rootFiles = fs.readdirSync(docsDir).filter(f => f.endsWith('.md'));
+// Process root-level files (feature sections), excluding architecture directory
+const rootFiles = fs.readdirSync(docsDir).filter(f => f.endsWith('.md') && f !== 'architecture');
 
 rootFiles.forEach(file => {
   const content = fs.readFileSync(path.join(docsDir, file), 'utf-8');

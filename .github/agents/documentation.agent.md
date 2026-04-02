@@ -41,8 +41,9 @@ You will receive:
 
 ## Documentation Structure
 
-Raili's documentation lives in the `documentation/` directory:
+Raili's documentation lives in the `documentation/` directory and is split into two categories:
 
+**User Documentation** (published via `npm run build:docs`):
 ```
 documentation/
 ├── approval.md      # Manual approval states and prompts
@@ -56,6 +57,16 @@ documentation/
     ├── run.md       # raili run command and execution flow
     └── stats.md     # raili stats command
 ```
+
+**Architecture Documentation** (excluded from build; for contributors):
+```
+documentation/architecture/
+├── infrastructure.md  # File system abstraction and provider patterns
+├── presenter.md       # Console presentation layer
+└── ... (high-level docs for extending/maintaining Raili's core)
+```
+
+Only update **User Documentation** files. If changes relate to internal architecture or implementation patterns, they belong in `documentation/architecture/` and are outside your scope.
 
 ## Documentation Conventions
 
