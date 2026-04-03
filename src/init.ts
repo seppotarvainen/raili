@@ -21,6 +21,7 @@ export async function initCommand(cwd: string) {
     '# Optional resolver files (place under the workflow dir):',
     '#   .raili/<workflow>/approval-resolver.js',
     "#   .raili/<workflow>/feedback-resolver.js",
+    "#   .raili/<workflow>/trigger.js - Optional: Create .raili/<workflow>/trigger.js for event-driven runs via 'raili listen'",
     '',
     'initial: init',
     '',
