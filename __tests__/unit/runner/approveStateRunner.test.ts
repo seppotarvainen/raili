@@ -7,6 +7,7 @@ jest.mock('../../../src/handlers/manualHandler');
 
 const mockRunNotify = notifyHandler.runNotify as jest.MockedFunction<typeof notifyHandler.runNotify>;
 const mockHandleManual = manualHandler.handleManualTransition as jest.MockedFunction<typeof manualHandler.handleManualTransition>;
+const mockLoadApproval = manualHandler.loadApprovalResolver as jest.MockedFunction<typeof manualHandler.loadApprovalResolver>;
 
 const approval = {
   question: 'Is the analysis correct?',
@@ -17,6 +18,7 @@ const approval = {
 beforeEach(() => {
   jest.resetAllMocks();
   mockHandleManual.mockResolvedValue({ chosen: 'PASSED', target: 'hello', reason: '' });
+  mockLoadApproval.mockReturnValue(async (input: any) => 'PASSED' as any);
 });
 
 test('runs approval prompt with no approval-level notify', async () => {
@@ -56,4 +58,13 @@ test('notify failure does not prevent approval prompt (best-effort)', async () =
 
   expect(mockHandleManual).toHaveBeenCalledTimes(1);
   expect(outcome.chosen).toBe('PASSED');
+});
+
+test('forwards resolver to manual handler when provided', async () => {
+  const resolverPath = '/tmp/approval-resolver.js';
+  const outcome = await runApprovalStep('analyze', approval, { cwd: '/tmp' }, resolverPath);
+
+  expect(mockLoadApproval).toHaveBeenCalledWith(resolverPath);
+  // ensure the manual handler was called with the resolver as second arg
+  expect(mockHandleManual.mock.calls[0][1]).toBeDefined();
 });

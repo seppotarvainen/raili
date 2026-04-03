@@ -72,7 +72,7 @@ The diff at `.raili/main/outputs/show_diff.md` is `git diff main` — it contain
 - Missing `restore()` / teardown for injected test fakes
 
 **Do NOT block for:**
-- Missing documentaion updates (that's the documentation agent's job)
+- Missing documentation updates (that's the documentation agent's job)
 - Interface consistency improvements (e.g., making an optional method required) — these are improvements
 - Changes in previously completed parts' files
 - Style preferences or nitpicks

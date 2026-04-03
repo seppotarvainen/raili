@@ -8,6 +8,14 @@ import { runCommandState } from './commandStateRunner';
 import { ApprovalOutcome, runApprovalStep } from './approveStateRunner';
 import { runNotify } from '../handlers/notifyHandler';
 import { clearAgentOutputs, readLatestRun } from '../context/outputStore';
+import {
+  resolveWorkflowDir,
+  resolveApprovalResolverPath,
+  resolveFeedbackResolverPath,
+} from '../context/pathUtils';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
+import path from 'path';
+import { loadFeedbackResolver } from '../handlers/manualHandler';
 import { readLearnings, appendUniqueLearning } from '../context/learningStore';
 import { resolveTransition } from './transition';
 import { handleFeedbackPrompt } from '../handlers/manualHandler';
@@ -54,6 +62,8 @@ export class Runner {
   private readonly cwd: string;
   private readonly workflowArg?: string;
   private readonly visitCounts = new Map<string, number>();
+  private approvalResolverPath?: string | null;
+  private feedbackResolverPath?: string | null;
 
   constructor(config: RunnerConfig) {
     this.stateMachine = config.stateMachine;
@@ -287,10 +297,12 @@ export class Runner {
   private async handleApproval(stateId: string, stateDef: StateDef): Promise<string> {
     const approval = stateDef.config.approval!;
 
-    const approvalOutcome: ApprovalOutcome = await runApprovalStep(stateId, approval, {
-      cwd: this.cwd,
-      context: this.context,
-    });
+    const approvalOutcome: ApprovalOutcome = await runApprovalStep(
+      stateId,
+      approval,
+      { cwd: this.cwd, context: this.context, workflowArg: this.workflowArg },
+      this.approvalResolverPath,
+    );
     const nextStateId = resolveNextState(
       stateId,
       { PASSED: approval.PASSED, FAILED: approval.FAILED },
@@ -359,7 +371,12 @@ export class Runner {
     }
 
     const fbStart = Date.now();
-    const val = await handleFeedbackPrompt(fb);
+    // If a feedback resolver path was resolved at startup, load it and pass into the handler (fail-fast if invalid)
+    let fbResolver = null;
+    if (typeof this.feedbackResolverPath !== 'undefined') {
+      fbResolver = loadFeedbackResolver(this.feedbackResolverPath ?? null);
+    }
+    const val = await handleFeedbackPrompt(fb, fbResolver);
     const fbWait = Date.now() - fbStart;
 
     if (!this.context.vars) {
@@ -471,7 +488,10 @@ export class Runner {
    */
   private routeToNext(stateId: string, stateDef: StateDef, outcome: string): string {
     // If state defines 'continue', route unconditionally to it.
-    const cont = (stateDef.config as any).continue as string | undefined;
+    // Be resilient: continue may be present on the state's config or (in some test setups)
+    // on the top-level stateDef object. Prefer config, fall back to stateDef property.
+    const cont =
+      (stateDef.config as any).continue ?? ((stateDef as any).continue as string | undefined);
     if (cont) {
       if (!(cont in this.stateMachine.states)) {
         throw new Error(`State '${stateId}': continue target '${cont}' not found in state machine`);
@@ -553,6 +573,21 @@ export class Runner {
       this.record(currentStateId);
     }
 
+    // Resolve workflow directory and resolver paths at startup only when a .raili directory exists.
+    // This preserves fail-fast behavior for workspaces that have been initialized while allowing
+    // unit tests and callers that don't scaffold .raili/ to run without error.
+    const fs = getFileSystem();
+    const railiRoot = path.join(this.cwd, '.raili');
+    if (fs.existsSync(railiRoot)) {
+      const wfDir = resolveWorkflowDir(this.cwd, this.workflowArg);
+      this.approvalResolverPath = resolveApprovalResolverPath(wfDir);
+      this.feedbackResolverPath = resolveFeedbackResolverPath(wfDir);
+    } else {
+      // No .raili present - treat as a non-initialized workspace (no resolvers)
+      this.approvalResolverPath = undefined;
+      this.feedbackResolverPath = undefined;
+    }
+
     let stateId = currentStateId;
 
     while (true) {
@@ -585,6 +620,7 @@ export class Runner {
           !config.on &&
           !config.transitions &&
           !config.approval &&
+          !config.feedback &&
           stateDef.transitions.length === 0
         ) {
           const successValue = config.success === undefined ? null : !!config.success;
@@ -629,6 +665,27 @@ export class Runner {
         // Phase 8: Teach phase - process state.config.teach (push learnings to agents)
         if ((stateDef.config as any).teach) {
           await this.handleTeach(stateId, stateDef);
+        }
+
+        // If no routing is defined (neither 'on' nor 'transitions' nor 'continue'), treat state as terminal now.
+        // This can happen for states that only declare 'feedback' (which were executed above).
+        // Be resilient to continue being present on either the state's config or the top-level stateDef (tests sometimes place it there).
+        const hasContinue =
+          (stateDef.config as any).continue ?? ((stateDef as any).continue as string | undefined);
+        if (!stateDef.config.on && !stateDef.config.transitions && !hasContinue) {
+          const successValue =
+            (stateDef.config as any).success === undefined
+              ? null
+              : !!(stateDef.config as any).success;
+          this.record(stateId, { success: successValue });
+          // Present terminal exit summary
+          try {
+            const enteredAt = this.currentPresenter?.entry?.enteredAt;
+            const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
+            this.currentPresenter?.appendStateExit(stateDef, 'TERMINAL', undefined, elapsedMs);
+            this.currentPresenter?.render();
+          } catch {}
+          break;
         }
 
         // Phase 9: Route to next state

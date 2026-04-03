@@ -99,3 +99,5 @@ If `.raili/` already exists, `raili init` will not overwrite existing files and 
 - `.raili/main/context.json` — Runtime state (auto-created on first run)
 - `.raili/main/outputs/` — Stored agent/script outputs (auto-created)
 - `.raili/main/learnings/` — Agent learnings (auto-created)
+- `.raili/main/approval-resolver.js` — *(optional)* JS module to programmatically resolve approvals
+- `.raili/main/feedback-resolver.js` — *(optional)* JS module to programmatically provide feedback for `feedback:` prompts

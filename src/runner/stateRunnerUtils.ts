@@ -1,5 +1,5 @@
 import { StateDef } from '../types';
-import { saveOutput } from '../context/outputStore';
+import { saveOutput, outputPath } from '../context/outputStore';
 import { parseExports } from '../variables/variableExports';
 import type { StateResult } from './runner';
 
@@ -97,4 +97,12 @@ export function processStateResult(
   const exports = parseExposedVars(state, result.stdout);
   const outcome = resolveOutcome(state, result, handlerType);
   return { outcome, exports };
+}
+
+/**
+ * Return the canonical output path for a state inside the workflow directory.
+ * This helper exposes the underlying output path computation in a testable place.
+ */
+export function resolveStateOutputPath(cwd: string, stateId: string, workflowArg?: string): string {
+  return outputPath(cwd, stateId, workflowArg);
 }

@@ -18,6 +18,9 @@ export async function initCommand(cwd: string) {
   const workflowYaml = [
     '# Raili Workflow Configuration',
     '# Defines the workflow state machine',
+    '# Optional resolver files (place under the workflow dir):',
+    '#   .raili/<workflow>/approval-resolver.js',
+    "#   .raili/<workflow>/feedback-resolver.js",
     '',
     'initial: init',
     '',
