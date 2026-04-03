@@ -56,7 +56,7 @@ Sub-workflow files must follow these rules (all validated at startup — fail-fa
 
 At least one state in the sub-workflow must be marked `out: true`. This marks the exit point where control returns to
 the parent workflow. The `out: true` state inherits the routing defined on the parent group state (`on`, `transitions`,
-or `approval`).
+`approval`, or `continue`).
 
 ```yaml
 # Sub-workflow: review-flow.yaml
@@ -72,7 +72,7 @@ states:
     out: true          # ← exit point; inherits parent's routing
 ```
 
-An `out: true` state must **not** define its own `on`, `transitions`, `approval`, `skip`, or `max_visits` — these are
+An `out: true` state must **not** define its own `on`, `transitions`, `approval`, `skip`, `max_visits`, or `continue` — these are
 inherited from the parent group state.
 
 ## Routing
@@ -130,7 +130,7 @@ When the workflow loader encounters a `type: group` state, it:
 3. Validates structure (no nested groups, has `out: true`, no ID collisions)
 4. Prefixes all sub-state IDs with `<groupStateId>.` (dot separator)
 5. Rewrites internal transitions to use prefixed IDs
-6. Copies parent routing (`on`/`transitions`/`approval`) onto each `out: true` state
+6. Copies parent routing (`on`/`transitions`/`approval`/`continue`) onto each `out: true` state
 7. Replaces the group state with a proxy `engine` state that `skip`s to the first flattened sub-state
 8. Merges all sub-workflow inputs into the parent's `inputs` (duplicates cause error)
 
@@ -273,7 +273,7 @@ Outputs are stored at `.raili/<workflow>/outputs/analyze.md` (no parent prefix).
 - Groups are **flattened at load time** — the runner never sees `type: group` at runtime
 - Nesting is limited to **one level** — sub-workflows must not contain `group` states
 - Sub-workflows must not declare `initial` — the first state in the `states` map is the entry point
-- The `out: true` state is the **only** exit from a sub-workflow; it must not define its own routing
+- The `out: true` state is the **only** exit from a sub-workflow; it must not define its own routing (including `continue`)
 - All common state fields (`notify`, `output`, `reset_outputs`, `max_visits`, `skip`, `feedback`, `expose`) work on sub-states as expected
 - The group proxy state appears in `stateHistory` as a skip entry before the first sub-state
 

@@ -416,3 +416,57 @@ states:
     expect(states[states.length - 1]).toBe('final');
   });
 });
+
+// ---------------------------------------------------------------------------
+// 6. Group with continue transition
+// ---------------------------------------------------------------------------
+describe('group workflow - continue transition', () => {
+  it('routes via continue when configured on parent group', async () => {
+    writeWorkflow(
+      tmpDir,
+      `initial: setup
+states:
+  setup:
+    type: engine
+    on:
+      PASSED: process_group
+  process_group:
+    type: group
+    group: ./sub.yaml
+    continue: cleanup
+  cleanup:
+    type: engine
+`,
+    );
+
+    // Sub-workflow with out state that should inherit continue from parent group
+    writeSubWorkflow(
+      tmpDir,
+      'main',
+      'sub.yaml',
+      `states:
+  work:
+    type: agent
+    agent: test_agent
+    out: true
+`,
+    );
+
+    writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
+    writeScriptRegistry(tmpDir, {});
+    writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
+
+    spawn.mockImplementation((cmd: string) => {
+      if (cmd === 'copilot') return fakeChild('work output', '', 0);
+      return fakeChild('', '', 0);
+    });
+
+    await runCommand(tmpDir, 'clean', {});
+
+    const ctx = loadContext(tmpDir);
+    const states = ctx.stateHistory.map((e) => e.state);
+    // After setup, process_group proxy, and work state, should route via continue to cleanup
+    expect(states).toEqual(['setup', 'process_group', 'process_group.work', 'cleanup']);
+    expect(states[states.length - 1]).toBe('cleanup');
+  });
+});
