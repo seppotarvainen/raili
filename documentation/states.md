@@ -187,11 +187,11 @@ states:
 
 - `group` (required) — Relative path to sub-workflow YAML file (relative to workflow directory)
 
-**Routing:** Defined on the group state (`on:`, `transitions:`, or `approval:`). The `out: true` sub-state inherits this routing.
+**Routing:** Defined on the group state (`on:`, `transitions:`, `approval`, or `continue:`). The `out: true` sub-state inherits this routing.
 
 **Flattening:** Sub-state IDs are prefixed with `<groupId>.` (e.g., `build_group.compile`). The group state becomes a proxy engine state that skips to the first sub-state. Context, outputs, and learnings are shared with the parent.
 
-**Constraints:** Sub-workflows must not contain `group` states (depth = 1), must declare `out: true` at least once, and `out: true` states must not define their own routing.
+**Constraints:** Sub-workflows must not contain `group` states (depth = 1), must declare `out: true` at least once, and `out: true` states must not define their own routing (including `continue`).
 
 See `documentation/groups.md` for full details on flattening, shared context, resumption, and examples.
 

@@ -469,3 +469,88 @@ afterEach(() => {
     });
   });
 
+  // ── group state continue inheritance ────────────────────────────────────
+
+  describe('loadWorkflowConfig group state continue inheritance', () => {
+    function writeWf(dir: string, yaml: string) {
+      const p = path.join(dir, '.raili', 'main');
+      getFileSystem().mkdirSync(p, { recursive: true } as any);
+      getFileSystem().writeFileSync(path.join(p, 'workflow.yaml'), yaml);
+    }
+
+    function writeSub(dir: string, yaml: string) {
+      const p = path.join(dir, '.raili', 'main');
+      getFileSystem().mkdirSync(p, { recursive: true } as any);
+      getFileSystem().writeFileSync(path.join(p, 'sub.yaml'), yaml);
+    }
+
+    test('inherits continue field from parent group to out state', () => {
+      writeWf(
+        tmpdir,
+        [
+          'initial: start',
+          'states:',
+          '  start:',
+          '    type: engine',
+          '  group_state:',
+          '    type: group',
+          '    group: ./sub.yaml',
+          '    continue: finish',
+          '  finish:',
+          '    type: engine',
+        ].join('\n'),
+      );
+
+      writeSub(
+        tmpdir,
+        [
+          'states:',
+          '  work:',
+          '    type: agent',
+          '    agent: agent_id',
+          '    out: true',
+        ].join('\n'),
+      );
+
+      const cfg = loadWorkflowConfig(tmpdir);
+      // After flattening, the out state should have inherited the continue from parent
+      expect(cfg.states['group_state.work']).toBeDefined();
+      expect((cfg.states['group_state.work'] as any).continue).toBe('finish');
+    });
+
+    test('throws when out state defines continue (not inherited)', () => {
+      writeWf(
+        tmpdir,
+        [
+          'initial: start',
+          'states:',
+          '  start:',
+          '    type: engine',
+          '  group_state:',
+          '    type: group',
+          '    group: ./sub.yaml',
+          '    on:',
+          '      PASSED: finish',
+          '  finish:',
+          '    type: engine',
+        ].join('\n'),
+      );
+
+      writeSub(
+        tmpdir,
+        [
+          'states:',
+          '  work:',
+          '    type: agent',
+          '    agent: agent_id',
+          '    out: true',
+          '    continue: other',
+        ].join('\n'),
+      );
+
+      expect(() => loadWorkflowConfig(tmpdir)).toThrow(
+        /out: true.*must not define routing.*continue/i,
+      );
+    });
+  });
+

@@ -147,10 +147,11 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
             (subCfg as any).transitions ||
             (subCfg as any).approval ||
             (subCfg as any).skip ||
-            (subCfg as any).max_visits
+            (subCfg as any).max_visits ||
+            (subCfg as any).continue
           ) {
             throw new Error(
-              `Invalid sub-state '${subId}' in '${subPath}': 'out: true' states must not define routing (on/transitions/approval/skip/max_visits)`,
+              `Invalid sub-state '${subId}' in '${subPath}': 'out: true' states must not define routing (on/transitions/approval/skip/max_visits/continue)`,
             );
           }
           // Inherit parent's routing onto the sub-state so the sub-workflow can signal back into the parent.
@@ -162,6 +163,9 @@ export function loadWorkflowConfig(cwd: string, workflowPath?: string): Workflow
           }
           if ((stateCfg as any).approval) {
             cfgCopy.approval = Object.assign({}, (stateCfg as any).approval);
+          }
+          if ((stateCfg as any).continue) {
+            cfgCopy.continue = (stateCfg as any).continue;
           }
         } else {
           // For non-out sub-states, rewrite transition targets that reference other sub-states

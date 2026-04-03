@@ -111,7 +111,7 @@ states:
 - Missing routing key in `transitions:` → workflow error
 - Variables can be used in approval questions with `${variable_name}` syntax
 - `skip` may be used to bypass a state and immediately route to another state without running handlers. Use with care to avoid hiding important checks.
-- **Group states** define routing on the parent group (`on:`, `transitions:`, or `approval:`). The sub-workflow's `out: true` state inherits this routing. See `documentation/groups.md` for details.
+- **Group states** define routing on the parent group (`on:`, `transitions:`, `approval,`, or `continue:`). The sub-workflow's `out: true` state inherits this routing. See `documentation/groups.md` for details.
 
 ## Unconditional Routing (continue:)
 
@@ -122,6 +122,7 @@ Key points:
 - `continue` is mutually exclusive with `on:`, `transitions:`, and `approval:` — workflows must declare exactly one routing mechanism per state.
 - For `script` and `command` states, `continue` ignores the exit code (both success and failure will route to the `continue` target).
 - For `agent` states, `continue` ignores the agent's reported outcome and routes unconditionally.
+- When declared on a `group` state, `continue` is copied to the sub-workflow's `out: true` state and will be used to route back to the parent. Sub-workflow `out: true` states must not define `continue` themselves — the loader will fail-fast if they do.
 - If the `continue` target references an unknown state ID this is a workflow validation error (fail-fast during load/build).
 
 Example usage:
