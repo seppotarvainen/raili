@@ -1,3 +1,5 @@
+# listen
+
 > Listen for external events and trigger workflow runs.
 
 ## Usage
