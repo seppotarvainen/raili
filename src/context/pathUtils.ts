@@ -66,3 +66,31 @@ export function learningsFilePath(cwd: string, agentId: string, workflowArg?: st
   const workflowDir = resolveWorkflowDir(cwd, workflowArg);
   return path.join(workflowDir, 'learnings', `${agentId}.md`);
 }
+
+/**
+ * Resolve the absolute path to an approval resolver file inside the workflow directory.
+ * Returns the absolute path if the file exists, otherwise null.
+ * Synchronous and will propagate unexpected FS errors.
+ */
+export function resolveApprovalResolverPath(workflowDir: string): string | null {
+  const fs = getFileSystem();
+  const p = path.join(workflowDir, 'approval-resolver.js');
+  if (fs.existsSync(p)) {
+    return p;
+  }
+  return null;
+}
+
+/**
+ * Resolve the absolute path to a feedback resolver file inside the workflow directory.
+ * Returns the absolute path if the file exists, otherwise null.
+ * Synchronous and will propagate unexpected FS errors.
+ */
+export function resolveFeedbackResolverPath(workflowDir: string): string | null {
+  const fs = getFileSystem();
+  const p = path.join(workflowDir, 'feedback-resolver.js');
+  if (fs.existsSync(p)) {
+    return p;
+  }
+  return null;
+}

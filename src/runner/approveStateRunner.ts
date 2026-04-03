@@ -3,13 +3,16 @@ import {
   handleManualTransition,
   ManualResult,
   ManualTransitionConfig,
+  loadApprovalResolver,
 } from '../handlers/manualHandler';
 import { NotifyResult, runNotify } from '../handlers/notifyHandler';
+import { outputPath } from '../context/outputStore';
 import { interpolateString } from '../variables/variableInterpolation';
 
 interface ApprovalStepOptions {
   cwd: string;
   context?: WorkflowContext;
+  workflowArg?: string;
 }
 
 export interface ApprovalOutcome {
@@ -30,6 +33,7 @@ export async function runApprovalStep(
   stateId: string,
   approval: ApprovalConfig,
   options: ApprovalStepOptions,
+  approvalResolverPath?: string | null,
 ): Promise<ApprovalOutcome> {
   let notifyRes: NotifyResult | undefined = undefined;
   if (approval.notify) {
@@ -52,6 +56,39 @@ export async function runApprovalStep(
     multiline: approval.multiline,
   };
 
+  // If an approval resolver path was provided, attempt to load the resolver (fail-fast when a path string is supplied)
+  let approvalResolver = null;
+  let outPath: string | null = null;
+  if (typeof approvalResolverPath !== 'undefined' && approvalResolverPath !== null) {
+    approvalResolver = loadApprovalResolver(approvalResolverPath);
+  }
+
+  // Provide outputPath and vars to the resolver via manual handler's input shape if a resolver is actually present.
+  if (approvalResolver) {
+    // compute deterministic output path for the state (may point to a non-existent file)
+    // Guard against workspaces that don't have .raili initialized (unit tests); if resolving the path fails, continue with null.
+    try {
+      outPath = outputPath(options.cwd, stateId, options.workflowArg);
+    } catch (e) {
+      outPath = null;
+    }
+
+    const result: ManualResult = await handleManualTransition(manualCallArg, approvalResolver, {
+      vars,
+      outputPath: outPath,
+      stateName: stateId,
+    });
+    return {
+      chosen: result.chosen,
+      target: result.target,
+      reason: result.reason,
+      question: interpolatedQuestion,
+      notify: notifyRes,
+      waitMs: result.waitMs,
+    };
+  }
+
+  // No resolver provided — call manual handler in its simplest form so unit tests can assert on a single argument
   const result: ManualResult = await handleManualTransition(manualCallArg);
 
   return {

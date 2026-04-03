@@ -89,6 +89,43 @@ review:
 
 Missing variables → immediate error (fail-fast).
 
+## Pluggable Approval & Feedback Resolvers
+
+Raili can automatically run JS resolver modules instead of showing the interactive prompt. Place resolver files under the workflow directory (e.g. `.raili/main/`):
+
+- `.raili/<workflow>/approval-resolver.js`
+- `.raili/<workflow>/feedback-resolver.js`
+
+Behavior:
+
+- **Approval resolver**: module must export a function `async function(input)` that returns either `"PASSED"` or `"FAILED"`. The engine calls the resolver with an input object containing `{ question, stateName, vars?, outputPath? }`. If the resolver throws or returns an invalid value the run fails immediately (fail-fast).
+
+Example approval resolver:
+
+```js
+module.exports = async function (input) {
+  // input.question, input.stateName, input.vars, input.outputPath
+  return 'PASSED';
+};
+```
+
+- **Feedback resolver**: module must export a function `async function(input)` that returns a string. The input object contains `{ prompt, stateName, vars? }`. The returned string is stored into the workflow `context.vars` under the state's declared `expose_var` name (same as typed feedback) so subsequent states and notify commands may read it via `$RAILI_VAR_<UPPERCASE>`.
+
+Example feedback resolver:
+
+```js
+module.exports = async function (input) {
+  return 'Automated review: looks good';
+};
+```
+
+Notes:
+
+- When a resolver is present, it is executed instead of the CLI prompt. Resolvers are loaded synchronously from the workflow directory and are validated — invalid exports cause the run to fail fast.
+- Approval resolvers must return exactly `PASSED` or `FAILED` (strings). Feedback resolvers must return a string (may be empty).
+- Resolver modules may access `input.vars` (current context variables) and `input.outputPath` (path to the state's output file) to make deterministic decisions.
+
+
 ## Approval Response Tracking
 
 Approval questions, answers, and any notify metadata are recorded in `context.json` as part of the originating state's history entry under a `meta` object. When manual prompts or feedback incur idle wait time, Raili records `meta.waitMs` (milliseconds) for that state — this represents the total time spent waiting for human input and is persisted to make runs auditable.

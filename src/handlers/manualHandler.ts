@@ -14,8 +14,88 @@ export interface ManualResult {
   waitMs?: number;
 }
 
-interface ManualOpts {
-  multiline: boolean | undefined;
+// Resolver interfaces
+interface ApprovalResolverInput {
+  question: string;
+  stateName: string;
+  vars?: Record<string, string>;
+  outputPath?: string | null;
+}
+type ApprovalResolverFunction = (input: ApprovalResolverInput) => Promise<'PASSED' | 'FAILED'>;
+
+interface FeedbackResolverInput {
+  prompt: string;
+  stateName: string;
+  vars?: Record<string, string>;
+}
+type FeedbackResolverFunction = (input: FeedbackResolverInput) => Promise<string>;
+
+/**
+ * Loaders for resolver modules. These are fail-fast: throw on invalid modules.
+ */
+export function loadApprovalResolver(resolverPath: string | null): ApprovalResolverFunction | null {
+  if (!resolverPath) return null;
+  // Use require to load arbitrary resolver modules (relative or absolute paths supported)
+  const mod = require(resolverPath) as unknown;
+  const fn =
+    typeof mod === 'function'
+      ? mod
+      : mod && typeof (mod as { default?: unknown }).default === 'function'
+        ? (mod as { default?: unknown }).default
+        : null;
+  if (!fn) {
+    throw new Error(`Approval resolver at '${resolverPath}' does not export a function`);
+  }
+  return fn as ApprovalResolverFunction;
+}
+
+export function loadFeedbackResolver(resolverPath: string | null): FeedbackResolverFunction | null {
+  if (!resolverPath) return null;
+  const mod = require(resolverPath) as unknown;
+  const fn =
+    typeof mod === 'function'
+      ? mod
+      : mod && typeof (mod as { default?: unknown }).default === 'function'
+        ? (mod as { default?: unknown }).default
+        : null;
+  if (!fn) {
+    throw new Error(`Feedback resolver at '${resolverPath}' does not export a function`);
+  }
+  return fn as FeedbackResolverFunction;
+}
+
+/**
+ * Execution wrappers that call resolver functions and propagate exceptions (fail-fast semantics).
+ */
+export async function executeApprovalResolver(
+  resolver: ApprovalResolverFunction,
+  input: ApprovalResolverInput,
+): Promise<'PASSED' | 'FAILED'> {
+  try {
+    const res = await resolver(input);
+    if (res !== 'PASSED' && res !== 'FAILED') {
+      throw new Error(`Approval resolver returned invalid outcome: ${String(res)}`);
+    }
+    return res;
+  } catch (err) {
+    // Fail-fast: re-throw preserving message
+    throw err;
+  }
+}
+
+export async function executeFeedbackResolver(
+  resolver: FeedbackResolverFunction,
+  input: FeedbackResolverInput,
+): Promise<string> {
+  try {
+    const res = await resolver(input);
+    if (typeof res !== 'string') {
+      throw new Error('Feedback resolver must return a string');
+    }
+    return res;
+  } catch (err) {
+    throw err;
+  }
 }
 
 /**
@@ -23,13 +103,32 @@ interface ManualOpts {
  * Returns the chosen outcome, target state, the reason (if any) and optional waitMs in milliseconds.
  *
  * For deterministic tests, RAILI_MANUAL_CHOICE env var can be set to a key from options (waitMs = 0).
+ * If an approvalResolver is provided, it will be executed instead of the CLI prompt.
  */
 export async function handleManualTransition(
   config: ManualTransitionConfig,
+  approvalResolver?: ApprovalResolverFunction | null,
+  resolverInputOverrides?: {
+    vars?: Record<string, string>;
+    outputPath?: string | null;
+    stateName?: string;
+  },
 ): Promise<ManualResult> {
   const keys = Object.keys(config.options || {});
   if (keys.length === 0) {
     throw new Error('No manual options provided');
+  }
+
+  // If resolver provided, execute it and map to ManualResult
+  if (approvalResolver) {
+    const input: ApprovalResolverInput = {
+      question: config.question,
+      stateName: resolverInputOverrides?.stateName ?? '',
+      vars: resolverInputOverrides?.vars,
+      outputPath: resolverInputOverrides?.outputPath ?? null,
+    };
+    const outcome = await executeApprovalResolver(approvalResolver, input);
+    return { chosen: outcome, target: config.options[outcome], reason: '', waitMs: 0 };
   }
 
   // Test escape hatch — skip prompt entirely
@@ -89,13 +188,24 @@ export async function handleManualTransition(
  * Respects RAILI_FEEDBACK_<UPPERCASE_NAME> env var to bypass stdin (CI).
  * If `required` is true, re-prompts until a non-empty value is provided.
  *
- * NOTE: This function preserves its existing API and returns the feedback text only. The caller (Engine)
- * is responsible for measuring and persisting wait durations for feedback prompts if desired.
+ * If feedbackResolver is provided it will be executed instead of CLI prompt.
  */
-export async function handleFeedbackPrompt(feedback: FeedbackConfig): Promise<string> {
+export async function handleFeedbackPrompt(
+  feedback: FeedbackConfig,
+  feedbackResolver?: FeedbackResolverFunction | null,
+): Promise<string> {
   const name = feedback.expose_var;
   if (!name || name.trim() === '') {
     throw new Error('Feedback: expose_var must be provided');
+  }
+
+  // If resolver provided, execute it
+  if (feedbackResolver) {
+    const input: FeedbackResolverInput = {
+      prompt: feedback.question ?? `Enter feedback for '${name}':`,
+      stateName: '',
+    };
+    return await executeFeedbackResolver(feedbackResolver, input);
   }
 
   const envName = `RAILI_FEEDBACK_${name.toUpperCase()}`;

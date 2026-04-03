@@ -125,6 +125,35 @@ export interface WorkflowContext {
   stateHistory: StateHistoryEntry[];
 }
 
+// Inputs provided to approval resolver functions
+interface ApprovalResolverInput {
+  // The state id for which approval is being resolved
+  stateId: string;
+  // Absolute workflow directory (e.g. .raili/main)
+  workflowDir: string;
+  // Current persisted workflow context
+  context: WorkflowContext;
+}
+
+// Inputs provided to feedback resolver functions
+interface FeedbackResolverInput {
+  // Absolute workflow directory (e.g. .raili/main)
+  workflowDir: string;
+  // Current persisted workflow context
+  context: WorkflowContext;
+  // The feedback configuration block from the state
+  config: FeedbackConfig;
+}
+
+// Resolver function signatures
+type ApprovalResolverFn = (
+  input: ApprovalResolverInput,
+) => Promise<'PASSED' | 'FAILED'> | 'PASSED' | 'FAILED';
+
+type FeedbackResolverFn = (
+  input: FeedbackResolverInput,
+) => Promise<string | null> | string | null;
+
 // Parsed CLI/run arguments
 export interface RailiRunArgs {
   workflow?: string;
