@@ -1,7 +1,7 @@
 import path from 'path';
 import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 import { setupFakeFs } from '../infrastructure/fsFake.util';
-import { resolveApprovalResolverPath, resolveFeedbackResolverPath } from '../../../src/context/pathUtils';
+import { resolveApprovalResolverPath, resolveFeedbackResolverPath, resolveTriggerPath } from '../../../src/context/pathUtils';
 
 describe('pathUtils resolver discovery', () => {
   let restoreFs: () => void;
@@ -36,5 +36,17 @@ describe('pathUtils resolver discovery', () => {
 
     expect(resolveApprovalResolverPath(workflowDir)).toBe(approvalPath);
     expect(resolveFeedbackResolverPath(workflowDir)).toBe(feedbackPath);
+  });
+
+  test('resolveTriggerPath returns path when trigger.js exists and null otherwise', () => {
+    const workflowDir = path.join('/tmp/workflow', '.raili', 'main');
+    const fs = getFileSystem();
+    fs.mkdirSync(workflowDir, { recursive: true });
+
+    const triggerPath = path.join(workflowDir, 'trigger.js');
+    expect(resolveTriggerPath(workflowDir)).toBeNull();
+
+    fs.writeFileSync(triggerPath, 'module.exports = async () => ({ok:true});');
+    expect(resolveTriggerPath(workflowDir)).toBe(triggerPath);
   });
 });

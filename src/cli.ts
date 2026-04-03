@@ -11,6 +11,7 @@ import commandLineArgs from 'command-line-args';
 import { RailiRunArgs } from './types';
 import { statsCommand } from './cli/stats';
 import { RailiCommand } from './cli/railiCommand';
+import { listenCommand } from './cli/listen';
 import { teachCommand } from './cli/teach';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
 import { loadVarsFile } from './variables/varsLoader';
@@ -193,6 +194,28 @@ async function main() {
         await Promise.resolve(statsCommand(process.cwd(), workflowArg, latest));
         process.exit(0);
       } catch (err: any) {
+        console.error(err.message || String(err));
+        process.exit(1);
+      }
+    } else if (command.listen) {
+      try {
+        let workflowPath: string | undefined;
+        try {
+          const parsed = parseRunArgs(runArgs);
+          workflowPath = parsed.workflow ? parsed.workflow : undefined;
+        } catch {
+          workflowPath = undefined;
+        }
+        if (!workflowPath) {
+          const wfIndex = runArgs.findIndex((a) => a === '-w' || a === '--workflow');
+          if (wfIndex !== -1 && runArgs[wfIndex + 1]) {workflowPath = runArgs[wfIndex + 1];}
+        }
+        await listenCommand(process.cwd(), workflowPath);
+        process.exit(0);
+      } catch (err: any) {
+        if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+          throw err;
+        }
         console.error(err.message || String(err));
         process.exit(1);
       }

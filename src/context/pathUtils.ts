@@ -94,3 +94,16 @@ export function resolveFeedbackResolverPath(workflowDir: string): string | null 
   }
   return null;
 }
+
+/**
+ * Resolve the absolute path to a trigger file inside the workflow directory.
+ * Returns the absolute path if the file exists, otherwise null.
+ */
+export function resolveTriggerPath(workflowDir: string): string | null {
+  const fs = getFileSystem();
+  const p = path.join(workflowDir, 'trigger.js');
+  if (fs.existsSync(p)) {
+    return p;
+  }
+  return null;
+}

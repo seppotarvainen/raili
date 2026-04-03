@@ -154,6 +154,8 @@ type FeedbackResolverFn = (
   input: FeedbackResolverInput,
 ) => Promise<string | null> | string | null;
 
+export type TriggerFunction = () => Promise<Record<string, string> | null>;
+
 // Parsed CLI/run arguments
 export interface RailiRunArgs {
   workflow?: string;

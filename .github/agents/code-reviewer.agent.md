@@ -41,7 +41,7 @@ The diff at `.raili/main/outputs/show_diff.md` is `git diff main` — it contain
 ## Review Checklist
 
 ### Completeness
-- [ ] All acceptance criteria in the current part file (or main ticket if no parts) are addressed
+- [ ] All acceptance criteria in the current part file (or main ticket if no parts) are addressed **— except documentation/help text criteria, which are always the documentation agent's responsibility and must never cause `revise`**
 - [ ] Tests exist for new/changed behavior
 
 ### Scope
@@ -66,13 +66,13 @@ The diff at `.raili/main/outputs/show_diff.md` is `git diff main` — it contain
 ## Blocking vs Non-Blocking Issues
 
 **Block (`revise`) only for:**
-- Missing acceptance criteria from the current part
+- Missing acceptance criteria from the current part (excluding documentation — see below)
 - Type safety violations in `src/` (`any`, `@ts-ignore`)
 - Architecture violations (direct `fs` import outside infrastructure)
 - Missing `restore()` / teardown for injected test fakes
 
-**Do NOT block for:**
-- Missing documentation updates (that's the documentation agent's job)
+**NEVER block for — not even if listed as acceptance criteria in the ticket:**
+- **Missing documentation updates** — documentation is always the documentation agent's job. If a ticket lists "update docs" or "update help text" as an acceptance criterion, skip it entirely. Do not mention it as an issue. Do not include it in Issues Found.
 - Interface consistency improvements (e.g., making an optional method required) — these are improvements
 - Changes in previously completed parts' files
 - Style preferences or nitpicks
