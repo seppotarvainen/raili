@@ -9,6 +9,7 @@ export class RailiCommand {
   public readonly stats: boolean;
   public readonly teach: boolean;
   public readonly listen: boolean;
+  public readonly create: boolean;
 
   constructor(value?: string) {
     this.value = value ?? '';
@@ -21,5 +22,6 @@ export class RailiCommand {
     this.stats = this.value === 'stats';
     this.teach = this.value === 'teach';
     this.listen = this.value === 'listen';
+    this.create = this.value === 'create';
   }
 }

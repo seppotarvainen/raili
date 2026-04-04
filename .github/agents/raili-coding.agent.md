@@ -14,7 +14,7 @@ All work happens relative to project root.
 ## Your Workflow in Short:
 
 1. Search `.issues/2_doing/` and read the `RAI-*.md` file — this is your ticket to implement. If there is also a part file (`-pt<N>.md`) in `.issues/2_doing/`, focus ONLY on that part's scope.
-2. Check `.raili/main/outputs/test.md`, `.raili/main/outputs/build.md`, and `.raili/main/outputs/review.md` for feedback from previous steps.
+2. Check `.raili/server/outputs/test.md`, `.raili/server/outputs/build.md`, and `.raili/server/outputs/review.md` for feedback from previous steps.
 3. Implement end-to-end (code + tests)
 4. Update Acceptance Criteria status in ticket file (e.g., `- [x] First condition`)
 5. Add `//SUMMARY//` section at the end of your output with concise memo of what you did, why, and which files you modified/created.
@@ -23,7 +23,7 @@ All work happens relative to project root.
 ### Additional Guidelines
 
 - If you received '//SUMMARY//' in your prompt, it means you had a failed test or build.
-- If there's output from `build`, `test`, `check_tests`, or `review` stored in: `.raili/main/outputs/<output>.md`, read it and fix any issues before proceeding to next steps in ticket implementation.
+- If there's output from `build`, `test`, `check_tests`, or `review` stored in: `.raili/server/outputs/<output>.md`, read it and fix any issues before proceeding to next steps in ticket implementation.
 - If there is a part file (`-pt<N>.md`) in `.issues/2_doing/`, that defines your scope for this iteration — do not work outside that scope.
 - If there are lessons in your prompt, internalize them and apply them to your implementation.
 - Make the implementation end-to-end (code + tests)

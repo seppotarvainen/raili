@@ -15,6 +15,8 @@ const COMMAND_HELP: Record<string, string> = {
     'Usage: raili stats [<workflow>] [--latest N]\n\nShow recent workflow run metrics. Defaults to workflow "main" and latest 10 runs.',
   teach:
     'Usage: raili teach <agentId> [-w <workflow>]\n\nOpen a multiline prompt, finish with /q, and append to .raili/<workflow>/learnings/<agentId>.md',
+  create:
+    'Usage: raili create -w <workflow>\n\nCreate a new named workflow directory under .raili/<workflow> with a scaffolded workflow.yaml, vars.yaml, outputs/ and learnings/.',
 };
 
 export function formatHelp(command?: string, topic?: string): string {
