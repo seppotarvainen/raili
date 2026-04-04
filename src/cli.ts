@@ -13,6 +13,7 @@ import { statsCommand } from './cli/stats';
 import { RailiCommand } from './cli/railiCommand';
 import { listenCommand } from './cli/listen';
 import { teachCommand } from './cli/teach';
+import { createCommand } from './cli/create';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
 import { loadVarsFile } from './variables/varsLoader';
 
@@ -29,7 +30,7 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     { name: 'help', alias: 'h', type: Boolean },
     { name: 'dry-run', type: Boolean },
   ];
-  const parsed: any = commandLineArgs(optionDefinitions, { argv });
+  const parsed = commandLineArgs(optionDefinitions, { argv }) as { workflow?: string; clean?: boolean; continue?: boolean; var?: string[]; help?: boolean; 'dry-run'?: boolean };
   const varsArray: string[] = (parsed.var as string[]) || [];
   const vars: Record<string, string> = {};
   for (const entry of varsArray) {
@@ -46,6 +47,18 @@ function promptLine(rl: readline.Interface, question: string): Promise<string> {
 }
 
 export { loadVarsFile };
+
+export function parseCreateArgs(argv: string[]): { workflow: string } {
+  const optionDefinitions = [
+    { name: 'workflow', alias: 'w', type: String },
+    { name: 'help', alias: 'h', type: Boolean },
+  ];
+  const parsed = commandLineArgs(optionDefinitions, { argv }) as { workflow?: string; help?: boolean };
+  if (!parsed.workflow || typeof parsed.workflow !== 'string') {
+    throw new Error('Missing required -w <workflow> argument');
+  }
+  return { workflow: parsed.workflow };
+}
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */
 export async function collectVars(
@@ -135,7 +148,19 @@ async function main() {
       // ignore parse errors for help check; full parsing happens later
     }
 
-    if (command.init) {
+    if (command.create) {
+      try {
+        const parsed = parseCreateArgs(runArgs);
+        await createCommand(process.cwd(), parsed.workflow);
+        process.exit(0);
+      } catch (err: any) {
+        if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+          throw err;
+        }
+        console.error(err.message || String(err));
+        process.exit(1);
+      }
+    } else if (command.init) {
       await initCommand(process.cwd());
     } else if (command.run) {
       const parsed = parseRunArgs(runArgs);

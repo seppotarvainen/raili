@@ -57,7 +57,7 @@ export async function listenCommand(cwd: string, workflowPath?: string): Promise
   const scripts = validateScriptRegistry(cwd);
   validateWorkflowReferences(workflowConfig, agents, scripts);
 
-  const pollIntervalMs = 60_000;
+  const pollIntervalMs = 15_000;
   const failureTimeoutMs = 10 * 60_000;
   let failureStart: number | null = null;
 
