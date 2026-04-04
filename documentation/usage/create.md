@@ -1,5 +1,6 @@
-> Create a new named workflow scaffold under `.raili/<workflow>`.
+# create
 
+> Create a new named workflow scaffold under `.raili/<workflow>`.
 
 Usage
 
