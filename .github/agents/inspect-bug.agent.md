@@ -81,7 +81,7 @@ Ordered steps. Each step names the file, the function/class, and what to fix.
 Follow the established patterns from `__tests__/integration/testUtils.ts`:
 
 - Use `createTmpWorkspace()` to create a sandboxed temp directory
-- Use `writeWorkflow(tmp, yamlContent)` to write `.raili/server/workflow.yaml`
+- Use `writeWorkflow(tmp, yamlContent)` to write `.raili/main/workflow.yaml`
 - Use `writeAgentRegistry(tmp, {...})` and `writeScriptRegistry(tmp, {...})`
 - Mock `child_process` globally: `jest.mock('child_process', () => ({ spawn: jest.fn() }));`
 - Use `fakeChild(stdout, stderr, exitCode)` to simulate process output

@@ -15,7 +15,7 @@ If lessons are given in your prompt, internalize them and work accordingly.
 
 ## Critical: Understanding the Diff
 
-The diff at `.raili/server/outputs/show_diff.md` is `git diff main` — it contains **all changes on this branch**, including work from previously completed parts (pt1, pt2, etc.) that are already in `.issues/3_done/`. When reviewing:
+The diff at `.raili/main/outputs/show_diff.md` is `git diff main` — it contains **all changes on this branch**, including work from previously completed parts (pt1, pt2, etc.) that are already in `.issues/3_done/`. When reviewing:
 
 - **Identify which part is in scope**: read `.issues/2_doing/` — if a part file (`-pt<N>.md`) exists, your review scope is ONLY that part's acceptance criteria
 - **Do not flag prior parts' changes** as issues — they were already reviewed and approved
@@ -25,7 +25,7 @@ The diff at `.raili/server/outputs/show_diff.md` is `git diff main` — it conta
 
 1. Read `.issues/2_doing/` — identify the active ticket and current part file (if any)
 2. If a part file exists, read it to understand the exact scope for this iteration
-3. Read `.raili/server/outputs/show_diff.md` — focus only on the files listed in the current part's scope
+3. Read `.raili/main/outputs/show_diff.md` — focus only on the files listed in the current part's scope
 4. Evaluate the implementation against the checklist below
 5. **Before flagging anything**: verify it by reading the actual source file, not just the diff. Diffs can be misleading — a removed line in the diff may be from a prior part, and a file that looks broken in the diff may be correct in its final state
 6. Output your verdict as the **last line**: `approve` or `revise`
