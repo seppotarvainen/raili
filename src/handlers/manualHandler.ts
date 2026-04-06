@@ -1,5 +1,11 @@
 import * as readline from 'readline';
-import { FeedbackConfig } from '../types';
+import {
+  FeedbackConfig,
+  ApprovalResolverInput,
+  FeedbackResolverInput,
+  ApprovalResolverResult,
+  FeedbackResolverResult,
+} from '../types';
 
 export interface ManualTransitionConfig {
   question: string;
@@ -14,21 +20,73 @@ export interface ManualResult {
   waitMs?: number;
 }
 
-// Resolver interfaces
-interface ApprovalResolverInput {
-  question: string;
-  stateName: string;
-  vars?: Record<string, string>;
-  outputPath?: string | null;
-}
-type ApprovalResolverFunction = (input: ApprovalResolverInput) => Promise<'PASSED' | 'FAILED'>;
+// Resolver interfaces (backward-compatible unions)
+type ApprovalResolverFunction = (
+  input: ApprovalResolverInput,
+) =>
+  | Promise<ApprovalResolverResult | 'PASSED' | 'FAILED'>
+  | ApprovalResolverResult
+  | 'PASSED'
+  | 'FAILED';
 
-interface FeedbackResolverInput {
-  prompt: string;
-  stateName: string;
-  vars?: Record<string, string>;
+type FeedbackResolverFunction = (
+  input: FeedbackResolverInput,
+) => Promise<FeedbackResolverResult | string | null> | FeedbackResolverResult | string | null;
+
+/**
+ * Normalizers adapt old resolver return shapes (plain strings) to the new object shapes.
+ * These helpers are exported so runners/handlers in later parts can call them when a resolver
+ * may return either the legacy string or the new structured object.
+ */
+function isApprovalObj(x: unknown): x is ApprovalResolverResult {
+  if (typeof x !== 'object' || x === null) return false;
+  const o = (x as { outcome?: unknown }).outcome;
+  return o === 'PASSED' || o === 'FAILED';
 }
-type FeedbackResolverFunction = (input: FeedbackResolverInput) => Promise<string>;
+
+function isFeedbackObj(x: unknown): x is FeedbackResolverResult {
+  if (typeof x !== 'object' || x === null) return false;
+  const f = (x as { feedback?: unknown }).feedback;
+  return typeof f === 'string';
+}
+
+export function normalizeApprovalResult(res: unknown): ApprovalResolverResult {
+  if (typeof res === 'string') {
+    if (res !== 'PASSED' && res !== 'FAILED') {
+      throw new Error(`invalid outcome: ${String(res)}`);
+    }
+    return { outcome: res };
+  }
+
+  if (isApprovalObj(res)) {
+    // res is now narrowed to ApprovalResolverResult
+    const reason = (res as ApprovalResolverResult).reason;
+    return { outcome: res.outcome, reason: typeof reason === 'string' ? reason : undefined };
+  }
+
+  throw new Error('invalid outcome');
+}
+
+export function normalizeFeedbackResult(res: unknown): FeedbackResolverResult | null {
+  if (res === null) return null;
+  if (typeof res === 'string') {
+    if (res.trim() === '') throw new Error('Feedback resolver returned empty feedback');
+    return { feedback: res };
+  }
+
+  if (isFeedbackObj(res)) {
+    const fb = res as FeedbackResolverResult;
+    if (typeof fb.feedback !== 'string' || fb.feedback.trim() === '') {
+      throw new Error('Feedback resolver returned invalid feedback');
+    }
+    return {
+      feedback: fb.feedback,
+      metadata: typeof fb.metadata === 'string' ? fb.metadata : undefined,
+    };
+  }
+
+  throw new Error('Feedback resolver must return a string or object');
+}
 
 /**
  * Loaders for resolver modules. These are fail-fast: throw on invalid modules.
@@ -70,15 +128,14 @@ export function loadFeedbackResolver(resolverPath: string | null): FeedbackResol
 export async function executeApprovalResolver(
   resolver: ApprovalResolverFunction,
   input: ApprovalResolverInput,
-): Promise<'PASSED' | 'FAILED'> {
+): Promise<ApprovalResolverResult> {
   try {
     const res = await resolver(input);
-    if (res !== 'PASSED' && res !== 'FAILED') {
-      throw new Error(`Approval resolver returned invalid outcome: ${String(res)}`);
-    }
-    return res;
+    // Normalize legacy string or new object shapes and validate
+    const normalized = normalizeApprovalResult(res as unknown);
+    // Return full object (outcome + optional reason)
+    return normalized;
   } catch (err) {
-    // Fail-fast: re-throw preserving message
     throw err;
   }
 }
@@ -86,13 +143,11 @@ export async function executeApprovalResolver(
 export async function executeFeedbackResolver(
   resolver: FeedbackResolverFunction,
   input: FeedbackResolverInput,
-): Promise<string> {
+): Promise<FeedbackResolverResult | null> {
   try {
     const res = await resolver(input);
-    if (typeof res !== 'string') {
-      throw new Error('Feedback resolver must return a string');
-    }
-    return res;
+    const normalized = normalizeFeedbackResult(res as unknown);
+    return normalized;
   } catch (err) {
     throw err;
   }
@@ -127,8 +182,13 @@ export async function handleManualTransition(
       vars: resolverInputOverrides?.vars,
       outputPath: resolverInputOverrides?.outputPath ?? null,
     };
-    const outcome = await executeApprovalResolver(approvalResolver, input);
-    return { chosen: outcome, target: config.options[outcome], reason: '', waitMs: 0 };
+    const normalized = await executeApprovalResolver(approvalResolver, input);
+    const outcome = normalized.outcome;
+    if (!keys.includes(outcome)) {
+      throw new Error(`Approval resolver returned unknown outcome '${outcome}'`);
+    }
+    const reason = typeof normalized.reason === 'string' ? normalized.reason : '';
+    return { chosen: outcome, target: config.options[outcome], reason, waitMs: 0 };
   }
 
   // Test escape hatch — skip prompt entirely
@@ -193,19 +253,28 @@ export async function handleManualTransition(
 export async function handleFeedbackPrompt(
   feedback: FeedbackConfig,
   feedbackResolver?: FeedbackResolverFunction | null,
-): Promise<string> {
+): Promise<FeedbackResolverResult | string | null> {
   const name = feedback.expose_var;
   if (!name || name.trim() === '') {
     throw new Error('Feedback: expose_var must be provided');
   }
 
-  // If resolver provided, execute it
+  // If resolver provided, execute it and return either the legacy string (when resolver returned a string),
+  // or the structured object when resolver returned an object. Keep null as-is.
   if (feedbackResolver) {
     const input: FeedbackResolverInput = {
       prompt: feedback.question ?? `Enter feedback for '${name}':`,
       stateName: '',
+      config: feedback,
     };
-    return await executeFeedbackResolver(feedbackResolver, input);
+    // Call resolver directly so we can preserve legacy string shape when appropriate.
+    const raw = await feedbackResolver(input as FeedbackResolverInput);
+    // Validate/normalize to ensure the resolver returned an allowed shape; reuse existing normalizer for validation.
+    const normalized = normalizeFeedbackResult(raw as unknown);
+    if (raw === null) return null;
+    if (typeof raw === 'string') return raw;
+    // raw is an object - return the normalized object form
+    return normalized;
   }
 
   const envName = `RAILI_FEEDBACK_${name.toUpperCase()}`;

@@ -43,10 +43,18 @@ describe('resolver loaders', () => {
 });
 
 describe('execute wrappers', () => {
-  test('executeApprovalResolver returns outcome and validates value', async () => {
+  test('executeApprovalResolver accepts object result with reason', async () => {
+    const resolver = async () => ({ outcome: 'FAILED', reason: 'Missing tests' });
+    const out = await executeApprovalResolver(resolver as any, { question: 'q', stateName: 's' });
+    expect(out.outcome).toBe('FAILED');
+    expect(out.reason).toBe('Missing tests');
+  });
+
+  test('executeApprovalResolver accepts legacy string result', async () => {
     const resolver = async () => 'PASSED';
     const out = await executeApprovalResolver(resolver as any, { question: 'q', stateName: 's' });
-    expect(out).toBe('PASSED');
+    expect(out.outcome).toBe('PASSED');
+    expect(out.reason).toBeUndefined();
   });
 
   test('executeApprovalResolver throws when resolver throws', async () => {
@@ -59,10 +67,17 @@ describe('execute wrappers', () => {
     await expect(executeApprovalResolver(resolver as any, { question: 'q', stateName: 's' })).rejects.toThrow(/invalid outcome/);
   });
 
-  test('executeFeedbackResolver returns string', async () => {
-    const resolver = async () => 'hello';
-    const out = await executeFeedbackResolver(resolver as any, { prompt: 'p', stateName: 's' });
-    expect(out).toBe('hello');
+  test('executeFeedbackResolver accepts object or string and returns structured result', async () => {
+    const resolverObj = async () => ({ feedback: 'Looks good', metadata: 'auto' });
+    const outObj = await executeFeedbackResolver(resolverObj as any, { prompt: 'p', stateName: 's' });
+    expect(outObj).not.toBeNull();
+    expect((outObj as any).feedback).toBe('Looks good');
+    expect((outObj as any).metadata).toBe('auto');
+
+    const resolverStr = async () => 'hello';
+    const outStr = await executeFeedbackResolver(resolverStr as any, { prompt: 'p', stateName: 's' });
+    expect(outStr).not.toBeNull();
+    expect((outStr as any).feedback).toBe('hello');
   });
 
   test('executeFeedbackResolver throws when resolver throws', async () => {
@@ -70,9 +85,9 @@ describe('execute wrappers', () => {
     await expect(executeFeedbackResolver(resolver as any, { prompt: 'p', stateName: 's' })).rejects.toThrow('boom2');
   });
 
-  test('executeFeedbackResolver throws when resolver returns non-string', async () => {
+  test('executeFeedbackResolver throws when resolver returns non-string/non-object', async () => {
     const resolver = async () => (123 as any);
-    await expect(executeFeedbackResolver(resolver as any, { prompt: 'p', stateName: 's' })).rejects.toThrow(/must return a string/);
+    await expect(executeFeedbackResolver(resolver as any, { prompt: 'p', stateName: 's' })).rejects.toThrow(/must return a string or object/);
   });
 });
 
