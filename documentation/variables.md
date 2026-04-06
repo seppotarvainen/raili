@@ -202,5 +202,6 @@ run_tests_with_ticket:
 
 ## Approval reason env mapping
 
-Approval reasons supplied by users when declining an approval are persisted into a dedicated `approvals` map in the workflow context and mirrored into `context.vars` using the key `<STATE>_<OUTCOME>` (uppercased). This allows notify commands and scripts to access the reason via the existing environment mapping as `RAILI_VAR_<KEY>` (e.g. `$RAILI_VAR_REVIEW_FAILED`). Only non-empty typed reasons are mirrored (PASSED approvals do not produce empty entries).
+Non-empty approval reasons supplied by users when declining an approval or returned by an approval resolver are persisted into a dedicated `approvals` map in the workflow context and mirrored into `context.vars` using the key `<STATE>_<OUTCOME>` (uppercased). This allows notify commands and scripts to access the reason via the existing environment mapping as `RAILI_VAR_<KEY>` (e.g. `$RAILI_VAR_REVIEW_FAILED`). Only non-empty reasons are mirrored (empty strings are ignored).
 
+Note: resolvers may return a reason alongside either `PASSED` or `FAILED` outcomes; when present the reason is persisted regardless of the outcome value.

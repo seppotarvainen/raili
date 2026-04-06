@@ -37,6 +37,7 @@ export function loadContext(cwd: string, workflowArg?: string): WorkflowContext 
 
   parsed.vars = parsed.vars ?? {};
   parsed.approvals = parsed.approvals ?? {};
+  parsed.feedbacks = parsed.feedbacks ?? {};
 
   return parsed as WorkflowContext;
 }
@@ -165,6 +166,7 @@ export function initializeContext(vars: Record<string, string>): WorkflowContext
   return {
     vars,
     approvals: {},
+    feedbacks: {},
     stateHistory: [],
   };
 }

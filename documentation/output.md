@@ -76,8 +76,9 @@ Note: when injecting learnings into agent prompts, source tags (e.g., `[var:...]
 
 Interaction with approvals
 
-When an approval is answered with a typed reason (FAILED), Raili mirrors that reason into `context.vars` using the key `<STATE>_<OUTCOME>` (uppercased). The Runner now processes a state's `teach:` mappings after approvals are handled and approval-exposed variables are available, so `teach:` can reference approval-produced variables (for example `${REVIEW_FAILED}`) declared on the same state. This ensures learnings can be created directly from user-provided approval reasons in the originating state.
+When an approval is answered with a typed reason (FAILED), or when an approval resolver returns a structured result containing a `reason`, Raili mirrors that non-empty reason into `context.vars` using the key `<STATE>_<OUTCOME>` (uppercased). The Runner processes a state's `teach:` mappings after approvals are handled and approval-exposed variables are available, so `teach:` can reference approval-produced variables (for example `${REVIEW_FAILED}`) declared on the same state. This ensures learnings can be created directly from user-provided or resolver-produced approval reasons in the originating state.
 
+Additionally, feedback resolvers that return structured objects with a `metadata` field have that metadata persisted under `context.feedbacks` (keyed by state id) and recorded in the state's `meta.feedback.metadata` entry inside `context.stateHistory`. The `feedback` value itself is still mirrored into `context.vars` under the declared `expose_var` so notify commands and scripts can read it via `$RAILI_VAR_<UPPERCASE>`. Feedback metadata is intentionally not exported as environment variables; it is stored for audit and tooling purposes.
 ## Common Patterns
 
 ### Test state — capture failures

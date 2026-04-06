@@ -122,39 +122,79 @@ export interface StateHistoryEntry {
 export interface WorkflowContext {
   vars?: Record<string, string>; // User-supplied variables (e.g. ticket_id, description)
   approvals?: Record<string, string>; // Approval reasons keyed by <STATE>_<OUTCOME> uppercase
+  feedbacks?: Record<string, { value: string; metadata?: string }>;
   stateHistory: StateHistoryEntry[];
 }
 
-// Inputs provided to approval resolver functions
-interface ApprovalResolverInput {
-  // The state id for which approval is being resolved
-  stateId: string;
-  // Absolute workflow directory (e.g. .raili/main)
-  workflowDir: string;
-  // Current persisted workflow context
-  context: WorkflowContext;
-}
 
-// Inputs provided to feedback resolver functions
-interface FeedbackResolverInput {
-  // Absolute workflow directory (e.g. .raili/main)
-  workflowDir: string;
-  // Current persisted workflow context
-  context: WorkflowContext;
-  // The feedback configuration block from the state
-  config: FeedbackConfig;
-}
-
-// Resolver function signatures
-type ApprovalResolverFn = (
-  input: ApprovalResolverInput,
-) => Promise<'PASSED' | 'FAILED'> | 'PASSED' | 'FAILED';
-
-type FeedbackResolverFn = (
-  input: FeedbackResolverInput,
-) => Promise<string | null> | string | null;
 
 export type TriggerFunction = () => Promise<Record<string, string> | null>;
+
+// Inputs provided to approval resolver functions
+export interface ApprovalResolverInput {
+  // The state id for which approval is being resolved
+  stateId?: string;
+  // Optional human-readable question or prompt presented to user/resolver
+  question?: string;
+  // Optional short state name
+  stateName?: string;
+  // Shortcut vars map (may be provided by callers)
+  vars?: Record<string, string> | undefined;
+  // Optional path to previous output that resolver may inspect
+  outputPath?: string | null;
+  // Absolute workflow directory (e.g. .raili/main)
+  workflowDir?: string;
+  // Current persisted workflow context
+  context?: WorkflowContext;
+}
+
+// Result object for approval resolvers
+export interface ApprovalResolverResult {
+  outcome: 'PASSED' | 'FAILED';
+  reason?: string;
+}
+
+/**
+ * Examples:
+ * // Old-style resolver returning a string
+ * export default async function (input: ApprovalResolverInput) { return 'PASSED'; }
+ * // New-style resolver returning an object
+ * export default async function (input: ApprovalResolverInput) { return { outcome: 'FAILED', reason: 'Missing tests' }; }
+ */
+type ApprovalResolverFn = (
+  input: ApprovalResolverInput,
+) => Promise<ApprovalResolverResult | 'PASSED' | 'FAILED'> | ApprovalResolverResult | 'PASSED' | 'FAILED';
+
+// Inputs provided to feedback resolver functions
+export interface FeedbackResolverInput {
+  // Optional prompt text that the resolver may present or use
+  prompt?: string;
+  // Optional short state name
+  stateName?: string;
+  // Absolute workflow directory (e.g. .raili/main)
+  workflowDir?: string;
+  // Current persisted workflow context
+  context?: WorkflowContext;
+  // The feedback configuration block from the state
+  config?: FeedbackConfig;
+}
+
+// Result object for feedback resolvers
+export interface FeedbackResolverResult {
+  feedback: string;
+  metadata?: string;
+}
+
+/**
+ * Examples:
+ * // Old-style resolver returning a string
+ * export default async function (input: FeedbackResolverInput) { return 'Looks good'; }
+ * // New-style resolver returning an object
+ * export default async function (input: FeedbackResolverInput) { return { feedback: 'Looks good', metadata: 'auto' }; }
+ */
+type FeedbackResolverFn = (
+  input: FeedbackResolverInput,
+) => Promise<FeedbackResolverResult | string | null> | FeedbackResolverResult | string | null;
 
 // Parsed CLI/run arguments
 export interface RailiRunArgs {

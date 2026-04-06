@@ -341,11 +341,7 @@ export class Runner {
     if (!this.context.vars) {
       this.context.vars = {};
     }
-    if (
-      approvalOutcome.chosen === 'FAILED' &&
-      approvalOutcome.reason &&
-      approvalOutcome.reason.trim() !== ''
-    ) {
+    if (approvalOutcome.reason && approvalOutcome.reason.trim() !== '') {
       const key = `${stateId}_${approvalOutcome.chosen}`.toUpperCase();
       this.context.approvals[key] = approvalOutcome.reason;
       this.context.vars[key] = approvalOutcome.reason;
@@ -382,10 +378,35 @@ export class Runner {
     if (!this.context.vars) {
       this.context.vars = {};
     }
-    this.context.vars[fb.expose_var] = val;
+
+    // Support both legacy string return and new object { feedback, metadata }
+    let feedbackValue: string = '';
+    let feedbackMetadata: string | undefined = undefined;
+
+    if (val === null) {
+      feedbackValue = '';
+    } else if (typeof val === 'string') {
+      feedbackValue = val;
+    } else {
+      feedbackValue = val.feedback;
+      feedbackMetadata = val.metadata;
+    }
+
+    // Persist exposed var
+    this.context.vars[fb.expose_var] = feedbackValue;
+
+    // Persist feedbacks metadata in context.feedbacks by state id
+    if (!this.context.feedbacks) {
+      this.context.feedbacks = {};
+    }
+    this.context.feedbacks[stateId] = { value: feedbackValue, metadata: feedbackMetadata };
+
     this.persist();
 
-    const meta: any = { feedback: { name: fb.expose_var, value: val } };
+    const meta: any = { feedback: { name: fb.expose_var, value: feedbackValue } };
+    if (typeof feedbackMetadata !== 'undefined') {
+      meta.feedback.metadata = feedbackMetadata;
+    }
     if (stateDef.config.approval) {
       meta.waitMs = fbWait;
     }

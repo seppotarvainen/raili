@@ -98,19 +98,29 @@ Raili can automatically run JS resolver modules instead of showing the interacti
 
 Behavior:
 
-- **Approval resolver**: module must export a function `async function(input)` that returns either `"PASSED"` or `"FAILED"`. The engine calls the resolver with an input object containing `{ question, stateName, vars?, outputPath? }`. If the resolver throws or returns an invalid value the run fails immediately (fail-fast).
-
-Example approval resolver:
+- **Approval resolver**: module must export a function `async function(input)` that returns either the legacy string `'PASSED'`/`'FAILED'` or a structured object with an explicit outcome and optional reason:
 
 ```js
-module.exports = async function (input) {
-  // input.question, input.stateName, input.vars, input.outputPath
-  return 'PASSED';
-};
+// Legacy string form
+module.exports = async function (input) { return 'PASSED'; };
+
+// New structured form
+module.exports = async function (input) { return { outcome: 'FAILED', reason: 'Missing tests' }; };
 ```
 
-- **Feedback resolver**: module must export a function `async function(input)` that returns a string. The input object contains `{ prompt, stateName, vars? }`. The returned string is stored into the workflow `context.vars` under the state's declared `expose_var` name (same as typed feedback) so subsequent states and notify commands may read it via `$RAILI_VAR_<UPPERCASE>`.
+The engine calls the resolver with an input object containing `{ question, stateName, vars?, outputPath? }`. The runner normalizes legacy and structured shapes and validates the result; invalid values or thrown errors cause the run to fail immediately (fail-fast).
 
+- **Feedback resolver**: module may export a function `async function(input)` that returns either a legacy string or a structured object with optional metadata. The input object contains `{ prompt, stateName, vars?, config? }`.
+
+```js
+// Legacy string form
+module.exports = async function (input) { return 'Automated note'; };
+
+// New structured form
+module.exports = async function (input) { return { feedback: 'Auto note', metadata: 'auto-generated' }; };
+```
+
+When a feedback resolver returns a string the engine stores that value into the workflow `context.vars` under the state's declared `expose_var`. When the resolver returns an object the `feedback` string is stored into `context.vars` (same as typed feedback) and any `metadata` field is persisted to `context.feedbacks` and recorded in the state's `meta.feedback.metadata` for auditability.
 Example feedback resolver:
 
 ```js
@@ -122,9 +132,8 @@ module.exports = async function (input) {
 Notes:
 
 - When a resolver is present, it is executed instead of the CLI prompt. Resolvers are loaded synchronously from the workflow directory and are validated — invalid exports cause the run to fail fast.
-- Approval resolvers must return exactly `PASSED` or `FAILED` (strings). Feedback resolvers must return a string (may be empty).
+- Approval resolvers accept either legacy string results (`'PASSED'`/`'FAILED'`) or structured objects `{ outcome: 'PASSED' | 'FAILED', reason?: string }`. Feedback resolvers accept either a string or a structured object `{ feedback: string, metadata?: string }`. The runner normalizes and validates these shapes; invalid return values cause the run to fail fast.
 - Resolver modules may access `input.vars` (current context variables) and `input.outputPath` (path to the state's output file) to make deterministic decisions.
-
 
 ## Approval Response Tracking
 
@@ -202,13 +211,12 @@ step2_review:
 
 ## Approval reason persistence
 
-When a user declines an approval and supplies a typed reason, Raili persists that reason in two places in the workflow context:
+When a resolver returns an object that includes a `reason`, or a user declines an approval and supplies a typed reason, Raili persists that non-empty reason in two places in the workflow context:
 
-- `context.approvals`: a dedicated map keyed by `<STATE>_<OUTCOME>` (uppercased) containing the reason text. Example: `"REVIEW_FAILED": "Needs changes"
+- `context.approvals`: a dedicated map keyed by `<STATE>_<OUTCOME>` (uppercased) containing the reason text. Example: `"REVIEW_FAILED": "Needs changes"`.
 - `context.vars`: the same key/value is mirrored into the vars map so existing notify/command logic can access the reason via the environment variable mapping (e.g. `$RAILI_VAR_REVIEW_FAILED`).
 
-Only non-empty typed reasons are persisted. PASSED approvals do not create empty entries. This keeps approval metadata separate from declared inputs while preserving env-compatible access for shell hooks.
-
+Only non-empty reasons are persisted. Reasons are persisted for any outcome when provided (for example a resolver may return `{ outcome: 'PASSED', reason: 'Auto-approved by CI' }` and the reason will be recorded). This keeps approval metadata separate from declared inputs while preserving env-compatible access for shell hooks.
 ## Interaction with `teach:` mappings
 
 When a state declares `teach:`, any approval-exposed variables (e.g. `REVIEW_FAILED`) are now written to `context.vars` before the state's `teach:` mappings are processed. This means a `teach:` entry on the same state can reference approval-produced variables such as `${REVIEW_FAILED}`. This ordering ensures learnings can be created from the user's approval reason within the originating state (fail-fast errors for missing variables are avoided in this scenario).
