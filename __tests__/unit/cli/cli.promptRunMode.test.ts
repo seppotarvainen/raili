@@ -1,4 +1,4 @@
-import {promptRunMode} from '../../../src/cli';
+import { promptRunMode } from '../../../src/cli';
 import * as contextModule from '../../../src/context/context';
 
 jest.mock('../../../src/context/context');
@@ -8,17 +8,14 @@ const mockedGetCurrentState = contextModule.getCurrentState as unknown as jest.M
 
 describe('promptRunMode', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
-  test('throws when workflow/context is missing for provided workflow', async () => {
-    mockedLoadContext.mockImplementation(() => {
-      throw new Error("Missing context.json for workflow 'test'. Cannot run without an existing context.");
-    });
+  test('returns clean when workflow/context is missing for provided workflow', async () => {
+    mockedLoadContext.mockReturnValue({ stateHistory: [] });
+    mockedGetCurrentState.mockReturnValue(null);
 
-    await expect(promptRunMode(process.cwd(), 'test')).rejects.toThrow(
-      "Missing context.json for workflow 'test'. Cannot run without an existing context.",
-    );
+    await expect(promptRunMode(process.cwd(), 'test')).resolves.toBe('clean');
   });
 
   test('returns clean when workflow exists but has no current state', async () => {
@@ -26,15 +23,5 @@ describe('promptRunMode', () => {
     mockedGetCurrentState.mockReturnValue(null);
 
     await expect(promptRunMode(process.cwd(), 'test')).resolves.toBe('clean');
-  });
-
-  test('throws when context.json is missing for an existing workflow directory', async () => {
-    mockedLoadContext.mockImplementation(() => {
-      throw new Error("Missing context.json for workflow 'test'. Cannot run without an existing context.");
-    });
-
-    await expect(promptRunMode(process.cwd(), 'test')).rejects.toThrow(
-      "Missing context.json for workflow 'test'. Cannot run without an existing context.",
-    );
   });
 });

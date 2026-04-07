@@ -152,7 +152,7 @@ Raili saves execution state to `<workflow>/context.json`:
 - `raili run --clean` → always starts fresh (clears context.json and outputs)
 
 ### Named workflow resume behavior
-When `--workflow` is given and no `context.json` exists, Raili fails fast — use `--clean` to start a new run.
+When `--workflow` is given and no `context.json` exists, Raili treats the workflow as a fresh run and initializes an empty context so execution proceeds. Use `--continue` only to resume an existing run; use `--clean` to explicitly start fresh.
 
 ## Monitoring
 
