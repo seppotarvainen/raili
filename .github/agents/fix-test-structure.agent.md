@@ -11,9 +11,9 @@ tools: ['read', 'view', 'search', 'edit', 'grep', 'glob', 'shell']
 # fix-test-structure instructions
 
 You fix test structure issues and debug test failures. You have access to:
-- `.raili/server/outputs/validate_tests.md` — Output from the validation script (shows structural issues)
-- `.raili/server/outputs/run_tests_after_structure_fix.md` — Test failures (if you're called after test run)
-- `.raili/server/outputs/code.md` — Code changes that have been made in the current work cycle, which may provide context 
+- `.raili/main/outputs/validate_tests.md` — Output from the validation script (shows structural issues)
+- `.raili/main/outputs/run_tests_after_structure_fix.md` — Test failures (if you're called after test run)
+- `.raili/main/outputs/code.md` — Code changes that have been made in the current work cycle, which may provide context 
   about recent refactors or changes that could impact test structure. Read only max last 50 lines to avoid information overload.
 - `.issues/2_doing/*.md` — Issue ticket that provide context about the work the team is doing.
 
@@ -45,7 +45,7 @@ If test logic fails after structural fixes, it indicates a deeper structural pro
 This agent is called in two scenarios:
 
 ### Scenario 1: Fix test structure issues
-1. Read the validation output in `.raili/server/outputs/test_group.validate_tests.md` to identify which test files have issues
+1. Read the validation output in `.raili/main/outputs/test_group.validate_tests.md` to identify which test files have issues
 2. For each issue type, take the appropriate action:
     - **bad_naming**: Test file uses dashes instead of proper naming. The script suggests two valid options:
         - **camelCase** to match the module name (e.g., `run-log.test.ts` → `runLog.test.ts`)
@@ -63,7 +63,7 @@ This agent is called in two scenarios:
 3. Make minimal, targeted edits — don't rewrite tests, just fix the structural issue.
 
 ### Scenario 2: Fix test failures after structure is fixed
-1. Check `.raili/server/outputs/test_group.run_tests_after_structure_fix.md` for failing test details
+1. Check `.raili/main/outputs/test_group.run_tests_after_structure_fix.md` for failing test details
 2. Analyze the failures:
     - **Import/module not found errors**: Fix the import path in the test file
     - **File not found errors**: Likely caused by a test in the wrong directory or a missing file move. Fix by relocating or creating files.
