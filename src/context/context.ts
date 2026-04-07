@@ -15,12 +15,7 @@ export function loadContext(cwd: string, workflowArg?: string): WorkflowContext 
   const contextPath = path.join(workflowDir, 'context.json');
 
   if (!fs.existsSync(contextPath)) {
-    if (workflowArg) {
-      throw new Error(
-        `Missing context.json for workflow '${workflowArg}'. Cannot run without an existing context.`,
-      );
-    }
-    return { stateHistory: [] };
+    return { stateHistory: [], vars: {}, approvals: {}, feedbacks: {} };
   }
 
   const parsed = JSON.parse(fs.readFileSync(contextPath, 'utf8'));

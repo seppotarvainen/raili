@@ -28,13 +28,7 @@ export function appendRunLog(
   const workflowDir = path.join(cwd, '.raili', workflowArg || 'main');
 
   // Load context for this workflow (may be empty). Use loadContext which is test-friendly.
-  let ctx: any;
-  try {
-    ctx = loadContext(cwd, workflowArg);
-  } catch (err) {
-    // If context is missing for unnamed runs, fall back to empty in-memory context
-    ctx = { stateHistory: [], vars: {} };
-  }
+  const ctx = loadContext(cwd, workflowArg);
 
   // Filter entries that belong to this run (enteredAt >= runStartISO)
   const runStart = new Date(runStartISO);
@@ -108,7 +102,7 @@ export function appendRunLog(
   // Include only declared workflow inputs which are marked log: true
   for (const input of workflowConfig.inputs || []) {
     if (input.log) {
-      output.vars[input.name] = ctx.vars[input.name];
+      output.vars[input.name] = ctx.vars ? ctx.vars[input.name] : undefined;
     }
   }
 

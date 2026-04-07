@@ -34,7 +34,7 @@ describe('context', () => {
     test('returns empty context if file does not exist', () => {
       const ctx = loadContext(tmpdir);
       expect(ctx.stateHistory).toEqual([]);
-      expect(ctx.vars).toBeUndefined();
+      expect(ctx.vars).toEqual({});
     });
 
     test('loads existing context from file', () => {
