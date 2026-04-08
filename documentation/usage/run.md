@@ -68,13 +68,17 @@ Each workflow directory keeps its own isolated artifacts:
 │   ├── workflow.yaml
 │   ├── vars.yaml
 │   ├── context.json           # main run state
-│   └── outputs/
+│   ├── outputs/
+│   └── config.json            # optional: resolver & trigger configuration
 └── dev/
     ├── workflow.yaml
     ├── vars.yaml
     ├── context.json           # dev run state (independent)
-    └── outputs/
+    ├── outputs/
+    └── config.json            # optional per-workflow config
 ```
+
+`config.json` (optional) allows tuning resolver and trigger behavior for the workflow. See `documentation/approval.md` for the supported fields and defaults (`trigger.interval`, `trigger.timeout`, `trigger.retry_interval`, `approval.timeout`, `feedback.timeout`).
 
 ## Dry-run mode
 

@@ -28,12 +28,14 @@ describe('variable interpolation in approval blocks', () => {
       FAILED: 'back',
     };
 
-    await runApprovalStep('review', approval, { cwd: '/tmp', context });
+    await runApprovalStep('review', approval, { cwd: '/tmp', context }, 'mock');
 
-    expect(mockHandleManual).toHaveBeenCalledWith({
-      question: 'Did you update ticket PROJ-123? Title: Fix login bug',
-      options: { PASSED: 'next', FAILED: 'back' },
-    });
+    expect(mockHandleManual).toHaveBeenCalledWith(
+      { question: 'Did you update ticket PROJ-123? Title: Fix login bug', options: { PASSED: 'next', FAILED: 'back' } },
+      undefined,
+      undefined,
+      undefined,
+    );
   });
 
   test('missing variable in question becomes empty string', async () => {
@@ -50,10 +52,12 @@ describe('variable interpolation in approval blocks', () => {
 
     await runApprovalStep('review', approval, { cwd: '/tmp', context });
 
-    expect(mockHandleManual).toHaveBeenCalledWith({
-      question: 'Ticket: PROJ-123, Title: ',
-      options: { PASSED: 'next', FAILED: 'back' },
-    });
+    expect(mockHandleManual).toHaveBeenCalledWith(
+      { question: 'Ticket: PROJ-123, Title: ', options: { PASSED: 'next', FAILED: 'back' } },
+      undefined,
+      undefined,
+      undefined,
+    );
   });
 
   test('handles multiline approval question with variables', async () => {
@@ -80,10 +84,12 @@ Description: Fix critical bug
 
 Please confirm.`;
 
-    expect(mockHandleManual).toHaveBeenCalledWith({
-      question: expectedQuestion,
-      options: { PASSED: 'next', FAILED: 'back' },
-    });
+    expect(mockHandleManual).toHaveBeenCalledWith(
+      { question: expectedQuestion, options: { PASSED: 'next', FAILED: 'back' } },
+      undefined,
+      undefined,
+      undefined,
+    );
   });
 
 
@@ -101,10 +107,12 @@ Please confirm.`;
 
     await runApprovalStep('review', approval, { cwd: '/tmp', context });
 
-    expect(mockHandleManual).toHaveBeenCalledWith({
-      question: 'Price: $100 and variable: value',
-      options: { PASSED: 'next', FAILED: 'back' },
-    });
+    expect(mockHandleManual).toHaveBeenCalledWith(
+      { question: 'Price: $100 and variable: value', options: { PASSED: 'next', FAILED: 'back' } },
+      undefined,
+      undefined,
+      undefined,
+    );
   });
 
   test('works with no variables defined', async () => {
@@ -121,10 +129,12 @@ Please confirm.`;
 
     await runApprovalStep('review', approval, { cwd: '/tmp', context });
 
-    expect(mockHandleManual).toHaveBeenCalledWith({
-      question: 'Is everything ready?',
-      options: { PASSED: 'next', FAILED: 'back' },
-    });
+    expect(mockHandleManual).toHaveBeenCalledWith(
+      { question: 'Is everything ready?', options: { PASSED: 'next', FAILED: 'back' } },
+      undefined,
+      undefined,
+      undefined,
+    );
   });
 
   test('works with no context provided', async () => {
@@ -136,10 +146,12 @@ Please confirm.`;
 
     await runApprovalStep('review', approval, { cwd: '/tmp' });
 
-    expect(mockHandleManual).toHaveBeenCalledWith({
-      question: 'Is everything ready?',
-      options: { PASSED: 'next', FAILED: 'back' },
-    });
+    expect(mockHandleManual).toHaveBeenCalledWith(
+      { question: 'Is everything ready?', options: { PASSED: 'next', FAILED: 'back' } },
+      undefined,
+      undefined,
+      undefined,
+    );
   });
 });
 

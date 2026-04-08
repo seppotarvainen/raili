@@ -96,6 +96,38 @@ Raili can automatically run JS resolver modules instead of showing the interacti
 - `.raili/<workflow>/approval-resolver.js`
 - `.raili/<workflow>/feedback-resolver.js`
 
+### Resolver configuration (`.raili/<workflow>/config.json`)
+
+Resolvers and trigger behavior may be tuned via an optional `config.json` file placed in the workflow directory (for example `.raili/main/config.json`). When present, Raili merges user values with sensible defaults. Supported blocks (all values in seconds):
+
+- `trigger`: `{ interval?, timeout?, retry_interval? }` — controls `raili listen` polling behavior.
+- `approval`: `{ timeout? }` — maximum seconds to wait for an approval prompt or approval resolver before aborting with an error.
+- `feedback`: `{ timeout? }` — maximum seconds to wait for a feedback prompt or resolver.
+
+Example:
+
+```json
+{
+  "trigger": { "interval": 60, "timeout": 86400, "retry_interval": 10 },
+  "approval": { "timeout": 1800 },
+  "feedback": { "timeout": 3600 }
+}
+```
+
+Defaults used when `config.json` is absent:
+
+- `trigger.interval`: 15 (seconds)
+- `trigger.timeout`: 3600 (1 hour)
+- `trigger.retry_interval`: 5 (seconds)
+- `approval.timeout`: 3600 (1 hour)
+- `feedback.timeout`: 3600 (1 hour)
+
+Behavior notes:
+
+- If an **approval** prompt or resolver exceeds the configured `approval.timeout` Raili throws an error with the message: `Approval prompt timeout exceeded` and the run fails fast.
+- Resolver modules continue to be validated and may read `input.vars` and `input.outputPath` to make deterministic decisions. The presence of a resolver replaces interactive prompts; resolver timeouts are still enforced via the workflow `config.json` when provided.
+- The `config.json` file is optional; absence preserves existing defaults and behavior.
+
 Behavior:
 
 - **Approval resolver**: module must export a function `async function(input)` that returns either the legacy string `'PASSED'`/`'FAILED'` or a structured object with an explicit outcome and optional reason:

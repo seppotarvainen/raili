@@ -19,6 +19,7 @@ jest.mock('../../../src/registry/registryValidator', () => ({
 
 import { loadTriggerModule } from '../../../src/handlers/triggerHandler';
 import { runCommand } from '../../../src/run';
+import { validateAgentRegistry, validateScriptRegistry } from '../../../src/registry/registryValidator';
 import { listenCommand } from '../../../src/cli/listen';
 
 let restoreFs: () => void;
@@ -26,14 +27,17 @@ let restoreSetTimeout: () => void;
 
 beforeEach(() => {
   restoreFs = setupFakeFs();
-  // Make setTimeout resolve immediately so the poll loop doesn't hang
+  // Make setTimeout schedule immediately via original to avoid synchronous tight loop
   const original = global.setTimeout;
-  jest.spyOn(global, 'setTimeout').mockImplementation((cb: any) => { cb(); return 0 as any; });
+  jest.spyOn(global, 'setTimeout').mockImplementation((cb: any, ms?: number, ...args: any[]) => {
+    return (original as any)(cb, 0, ...args);
+  });
   restoreSetTimeout = () => { (global.setTimeout as any) = original; };
 });
 
 afterEach(() => {
   jest.clearAllMocks();
+  if (restoreSetTimeout) restoreSetTimeout();
   jest.restoreAllMocks();
   const r = restoreFs;
   if (r) r();
@@ -68,24 +72,20 @@ test('throws when .raili is a file not a directory', async () => {
 });
 
 test('throws when agent-registry.json is missing', async () => {
-  const fs = getFileSystem();
-  fs.mkdirSync('/repo', { recursive: true } as any);
-  const raili = '/repo/.raili';
-  fs.mkdirSync(raili, { recursive: true } as any);
-  fs.mkdirSync(path.join(raili, 'main'), { recursive: true } as any);
-  fs.writeFileSync(path.join(raili, 'script-registry.json'), '{}');
-  fs.writeFileSync(path.join(raili, 'main', 'workflow.yaml'), 'initial: start\nstates: {}\n');
+  setupValidFs('/repo', true);
+  (loadTriggerModule as jest.Mock).mockResolvedValue(async () => null);
+  (validateAgentRegistry as jest.Mock).mockImplementationOnce(() => {
+    throw new Error('agent-registry.json not found in .raili/');
+  });
   await expect(listenCommand('/repo', 'main')).rejects.toThrow('agent-registry.json not found');
 });
 
 test('throws when script-registry.json is missing', async () => {
-  const fs = getFileSystem();
-  fs.mkdirSync('/repo', { recursive: true } as any);
-  const raili = '/repo/.raili';
-  fs.mkdirSync(raili, { recursive: true } as any);
-  fs.mkdirSync(path.join(raili, 'main'), { recursive: true } as any);
-  fs.writeFileSync(path.join(raili, 'agent-registry.json'), '{}');
-  fs.writeFileSync(path.join(raili, 'main', 'workflow.yaml'), 'initial: start\nstates: {}\n');
+  setupValidFs('/repo', true);
+  (loadTriggerModule as jest.Mock).mockResolvedValue(async () => null);
+  (validateScriptRegistry as jest.Mock).mockImplementationOnce(() => {
+    throw new Error('script-registry.json not found in .raili/');
+  });
   await expect(listenCommand('/repo', 'main')).rejects.toThrow('script-registry.json not found');
 });
 

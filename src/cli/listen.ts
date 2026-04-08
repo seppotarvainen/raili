@@ -1,7 +1,12 @@
 import path from 'path';
 import { getFileSystem } from '../infrastructure/fileSystemProvider';
-import { resolveWorkflowDir, resolveTriggerPath } from '../context/pathUtils';
+import {
+  resolveWorkflowDir,
+  resolveTriggerPath,
+  resolveResolverConfigPath,
+} from '../context/pathUtils';
 import { loadWorkflowConfig } from '../workflow/workflowLoader';
+import { loadResolverConfig } from '../resolverConfigLoader';
 import {
   validateAgentRegistry,
   validateScriptRegistry,
@@ -9,9 +14,17 @@ import {
 } from '../registry/registryValidator';
 import { loadTriggerModule } from '../handlers/triggerHandler';
 import { runCommand } from '../run';
+import type { ResolverConfig } from '../types';
 
 function delay(ms: number) {
   return new Promise((res) => setTimeout(res, ms));
+}
+
+export function computeTriggerTimings(config: ResolverConfig | null) {
+  const pollIntervalMs = (config?.trigger?.interval ?? 15) * 1000;
+  const failureTimeoutMs = (config?.trigger?.timeout ?? 3600) * 1000;
+  const retryIntervalMs = (config?.trigger?.retry_interval ?? 5) * 1000;
+  return { pollIntervalMs, failureTimeoutMs, retryIntervalMs };
 }
 
 export async function listenCommand(cwd: string, workflowPath?: string): Promise<void> {
@@ -32,17 +45,14 @@ export async function listenCommand(cwd: string, workflowPath?: string): Promise
   // Resolve workflow directory (throws if not resolvable)
   const workflowDir = resolveWorkflowDir(cwd, workflowPath);
 
-  // Basic registry presence checks (fail-fast)
-  const agentRegistryPath = path.join(railiDir, 'agent-registry.json');
-  const scriptRegistryPath = path.join(railiDir, 'script-registry.json');
-  if (!fs.existsSync(agentRegistryPath)) {
-    throw new Error('agent-registry.json not found in .raili/');
-  }
-  if (!fs.existsSync(scriptRegistryPath)) {
-    throw new Error('script-registry.json not found in .raili/');
+  // Load resolver configuration (optional) so listen uses configured intervals/backoff/timeouts
+  const resolverConfigPath = resolveResolverConfigPath(workflowDir);
+  const config = loadResolverConfig(resolverConfigPath);
+  if (resolverConfigPath) {
+    console.log(`Loaded resolver config from ${resolverConfigPath}`);
   }
 
-  // Resolve and load trigger early so trigger-related errors surface before workflow validation
+  // Resolve and load trigger so trigger-related errors surface before registry validation
   const triggerPath = resolveTriggerPath(workflowDir);
   if (!triggerPath) {
     throw new Error(`Trigger not found for workflow at ${workflowDir}`);
@@ -50,15 +60,13 @@ export async function listenCommand(cwd: string, workflowPath?: string): Promise
 
   const triggerFn = await loadTriggerModule(triggerPath);
 
-  // Load workflow config and validate registries/references after trigger checks
+  // Load workflow config and perform registry validation (fail-fast)
   const workflowConfig = loadWorkflowConfig(cwd, workflowPath);
-
   const agents = validateAgentRegistry(cwd);
   const scripts = validateScriptRegistry(cwd);
   validateWorkflowReferences(workflowConfig, agents, scripts);
 
-  const pollIntervalMs = 15_000;
-  const failureTimeoutMs = 10 * 60_000;
+  const { pollIntervalMs, failureTimeoutMs, retryIntervalMs } = computeTriggerTimings(config);
   let failureStart: number | null = null;
 
   // Poll loop
@@ -83,15 +91,16 @@ export async function listenCommand(cwd: string, workflowPath?: string): Promise
       // Reset failure timer and wait before next poll
       failureStart = null;
       await delay(pollIntervalMs);
-    } catch (err: any) {
-      console.error('Trigger error:', err && err.message ? err.message : String(err));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('Trigger error:', msg);
       if (!failureStart) {
         failureStart = Date.now();
       } else if (Date.now() - failureStart > failureTimeoutMs) {
         throw new Error('Trigger failing continuously: aborting after timeout');
       }
-      // Backoff a bit before retrying
-      await delay(Math.min(5_000, pollIntervalMs));
+      // Backoff a bit before retrying (configurable retry interval in seconds)
+      await delay(retryIntervalMs);
     }
   }
 }

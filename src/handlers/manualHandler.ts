@@ -168,79 +168,101 @@ export async function handleManualTransition(
     outputPath?: string | null;
     stateName?: string;
   },
+  timeoutMs?: number,
 ): Promise<ManualResult> {
   const keys = Object.keys(config.options || {});
   if (keys.length === 0) {
     throw new Error('No manual options provided');
   }
 
-  // If resolver provided, execute it and map to ManualResult
-  if (approvalResolver) {
-    const input: ApprovalResolverInput = {
-      question: config.question,
-      stateName: resolverInputOverrides?.stateName ?? '',
-      vars: resolverInputOverrides?.vars,
-      outputPath: resolverInputOverrides?.outputPath ?? null,
-    };
-    const normalized = await executeApprovalResolver(approvalResolver, input);
-    const outcome = normalized.outcome;
-    if (!keys.includes(outcome)) {
-      throw new Error(`Approval resolver returned unknown outcome '${outcome}'`);
+  const doWork = async (): Promise<ManualResult> => {
+    // If resolver provided, execute it and map to ManualResult
+    if (approvalResolver) {
+      const input: ApprovalResolverInput = {
+        question: config.question,
+        stateName: resolverInputOverrides?.stateName ?? '',
+        vars: resolverInputOverrides?.vars,
+        outputPath: resolverInputOverrides?.outputPath ?? null,
+      };
+      const normalized = await executeApprovalResolver(approvalResolver, input);
+      const outcome = normalized.outcome;
+      if (!keys.includes(outcome)) {
+        throw new Error(`Approval resolver returned unknown outcome '${outcome}'`);
+      }
+      const reason = typeof normalized.reason === 'string' ? normalized.reason : '';
+      return { chosen: outcome, target: config.options[outcome], reason, waitMs: 0 };
     }
-    const reason = typeof normalized.reason === 'string' ? normalized.reason : '';
-    return { chosen: outcome, target: config.options[outcome], reason, waitMs: 0 };
-  }
 
-  // Test escape hatch — skip prompt entirely
-  const forced = process.env.RAILI_MANUAL_CHOICE;
-  if (forced && keys.includes(forced)) {
-    return { chosen: forced, target: config.options[forced], reason: '', waitMs: 0 };
-  }
+    // Test escape hatch — skip prompt entirely
+    const forced = process.env.RAILI_MANUAL_CHOICE;
+    if (forced && keys.includes(forced)) {
+      return { chosen: forced, target: config.options[forced], reason: '', waitMs: 0 };
+    }
 
-  // Create readline interface when ready to prompt. Measure wait starting immediately before attaching listeners.
-  if (config.multiline) {
-    console.log(
-      `\n${config.question}\n[Enter multiple lines, finish with a single line containing '/q']`,
-    );
+    // Create readline interface when ready to prompt. Measure wait starting immediately before attaching listeners.
+    if (config.multiline) {
+      console.log(
+        `\n${config.question}\n[Enter multiple lines, finish with a single line containing '/q']`,
+      );
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.setPrompt('> ');
+      rl.prompt();
+
+      const waitStart = Date.now();
+
+      return await new Promise<ManualResult>((resolve) => {
+        const lines: string[] = [];
+
+        const onLine = (line: string) => {
+          if (line === '/q') {
+            rl.close();
+            const reason = lines.join('\n');
+            const chosen = reason === '' ? 'PASSED' : 'FAILED';
+            const waitMs = Date.now() - waitStart;
+            resolve({ chosen, target: config.options[chosen], reason, waitMs });
+          } else {
+            lines.push(line);
+            rl.prompt();
+          }
+        };
+        rl.on('line', onLine);
+      });
+    }
+
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.setPrompt('> ');
-    rl.prompt();
-
     const waitStart = Date.now();
 
-    return await new Promise<ManualResult>((resolve) => {
-      const lines: string[] = [];
-
-      const onLine = (line: string) => {
-        if (line === '/q') {
-          rl.close();
-          const reason = lines.join('\n');
-          const chosen = reason === '' ? 'PASSED' : 'FAILED';
-          const waitMs = Date.now() - waitStart;
-          resolve({ chosen, target: config.options[chosen], reason, waitMs });
-        } else {
-          lines.push(line);
-          rl.prompt();
-        }
-      };
-      rl.on('line', onLine);
+    const answer = await new Promise<string>((resolve) => {
+      rl.question(`\n${config.question}\n[Enter = PASSED, type reason = FAILED]: `, resolve);
     });
+
+    rl.close();
+
+    const reason = answer.trim();
+    const chosen = reason === '' ? 'PASSED' : 'FAILED';
+    const waitMs = Date.now() - waitStart;
+
+    return { chosen, target: config.options[chosen], reason, waitMs };
+  };
+
+  if (typeof timeoutMs === 'number' && timeoutMs > 0) {
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        doWork(),
+        new Promise<ManualResult>((_, reject) => {
+          timeoutHandle = setTimeout(
+            () => reject(new Error('Approval prompt timeout exceeded')),
+            timeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timeoutHandle);
+    }
   }
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const waitStart = Date.now();
-
-  const answer = await new Promise<string>((resolve) => {
-    rl.question(`\n${config.question}\n[Enter = PASSED, type reason = FAILED]: `, resolve);
-  });
-
-  rl.close();
-
-  const reason = answer.trim();
-  const chosen = reason === '' ? 'PASSED' : 'FAILED';
-  const waitMs = Date.now() - waitStart;
-
-  return { chosen, target: config.options[chosen], reason, waitMs };
+  return await doWork();
 }
 
 /**
@@ -253,77 +275,101 @@ export async function handleManualTransition(
 export async function handleFeedbackPrompt(
   feedback: FeedbackConfig,
   feedbackResolver?: FeedbackResolverFunction | null,
+  timeoutMs?: number,
 ): Promise<FeedbackResolverResult | string | null> {
   const name = feedback.expose_var;
   if (!name || name.trim() === '') {
     throw new Error('Feedback: expose_var must be provided');
   }
 
-  // If resolver provided, execute it and return either the legacy string (when resolver returned a string),
-  // or the structured object when resolver returned an object. Keep null as-is.
-  if (feedbackResolver) {
-    const input: FeedbackResolverInput = {
-      prompt: feedback.question ?? `Enter feedback for '${name}':`,
-      stateName: '',
-      config: feedback,
-    };
-    // Call resolver directly so we can preserve legacy string shape when appropriate.
-    const raw = await feedbackResolver(input as FeedbackResolverInput);
-    // Validate/normalize to ensure the resolver returned an allowed shape; reuse existing normalizer for validation.
-    const normalized = normalizeFeedbackResult(raw as unknown);
-    if (raw === null) return null;
-    if (typeof raw === 'string') return raw;
-    // raw is an object - return the normalized object form
-    return normalized;
-  }
-
-  const envName = `RAILI_FEEDBACK_${name.toUpperCase()}`;
-  const forced = process.env[envName];
-  if (typeof forced !== 'undefined') {
-    return forced;
-  }
-
-  const question = feedback.question ?? `Enter feedback for '${name}':`;
-  const multiline = !!feedback.multiline;
-  const required = !!feedback.required;
-
-  // Helper to prompt single-line
-  const promptSingle = async (): Promise<string> => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const answer = await new Promise<string>((resolve) => {
-      rl.question(`\n${question}\n: `, resolve);
-    });
-    rl.close();
-    return answer.trim();
-  };
-
-  // Helper to prompt multiline
-  const promptMulti = async (): Promise<string> => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    console.log(`\n${question}\n[Enter multiple lines, finish with a single line containing '/q']`);
-    rl.setPrompt('> ');
-    rl.prompt();
-
-    return await new Promise<string>((resolve) => {
-      const lines: string[] = [];
-      const onLine = (line: string) => {
-        if (line === '/q') {
-          rl.close();
-          resolve(lines.join('\n'));
-        } else {
-          lines.push(line);
-          rl.prompt();
-        }
+  const doWork = async (): Promise<FeedbackResolverResult | string | null> => {
+    // If resolver provided, execute it and return either the legacy string (when resolver returned a string),
+    // or the structured object when resolver returned an object. Keep null as-is.
+    if (feedbackResolver) {
+      const input: FeedbackResolverInput = {
+        prompt: feedback.question ?? `Enter feedback for '${name}':`,
+        stateName: '',
+        config: feedback,
       };
-      rl.on('line', onLine);
-    });
+      // Call resolver directly so we can preserve legacy string shape when appropriate.
+      const raw = await feedbackResolver(input as FeedbackResolverInput);
+      // Validate/normalize to ensure the resolver returned an allowed shape; reuse existing normalizer for validation.
+      const normalized = normalizeFeedbackResult(raw as unknown);
+      if (raw === null) return null;
+      if (typeof raw === 'string') return raw;
+      // raw is an object - return the normalized object form
+      return normalized;
+    }
+
+    const envName = `RAILI_FEEDBACK_${name.toUpperCase()}`;
+    const forced = process.env[envName];
+    if (typeof forced !== 'undefined') {
+      return forced;
+    }
+
+    const question = feedback.question ?? `Enter feedback for '${name}':`;
+    const multiline = !!feedback.multiline;
+    const required = !!feedback.required;
+
+    // Helper to prompt single-line
+    const promptSingle = async (): Promise<string> => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const answer = await new Promise<string>((resolve) => {
+        rl.question(`\n${question}\n: `, resolve);
+      });
+      rl.close();
+      return answer.trim();
+    };
+
+    // Helper to prompt multiline
+    const promptMulti = async (): Promise<string> => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      console.log(
+        `\n${question}\n[Enter multiple lines, finish with a single line containing '/q']`,
+      );
+      rl.setPrompt('> ');
+      rl.prompt();
+
+      return await new Promise<string>((resolve) => {
+        const lines: string[] = [];
+        const onLine = (line: string) => {
+          if (line === '/q') {
+            rl.close();
+            resolve(lines.join('\n'));
+          } else {
+            lines.push(line);
+            rl.prompt();
+          }
+        };
+        rl.on('line', onLine);
+      });
+    };
+
+    while (true) {
+      const val = multiline ? await promptMulti() : await promptSingle();
+      if (val !== '' || !required) {
+        return val;
+      }
+      console.log('This feedback is required and cannot be empty. Please provide a value.');
+    }
   };
 
-  while (true) {
-    const val = multiline ? await promptMulti() : await promptSingle();
-    if (val !== '' || !required) {
-      return val;
+  if (typeof timeoutMs === 'number' && timeoutMs > 0) {
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        doWork(),
+        new Promise<FeedbackResolverResult | string | null>((_, reject) => {
+          timeoutHandle = setTimeout(
+            () => reject(new Error('Feedback prompt timeout exceeded')),
+            timeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timeoutHandle);
     }
-    console.log('This feedback is required and cannot be empty. Please provide a value.');
   }
+
+  return await doWork();
 }
