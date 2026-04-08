@@ -1,7 +1,8 @@
 import { StateDef } from '../types';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { executeAgent } from '../handlers/agentHandler';
-import { loadAgentOutputPath, readLatestRun, saveOutput } from '../context/outputStore';
+import { loadAgentOutputPath, readLatestRun } from '../context/outputStore';
+import { storeOutput } from './stateRunnerUtils';
 import { interpolateString } from '../variables/variableInterpolation';
 import type { StateResult } from './runner';
 import { IStateRunner } from './stateRunner';
@@ -63,13 +64,8 @@ class AgentStateRunner implements IStateRunner {
       workflowArg,
     );
 
-    // Store output if configured
-    if (state.config.output) {
-      const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
-      if (combined) {
-        saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
-      }
-    }
+    // Store output if configured (delegated to shared helper which also saves latest)
+    storeOutput(cwd, state, result, workflowArg);
 
     if (state.config.on) {
       return { outcome: result.success ? 'PASSED' : 'FAILED' };

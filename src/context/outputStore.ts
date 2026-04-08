@@ -130,6 +130,43 @@ export function saveOutput(
     ? separator + filteredOutput
     : filteredOutput;
   fs.appendFileSync(outputPath(cwd, stateId, workflowArg), entry, 'utf8');
+
+  // Also save the latest filtered output in overwrite mode
+  saveLatestOutput(cwd, stateId, output, outputConfig, workflowArg);
+}
+
+export function saveLatestOutput(
+  cwd: string,
+  stateId: string,
+  output: string,
+  outputConfig?: OutputConfig,
+  workflowArg?: string,
+): void {
+  if (!outputConfig?.store) {
+    return;
+  }
+
+  const fs = getFileSystem();
+
+  // Apply the same filtering rules as saveOutput
+  const filtered = filterOutput(output, outputConfig);
+  if (!filtered) {
+    return;
+  }
+
+  const workflowDir = resolveWorkflowDir(cwd, workflowArg);
+  const dir = path.join(workflowDir, OUTPUTS_DIR);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  // Derive latest file path from the standard outputPath (replace .md with .latest.md)
+  const standard = outputPath(cwd, stateId, workflowArg);
+  const latestPath = standard.endsWith('.md')
+    ? standard.slice(0, -3) + '.latest.md'
+    : standard + '.latest.md';
+
+  fs.writeFileSync(latestPath, filtered, 'utf8');
 }
 
 /**

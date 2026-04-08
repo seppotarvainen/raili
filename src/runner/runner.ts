@@ -605,10 +605,28 @@ export class Runner {
    * Run the workflow from the current (or initial) state until a terminal state is reached.
    */
   async run(): Promise<void> {
-    const currentStateId =
+    let currentStateId =
       this.context && this.context.stateHistory && this.context.stateHistory.length > 0
         ? this.context.stateHistory[this.context.stateHistory.length - 1].state
         : this.stateMachine.initial;
+
+    // If the last recorded state is terminal (no routing), treat this as a fresh run
+    // and start from the workflow initial state so `continue` on a completed run restarts it.
+    if (this.context.stateHistory.length > 0) {
+      const lastStateId = this.context.stateHistory[this.context.stateHistory.length - 1].state;
+      const lastDef = this.stateMachine.states[lastStateId];
+      if (lastDef) {
+        const isTerminal =
+          !lastDef.config.on &&
+          !lastDef.config.transitions &&
+          !lastDef.config.approval &&
+          !lastDef.config.feedback &&
+          lastDef.transitions.length === 0;
+        if (isTerminal) {
+          currentStateId = this.stateMachine.initial;
+        }
+      }
+    }
 
     if (this.context.stateHistory.length === 0) {
       this.record(currentStateId);

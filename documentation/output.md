@@ -14,7 +14,9 @@ output:
 
 Output saved to `.raili/<workflow>/outputs/<stateId>.md` with run separators.
 
-Note: For group (sub-workflow) states the on-disk filename uses only the sub-state name (the final segment of the virtual state id). For example a sub-state with virtual id `groupx.produce` is stored as `produce.md` (no parent prefix).
+Additionally, Raili also writes a per-state "latest" file that contains only the most recent run's filtered output. The latest file is created alongside the history file and uses the same base name with a `.latest.md` suffix (for example `code.latest.md` for `code.md`). On each run when `output.store: true` is configured, Raili appends the full run to the history file and **overwrites** the `.latest.md` file with the filtered content from the current run. If the configured filtering (markers/tail) yields an empty result, the `.latest.md` file is not created or is left unchanged.
+
+Note: For group (sub-workflow) states the on-disk filename uses only the sub-state name (the final segment of the virtual state id). For example a sub-state with virtual id `groupx.produce` is stored as `produce.md` (no parent prefix). The latest file follows the same naming convention (e.g. `produce.latest.md`).
 
 ## Marker-based Extraction
 

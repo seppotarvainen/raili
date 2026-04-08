@@ -1,5 +1,5 @@
 import { StateDef } from '../types';
-import { saveOutput, outputPath } from '../context/outputStore';
+import { saveOutput, saveLatestOutput, outputPath } from '../context/outputStore';
 import { parseExports } from '../variables/variableExports';
 import type { StateResult } from './runner';
 
@@ -26,7 +26,7 @@ export function buildEnvOverrides(vars?: Record<string, string>): Record<string,
 /**
  * Store combined stdout+stderr output if the state has an output config.
  */
-function storeOutput(
+export function storeOutput(
   cwd: string,
   state: StateDef,
   result: HandlerResult,
@@ -40,6 +40,9 @@ function storeOutput(
     return;
   }
   saveOutput(cwd, state.id, combined, state.config.output, workflowArg);
+  // Also save the latest output file so callers that rely on the "latest" variant
+  // get an up-to-date copy whenever outputs are stored.
+  saveLatestOutput(cwd, state.id, combined, state.config.output, workflowArg);
 }
 
 /**
