@@ -38,7 +38,7 @@ export function resolveWorkflowDir(cwd: string, workflowArg?: string): string {
     if (fs.existsSync(mainCandidate)) {
       return mainCandidate;
     }
-    throw new Error('Unable to resolve workflow directory. No "main" directory found"');
+    throw new Error('Unable to resolve workflow directory. No "main" directory found');
   }
 
   // If bare name
@@ -102,6 +102,19 @@ export function resolveFeedbackResolverPath(workflowDir: string): string | null 
 export function resolveTriggerPath(workflowDir: string): string | null {
   const fs = getFileSystem();
   const p = path.join(workflowDir, 'trigger.js');
+  if (fs.existsSync(p)) {
+    return p;
+  }
+  return null;
+}
+
+/**
+ * Resolve the absolute path to resolver configuration file inside the workflow directory.
+ * Returns the absolute path if the file exists, otherwise null.
+ */
+export function resolveResolverConfigPath(workflowDir: string): string | null {
+  const fs = getFileSystem();
+  const p = path.join(workflowDir, 'config.json');
   if (fs.existsSync(p)) {
     return p;
   }

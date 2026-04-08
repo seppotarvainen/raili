@@ -35,6 +35,7 @@ You fix test structure issues and debug test failures. You have access to:
 
 **Hard constraint:** You must NOT change test logic, assertions, or test case structure. You may only:
 - Move/rename test files
+- Combine duplicate tests into one file (merging test cases if needed)
 - Update import paths to match new file locations
 - Add imports from existing source modules (`src/`)
 - Delete files (for placeholder cleanup)

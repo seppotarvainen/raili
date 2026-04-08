@@ -46,7 +46,7 @@ transitions:
 
 ## Manual Approval (approval:)
 
-Pauses execution and prompts the user for yes/no.
+Pauses execution and prompts the user for yes/no. Approval behavior can be customized via an optional workflow resolver configuration file: `.raili/<workflow>/config.json` (see documentation/approval.md). The config allows tuning approval timeouts so long-running prompts or automated resolvers do not block indefinitely.
 
 ```yaml
 approval:
@@ -57,6 +57,8 @@ approval:
 ```
 
 **Use for:** any state type
+
+**Timeout behavior:** If `approval.timeout` is set in `.raili/<workflow>/config.json` (seconds), Raili enforces that timeout for both interactive prompts and approval resolver executions. When the timeout is exceeded the run fails fast with the message: `Approval prompt timeout exceeded`.
 
 ## Terminal State
 

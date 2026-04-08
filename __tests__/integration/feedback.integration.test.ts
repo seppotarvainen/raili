@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
 import {
@@ -86,6 +88,39 @@ states:
     expect(opts.env['RAILI_VAR_NOTE']).toBe('hello world');
 
     // Ensure workflow reached done
+    expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
+  });
+});
+
+describe('integration: feedback with resolver config', () => {
+  it('uses feedback timeout from config.json when present', async () => {
+    writeWorkflow(
+      tmpDir,
+      `initial: ask
+states:
+  ask:
+    type: engine
+    feedback:
+      expose_var: note
+    transitions:
+      next: done
+  done:
+    type: engine
+`,
+    );
+    writeAgentRegistry(tmpDir, {});
+    writeScriptRegistry(tmpDir, {});
+
+    // Write a resolver config with an explicit feedback timeout
+    const cfgPath = path.join(tmpDir, '.raili', 'main', 'config.json');
+    fs.writeFileSync(cfgPath, JSON.stringify({ feedback: { timeout: 120 } }), 'utf8');
+
+    process.env.RAILI_FEEDBACK_NOTE = 'from config test';
+
+    await runCommand(tmpDir, 'clean', {});
+
+    const ctx = loadContext(tmpDir);
+    expect(ctx.vars!['note']).toBe('from config test');
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
   });
 });

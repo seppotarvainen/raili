@@ -130,6 +130,22 @@ export interface WorkflowContext {
 
 export type TriggerFunction = () => Promise<Record<string, string> | null>;
 
+// Resolver configuration for approval/feedback/trigger behavior
+export interface ResolverConfig {
+  trigger?: {
+    interval?: number;       // Poll interval in seconds (default: 15)
+    timeout?: number;        // Failure timeout in seconds (default: 600)
+    retry_interval?: number; // Backoff retry interval in seconds (default: 5)
+  };
+  approval?: {
+    timeout?: number; // Timeout in seconds (default: 3600, no retry)
+  };
+  feedback?: {
+    timeout?: number; // Timeout in seconds (default: 3600)
+  };
+}
+
+
 // Inputs provided to approval resolver functions
 export interface ApprovalResolverInput {
   // The state id for which approval is being resolved

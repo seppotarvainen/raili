@@ -12,7 +12,9 @@ import {
   resolveWorkflowDir,
   resolveApprovalResolverPath,
   resolveFeedbackResolverPath,
+  resolveResolverConfigPath,
 } from '../context/pathUtils';
+import { loadResolverConfig } from '../resolverConfigLoader';
 import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import path from 'path';
 import { loadFeedbackResolver } from '../handlers/manualHandler';
@@ -372,7 +374,25 @@ export class Runner {
     if (typeof this.feedbackResolverPath !== 'undefined') {
       fbResolver = loadFeedbackResolver(this.feedbackResolverPath ?? null);
     }
-    const val = await handleFeedbackPrompt(fb, fbResolver);
+
+    // Resolve resolver config to obtain feedback timeout if available.
+    // Only use timeout when a config file is explicitly present — defaults should not impose a timeout.
+    // Fail-open on errors.
+    let timeoutMs: number | undefined = undefined;
+    try {
+      const wfDir = resolveWorkflowDir(this.cwd, this.workflowArg);
+      const cfgPath = resolveResolverConfigPath(wfDir);
+      if (cfgPath !== null) {
+        const resolverCfg = loadResolverConfig(cfgPath);
+        if (resolverCfg.feedback && typeof resolverCfg.feedback.timeout === 'number') {
+          timeoutMs = resolverCfg.feedback.timeout * 1000;
+        }
+      }
+    } catch (e) {
+      timeoutMs = undefined;
+    }
+
+    const val = await handleFeedbackPrompt(fb, fbResolver, timeoutMs);
     const fbWait = Date.now() - fbStart;
 
     if (!this.context.vars) {

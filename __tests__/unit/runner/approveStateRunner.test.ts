@@ -1,6 +1,8 @@
 import {runApprovalStep} from '../../../src/runner/approveStateRunner';
 import * as notifyHandler from '../../../src/handlers/notifyHandler';
 import * as manualHandler from '../../../src/handlers/manualHandler';
+import { setupFakeFs } from '../infrastructure/fsFake.util';
+import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
 
 jest.mock('../../../src/handlers/notifyHandler');
 jest.mock('../../../src/handlers/manualHandler');
@@ -68,3 +70,24 @@ test('forwards resolver to manual handler when provided', async () => {
   // ensure the manual handler was called with the resolver as second arg
   expect(mockHandleManual.mock.calls[0][1]).toBeDefined();
 });
+
+test('passes configured approval timeout from config.json to manual handler', async () => {
+  const restore = setupFakeFs();
+  const fs = getFileSystem();
+  fs.mkdirSync('/proj', { recursive: true } as any);
+  fs.mkdirSync('/proj/.raili', { recursive: true } as any);
+  fs.mkdirSync('/proj/.raili/main', { recursive: true } as any);
+  fs.writeFileSync(
+    '/proj/.raili/main/config.json',
+    JSON.stringify({ approval: { timeout: 30 } }),
+  );
+
+  try {
+    await runApprovalStep('analyze', approval, { cwd: '/proj', workflowArg: 'main' });
+    // fourth arg to handleManualTransition should be 30 * 1000 = 30000 ms
+    expect(mockHandleManual.mock.calls[0][3]).toBe(30000);
+  } finally {
+    restore();
+  }
+});
+

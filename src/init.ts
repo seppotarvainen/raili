@@ -1,5 +1,6 @@
 import { getFileSystem } from './infrastructure/fileSystemProvider';
 import path from 'path';
+import { getResolverConfigDefaults } from './resolverConfigLoader';
 
 export function generateWorkflowYaml(_workflowName?: string): string {
   return [
@@ -94,6 +95,10 @@ export function generateScriptRegistry(): Record<string, { path: string }> {
   };
 }
 
+function generateResolverConfig() {
+  return getResolverConfigDefaults();
+}
+
 export async function initCommand(cwd: string) {
   const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
@@ -111,6 +116,7 @@ export async function initCommand(cwd: string) {
   const workflowYaml = generateWorkflowYaml();
   const agentRegistry = JSON.stringify(generateAgentRegistry(), null, 2);
   const scriptRegistry = JSON.stringify(generateScriptRegistry(), null, 2);
+  const resolverConfig = JSON.stringify(generateResolverConfig(), null, 2);
 
   // Write registries at .raili root (shared)
   fs.writeFileSync(path.join(railiDir, 'agent-registry.json'), agentRegistry);
@@ -119,6 +125,7 @@ export async function initCommand(cwd: string) {
   // Write workflow.yaml and vars.yaml into .raili/main/
   fs.writeFileSync(path.join(mainWorkflowDir, 'workflow.yaml'), workflowYaml);
   fs.writeFileSync(path.join(mainWorkflowDir, 'vars.yaml'), '# vars for main workflow\n');
+  fs.writeFileSync(path.join(mainWorkflowDir, 'config.json'), resolverConfig);
   fs.mkdirSync(path.join(mainWorkflowDir, 'outputs'), { recursive: true });
   fs.mkdirSync(path.join(mainWorkflowDir, 'learnings'), { recursive: true });
 

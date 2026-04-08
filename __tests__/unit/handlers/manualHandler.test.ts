@@ -1,4 +1,61 @@
-import {handleManualTransition} from '../../../src/handlers/manualHandler';
+import { handleManualTransition, handleFeedbackPrompt } from '../../../src/handlers/manualHandler';
+
+describe('manualHandler timeouts', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    // cleanup env
+    delete process.env.RAILI_FEEDBACK_TEST;
+    delete process.env.RAILI_MANUAL_CHOICE;
+  });
+
+  test('handleManualTransition times out when resolver hangs', async () => {
+    const never = () => new Promise(() => {});
+    const p = handleManualTransition(
+      { question: 'q', options: { PASSED: 'a', FAILED: 'b' } },
+      never as any,
+      undefined,
+      10,
+    );
+    // advance timers to trigger timeout
+    jest.advanceTimersByTime(20);
+    await expect(p).rejects.toThrow('Approval prompt timeout exceeded');
+  });
+
+  test('handleManualTransition returns when resolver resolves quickly', async () => {
+    const fast = async () => 'PASSED';
+    const res = await handleManualTransition(
+      { question: 'q', options: { PASSED: 'a', FAILED: 'b' } },
+      fast as any,
+      undefined,
+      1000,
+    );
+    expect(res.chosen).toBe('PASSED');
+  });
+
+  test('handleFeedbackPrompt times out when resolver hangs', async () => {
+    const never = () => new Promise(() => {});
+    const p = handleFeedbackPrompt(
+      { expose_var: 'test' },
+      never as any,
+      10,
+    );
+    jest.advanceTimersByTime(20);
+    await expect(p).rejects.toThrow('Feedback prompt timeout exceeded');
+  });
+
+  test('handleFeedbackPrompt returns env override immediately', async () => {
+    process.env.RAILI_FEEDBACK_TEST = 'ok';
+    const res = await handleFeedbackPrompt({ expose_var: 'test' });
+    expect(res).toBe('ok');
+  });
+});
+
+// Basic behavior tests (moved from __tests__/unit/manualHandler.test.ts)
 
 afterEach(() => { delete process.env.RAILI_MANUAL_CHOICE; });
 

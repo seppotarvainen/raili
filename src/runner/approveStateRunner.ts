@@ -8,6 +8,8 @@ import {
 import { NotifyResult, runNotify } from '../handlers/notifyHandler';
 import { outputPath } from '../context/outputStore';
 import { interpolateString } from '../variables/variableInterpolation';
+import { resolveWorkflowDir, resolveResolverConfigPath } from '../context/pathUtils';
+import { loadResolverConfig } from '../resolverConfigLoader';
 
 interface ApprovalStepOptions {
   cwd: string;
@@ -59,11 +61,29 @@ export async function runApprovalStep(
   // If an approval resolver path was provided, attempt to load the resolver (fail-fast when a path string is supplied)
   let approvalResolver = null;
   let outPath: string | null = null;
-  if (typeof approvalResolverPath !== 'undefined' && approvalResolverPath !== null) {
+  if (approvalResolverPath) {
     approvalResolver = loadApprovalResolver(approvalResolverPath);
   }
 
   // Provide outputPath and vars to the resolver via manual handler's input shape if a resolver is actually present.
+  // Resolve resolver config to obtain approval timeout if available.
+  // Only use timeout when a config file is explicitly present — defaults should not impose a timeout.
+  // Fail-open: if resolver config cannot be resolved, proceed without timeout.
+  let timeoutMs: number | undefined = undefined;
+  try {
+    const wfDir = resolveWorkflowDir(options.cwd, options.workflowArg);
+    const cfgPath = resolveResolverConfigPath(wfDir);
+    if (cfgPath !== null) {
+      const resolverCfg = loadResolverConfig(cfgPath);
+      if (resolverCfg.approval && typeof resolverCfg.approval.timeout === 'number') {
+        timeoutMs = resolverCfg.approval.timeout * 1000;
+      }
+    }
+  } catch (e) {
+    // ignore and continue without timeout
+    timeoutMs = undefined;
+  }
+
   if (approvalResolver) {
     // compute deterministic output path for the state (may point to a non-existent file)
     // Guard against workspaces that don't have .raili initialized (unit tests); if resolving the path fails, continue with null.
@@ -73,11 +93,16 @@ export async function runApprovalStep(
       outPath = null;
     }
 
-    const result: ManualResult = await handleManualTransition(manualCallArg, approvalResolver, {
-      vars,
-      outputPath: outPath,
-      stateName: stateId,
-    });
+    const result: ManualResult = await handleManualTransition(
+      manualCallArg,
+      approvalResolver,
+      {
+        vars,
+        outputPath: outPath,
+        stateName: stateId,
+      },
+      timeoutMs,
+    );
     return {
       chosen: result.chosen,
       target: result.target,
@@ -89,7 +114,12 @@ export async function runApprovalStep(
   }
 
   // No resolver provided — call manual handler in its simplest form so unit tests can assert on a single argument
-  const result: ManualResult = await handleManualTransition(manualCallArg);
+  const result: ManualResult = await handleManualTransition(
+    manualCallArg,
+    undefined,
+    undefined,
+    timeoutMs,
+  );
 
   return {
     chosen: result.chosen,

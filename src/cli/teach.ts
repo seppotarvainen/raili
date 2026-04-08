@@ -22,6 +22,11 @@ export async function teachCommand(cwd: string, agentId?: string, workflowArg?: 
 
   await new Promise<void>((resolve) =>
     rl.on('close', () => {
+      // Unref stdin so the underlying TTY handle does not prevent the process from exiting
+      // (relevant both in production after the CLI finishes and in tests where readline is mocked)
+      if (typeof (process.stdin as any).unref === 'function') {
+        process.stdin.unref();
+      }
       resolve();
     }),
   );
