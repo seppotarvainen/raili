@@ -152,7 +152,7 @@ Raili saves execution state to `<workflow>/context.json`:
 
 ### Resume behavior
 - `raili run` with existing context → prompts "Continue from existing run (Enter) or clean run (c)?"
-- `raili run --continue` → always resumes
+- `raili run --continue` → resumes from the last recorded state. If the last recorded state was terminal (no routing defined), `--continue` will restart the workflow from the workflow's `initial` state (useful to rerun a completed workflow).
 - `raili run --clean` → always starts fresh (clears context.json and outputs)
 
 ### Named workflow resume behavior
