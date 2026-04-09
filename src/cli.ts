@@ -14,12 +14,11 @@ import { RailiCommand } from './cli/railiCommand';
 import { listenCommand } from './cli/listen';
 import { teachCommand } from './cli/teach';
 import { createCommand } from './cli/create';
+import { visualCommand } from './cli/visual';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
 import { loadVarsFile } from './variables/varsLoader';
 
 const args = process.argv.slice(2);
-const command = new RailiCommand(args[0]);
-const runArgs = args.slice(1);
 
 export function parseRunArgs(argv: string[]): RailiRunArgs {
   const optionDefinitions = [
@@ -58,6 +57,17 @@ export function parseCreateArgs(argv: string[]): { workflow: string } {
     throw new Error('Missing required -w <workflow> argument');
   }
   return { workflow: parsed.workflow };
+}
+
+export function parseVisualArgs(argv: string[]): { workflow?: string; format?: string; out?: string; help?: boolean } {
+  const optionDefinitions = [
+    { name: 'workflow', alias: 'w', type: String },
+    { name: 'format', alias: 'f', type: String },
+    { name: 'out', alias: 'o', type: String },
+    { name: 'help', alias: 'h', type: Boolean },
+  ];
+  const parsed = commandLineArgs(optionDefinitions, { argv }) as { workflow?: string; format?: string; out?: string; help?: boolean };
+  return { workflow: parsed.workflow, format: parsed.format, out: parsed.out, help: !!parsed.help };
 }
 
 /** Prompt the user for any declared inputs that weren't supplied via --var flags */
@@ -130,7 +140,7 @@ export async function promptRunMode(cwd: string, workflowPath?: string): Promise
   });
 }
 
-async function main() {
+async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1)) {
   try {
     // Early, deterministic help handling (read-only). Support -h and --help only.
     if (command.isFlagHelp) {
@@ -153,11 +163,12 @@ async function main() {
         const parsed = parseCreateArgs(runArgs);
         await createCommand(process.cwd(), parsed.workflow);
         process.exit(0);
-      } catch (err: any) {
-        if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg && typeof msg === 'string' && msg.startsWith('EXIT:')) {
           throw err;
         }
-        console.error(err.message || String(err));
+        console.error(msg);
         process.exit(1);
       }
     } else if (command.init) {
@@ -218,8 +229,34 @@ async function main() {
       try {
         await Promise.resolve(statsCommand(process.cwd(), workflowArg, latest));
         process.exit(0);
-      } catch (err: any) {
-        console.error(err.message || String(err));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(msg);
+        process.exit(1);
+      }
+    } else if (command.visual) {
+      try {
+        const parsed = parseVisualArgs(runArgs);
+        if (parsed.help) {
+          printHelp('visual');
+          return;
+        }
+        try {
+          await Promise.resolve(
+            visualCommand(process.cwd(), parsed.workflow ?? 'main', parsed.format ?? 'mermaid', parsed.out),
+          );
+          process.exit(0);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg && typeof msg === 'string' && msg.startsWith('EXIT:')) {
+            throw err;
+          }
+          console.error(msg);
+          process.exit(1);
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(msg);
         process.exit(1);
       }
     } else if (command.listen) {
@@ -237,11 +274,12 @@ async function main() {
         }
         await listenCommand(process.cwd(), workflowPath);
         process.exit(0);
-      } catch (err: any) {
-        if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg && typeof msg === 'string' && msg.startsWith('EXIT:')) {
           throw err;
         }
-        console.error(err.message || String(err));
+        console.error(msg);
         process.exit(1);
       }
     } else if (command.teach) {
@@ -266,13 +304,14 @@ async function main() {
         const agentId = runArgs.find((a) => !a.startsWith('-'));
         await teachCommand(process.cwd(), agentId, workflowPath);
         process.exit(0);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // If the error is an exit sentinel from a mocked process.exit in tests (e.g. 'EXIT:0'),
         // rethrow it so tests can observe the intended exit code instead of being treated as a failure.
-        if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg && typeof msg === 'string' && msg.startsWith('EXIT:')) {
           throw err;
         }
-        console.error(err.message || String(err));
+        console.error(msg);
         process.exit(1);
       }
     } else if (!command.value) {
@@ -283,12 +322,13 @@ async function main() {
       printHelp();
       process.exit(2);
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Propagate test sentinel exit errors so test mocks can assert the intended exit code.
-    if (err && typeof err.message === 'string' && err.message.startsWith('EXIT:')) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg && typeof msg === 'string' && msg.startsWith('EXIT:')) {
       throw err;
     }
-    console.error(err.message || String(err));
+    console.error(msg);
     process.exit(1);
   }
 }

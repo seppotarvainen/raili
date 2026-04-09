@@ -50,8 +50,12 @@ export function validateWorkflowReferences(
   const missingAgents: string[] = [];
   const missingScripts: string[] = [];
 
-  // Collect declared workflow input names for collision detection
-  const declaredInputs = new Set((workflow.inputs || []).map((i) => i.name));
+  // Collect declared workflow input names for collision detection (support string or object styles)
+  const declaredInputs = new Set(
+    (workflow.inputs || [])
+      .map((i: any) => (typeof i === 'string' ? i : i && typeof i.name === 'string' ? i.name : ''))
+      .filter(Boolean),
+  );
 
   for (const [stateName, stateConfig] of Object.entries(workflow.states)) {
     // Check agent states

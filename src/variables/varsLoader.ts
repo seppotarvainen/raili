@@ -21,24 +21,18 @@ export function loadVarsFile(
     let content: string;
     try {
       content = fs.readFileSync(filePath, 'utf8');
-    } catch (err: any) {
-      console.warn(
-        colors.yellow(
-          `[Warning] Unable to read ${path.basename(filePath)}: ${err?.message ? err.message : String(err)}`,
-        ),
-      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(colors.yellow(`[Warning] Unable to read ${path.basename(filePath)}: ${msg}`));
       return {};
     }
 
     let parsed: any;
     try {
       parsed = yaml.load(content) as any;
-    } catch (err: any) {
-      console.warn(
-        colors.yellow(
-          `[Warning] Could not parse ${path.basename(filePath)}: ${err?.message ? err.message : String(err)}`,
-        ),
-      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(colors.yellow(`[Warning] Could not parse ${path.basename(filePath)}: ${msg}`));
       return {};
     }
 
