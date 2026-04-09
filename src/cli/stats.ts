@@ -199,9 +199,10 @@ export function readRunLog(cwd: string, workflow = 'main') {
       const obj = JSON.parse(line);
       // Lenient parsing: avoid runtime schema dependency. Coerce to RunEntry and accept missing fields.
       parsed.push(obj as RunEntry);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // skip malformed line but warn
-      console.warn(`Skipping malformed run-log line: ${err?.message ? err.message : String(err)}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`Skipping malformed run-log line: ${msg}`);
     }
   }
   return parsed;

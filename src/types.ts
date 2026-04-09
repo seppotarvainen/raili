@@ -220,3 +220,24 @@ export interface RailiRunArgs {
   help?: boolean;
   dryRun?: boolean;
 }
+
+// Graph types: nodes, edges, and graph model used by CLI utilities
+export interface GraphNode {
+  id: string;
+  type: StateType;
+  config: StateConfig;
+}
+
+export interface GraphEdge {
+  from: string;
+  to: string;
+  outcome?: string;
+  isDefault?: boolean;
+}
+
+export interface Graph {
+  initial?: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  terminals: string[];
+}
