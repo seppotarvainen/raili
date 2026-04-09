@@ -18,9 +18,12 @@ describe('renderMermaid', () => {
     terminals: ['done'],
   };
 
-  test('starts with graph TD', () => {
+  test('starts with graph TD and uses emoji labels', () => {
     const out = renderMermaid(sample);
     expect(out.startsWith('graph TD')).toBe(true);
+    // verify emoji label formatting
+    expect(out).toContain('start["start<br/>🤖"]');
+    expect(out).toContain('run_tests["run_tests<br/>📜"]');
   });
 
   test('includes style lines for node colors', () => {
@@ -48,22 +51,17 @@ describe('renderMermaid', () => {
     expect(out).toContain('start -.->|default| done');
   });
 
-  test('initial arrow points to graph.initial when provided', () => {
+  test('does not emit pseudo-state initial arrow', () => {
     const g = { ...sample, initial: 'deploy' } as Graph;
     const out = renderMermaid(g);
-    expect(out).toContain('[*] -->|initial| deploy');
+    expect(out).not.toContain('[*]');
   });
 
-  test('initial arrow emitted to first node when graph.initial missing', () => {
-    const out = renderMermaid(sample);
-    expect(out).toContain('[*] -->|initial| start');
-  });
-
-  test('notes include output.store and max_visits when present', () => {
+  test('notes include output.store and max_visits when present (emitted as comments)', () => {
     const withMax: Graph = JSON.parse(JSON.stringify(sample));
     // add max_visits to run_tests
     withMax.nodes = withMax.nodes.map((n) => (n.id === 'run_tests' ? { ...n, config: { ...(n.config || {}), max_visits: { count: 3 } } } : n));
     const out = renderMermaid(withMax);
-    expect(out).toContain('Note over run_tests: max_visits=3, output.store=true');
+    expect(out).toContain('%% run_tests: max_visits=3, output.store=true');
   });
 });

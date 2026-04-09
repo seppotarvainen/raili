@@ -1,4 +1,5 @@
 import { Graph, GraphNode } from '../types';
+import { EMOJI_MAP } from '../presenter';
 
 const typeColorMap: Record<string, string> = {
   agent: '#87CEEB', // light blue
@@ -9,21 +10,17 @@ const typeColorMap: Record<string, string> = {
 };
 
 function nodeLabel(node: GraphNode): string {
-  // Use HTML-style break for Mermaid labels
+  // Use HTML-style break for Mermaid labels and show emoji for type
   const title = node.id;
-  const type = node.type;
-  return `${title}<br/>${type}`;
+  const emoji = EMOJI_MAP[node.type] ?? node.type;
+  return `${title}<br/>${emoji}`;
 }
 
 export function renderMermaid(graph: Graph): string {
   const lines: string[] = [];
   lines.push('graph TD');
 
-  // Initial arrow: prefer graph.initial, fallback to first node
-  const initialTarget = graph.initial ?? (graph.nodes.length ? graph.nodes[0].id : undefined);
-  if (initialTarget) {
-    lines.push(`[*] -->|initial| ${initialTarget}`);
-  }
+  // Initial pseudo-state removed: Mermaid flowchart doesn't support [*] pseudo-state transitions
 
   // Node definitions
   for (const node of graph.nodes) {
@@ -52,7 +49,7 @@ export function renderMermaid(graph: Graph): string {
     lines.push(`style ${node.id} fill:${color},stroke:#333,stroke-width:1px`);
   }
 
-  // Notes for annotations: max_visits & output.store
+  // Notes for annotations: max_visits & output.store — emit as Mermaid comments instead of "Note over"
   for (const node of graph.nodes) {
     const parts: string[] = [];
     const mv = node.config?.max_visits;
@@ -64,7 +61,8 @@ export function renderMermaid(graph: Graph): string {
     }
     if (parts.length > 0) {
       const note = parts.join(', ');
-      lines.push(`Note over ${node.id}: ${note}`);
+      // Use Mermaid comment so diagram remains valid in flowchart context
+      lines.push(`%% ${node.id}: ${note}`);
     }
   }
 

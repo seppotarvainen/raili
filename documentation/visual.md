@@ -57,6 +57,8 @@ raili visual -o ./docs/workflows/main.mmd
 ## Notes
 
 - The visual command is read-only: it only loads and validates workflow/registry files and writes the generated diagram file.
-- The generated Mermaid includes annotations (node types, `output.store`, `max_visits`) to aid inspection.
+- Mermaid labels now include a type emoji for each node (for example **agent** → 🤖, **script** → 📜, **command** → 📢). Labels use an HTML-style break (`<br/>`) so the emoji appears under the node title for readability.
+- The renderer no longer emits the pseudo-state initial arrow (`[*] --> ...`). The initial node is shown without a pseudo-state transition to keep the flowchart valid.
+- Annotations such as `output.store` and `max_visits` are emitted as Mermaid comments (``%% <node>: ...``) rather than `Note over` blocks to ensure generated flowcharts remain valid in Mermaid flowchart context.
 
 (See `documentation/states.md`, `documentation/routing.md`, and `documentation/usage/run.md` for related workflow and validation behavior.)
