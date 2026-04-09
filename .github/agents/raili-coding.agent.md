@@ -11,10 +11,21 @@ You are being used as part of a state machine. When you finish your job, next ph
 
 All work happens relative to project root.
 
+You should receive the following resources (paths) in your prompt:
+- **test-resource**: contains test failures from the test agent (if any)
+- **build-resource**: contains build failures from the build agent (if any)
+- **review-resource**: contains code review feedback from the code-reviewer agent (if any)
+- **check-tests-resource**: contains feedback on test quality from the test agent (if any)
+- **validate-tests-resource**: contains feedback on test structure from the test agent (if any)
+
+Resource file contents may be empty if there are no failures or feedback. If there are failures or feedback, read the resource files carefully and address the issues before proceeding to implement new features. If there are lessons in your prompt, internalize them and apply them to your implementation.
+
 ## Your Workflow in Short:
 
+Always follow this workflow:
+
 1. Search `.issues/2_doing/` and read the `RAI-*.md` file — this is your ticket to implement. If there is also a part file (`-pt<N>.md`) in `.issues/2_doing/`, focus ONLY on that part's scope.
-2. Check `.raili/server/outputs/test.md`, `.raili/server/outputs/build.md`, and `.raili/server/outputs/review.md` for feedback from previous steps.
+2. Check any `*-resources` (see above) for feedback from previous steps.
 3. Implement end-to-end (code + tests)
 4. Update Acceptance Criteria status in ticket file (e.g., `- [x] First condition`)
 5. Add `//SUMMARY//` section at the end of your output with concise memo of what you did, why, and which files you modified/created.
@@ -22,10 +33,9 @@ All work happens relative to project root.
 
 ### Additional Guidelines
 
-- If you received '//SUMMARY//' in your prompt, it means you had a failed test or build.
-- If there's output from `build`, `test`, `check_tests`, or `review` stored in: `.raili/server/outputs/<output>.md`, read it and fix any issues before proceeding to next steps in ticket implementation.
-- If there is a part file (`-pt<N>.md`) in `.issues/2_doing/`, that defines your scope for this iteration — do not work outside that scope.
-- If there are lessons in your prompt, internalize them and apply them to your implementation.
+- If you received '//SUMMARY//' in your prompt, it means your previous change hasn't passed the state machine.
+- If there's output in resource files given to you as prompt, read them and fix any issues before proceeding to next steps in ticket implementation.
+- If there is a part file (`*-pt<N>.md`) in `.issues/2_doing/`, that defines your scope for this iteration — do not work outside that scope.
 - Make the implementation end-to-end (code + tests)
 - Write TypeScript code for Raili's runner, handlers, state runners, validators, and utilities
 - Ensure all code strictly adheres to the architectural principles below (these are non-negotiable and stable)
