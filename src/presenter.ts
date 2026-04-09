@@ -14,7 +14,7 @@ interface PresenterEntry {
   borderBottom?: string;
 }
 
-const EMOJI_MAP: Record<string, string> = {
+export const EMOJI_MAP: Record<string, string> = {
   agent: '🤖',
   command: '📢',
   script: '📜',
