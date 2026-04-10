@@ -60,6 +60,21 @@ export function resolveWorkflowDir(cwd: string, workflowArg?: string): string {
 }
 
 /**
+ * Get the canonical workflow name from the current working directory and an optional workflow argument.
+ * Uses resolveWorkflowDir for deterministic resolution and returns the directory basename.
+ */
+export function getWorkflowName(cwd: string, workflowArg?: string): string {
+  // sanitize workflowArg: trim leading/trailing slashes and whitespace
+  const sanitized = workflowArg ? workflowArg.replace(/^[\\/]+|[\\/]+$/g, '').trim() : undefined;
+  const workflowDir = resolveWorkflowDir(cwd, sanitized);
+  const name = path.basename(workflowDir);
+  if (!name || name === '.' || name === '..') {
+    throw new Error('Resolved invalid workflow name');
+  }
+  return name;
+}
+
+/**
  * Return the canonical path to the learnings file for an agent inside the workflow directory.
  */
 export function learningsFilePath(cwd: string, agentId: string, workflowArg?: string): string {

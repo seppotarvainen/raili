@@ -67,6 +67,6 @@ describe('runCommand', () => {
     // Assert: initializeContext should be called with merged vars: file + flags (flags win)
     expect(initializeContext).toHaveBeenCalled();
     const calledWith = (initializeContext as jest.Mock).mock.calls[0][0];
-    expect(calledWith).toEqual({ ticket_id: 'OVERRIDE', secret: 'X' });
+    expect(calledWith).toEqual({ ticket_id: 'OVERRIDE', secret: 'X', workflow: 'main' });
   });
 });

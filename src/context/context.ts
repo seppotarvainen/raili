@@ -159,7 +159,8 @@ export function clearContext(cwd: string, workflowArg?: string): void {
  */
 export function initializeContext(vars: Record<string, string>): WorkflowContext {
   return {
-    vars,
+    // Clone provided vars to avoid caller-side mutation
+    vars: { ...vars },
     approvals: {},
     feedbacks: {},
     stateHistory: [],

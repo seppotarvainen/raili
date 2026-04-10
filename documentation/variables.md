@@ -195,6 +195,7 @@ run_tests_with_ticket:
 ## Important Notes
 
 - Only keys in `inputs:` are prompted/available — workflow.yaml is the source of truth
+- A read-only `workflow` variable is injected into every run and set to the workflow directory name (for the default workflow this is `main`). Use `${workflow}` in agent prompts/approval questions and `$RAILI_VAR_WORKFLOW` in shell contexts. The `workflow` variable is set on clean runs and preserved when continuing an existing run (it is not read from `vars.yaml`).
 - Missing variables → immediate error (fail-fast)
 - Use `$$` to escape literal `$`: `$$100` becomes `$100`
 - Variables persist in `context.json` across runs
