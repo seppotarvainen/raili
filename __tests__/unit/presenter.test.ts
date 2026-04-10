@@ -34,6 +34,10 @@ describe('Presenter.render', () => {
     expect(combined).toContain('⏱️ Entered: 2026-03-18T10:32:00Z.');
     expect(combined).toContain('🔁 Visit: 1');
     expect(combined).toContain('✅ Learnings applied');
+    // Verify box frame is present
+    expect(combined).toMatch(/╔.*╗/);
+    expect(combined).toMatch(/║.*║/);
+    expect(combined).toMatch(/╚.*╝/);
   });
 
   test('renders boxed header for engine state with no learnings', () => {
@@ -46,6 +50,10 @@ describe('Presenter.render', () => {
     expect(combined).toContain('⏱️ Entered: 2026-03-19T12:00:00Z.');
     expect(combined).toContain('🔁 Visit: 1');
     expect(combined).toContain('No earlier run output');
+    // Verify box frame is present
+    expect(combined).toMatch(/╔.*╗/);
+    expect(combined).toMatch(/║.*║/);
+    expect(combined).toMatch(/╚.*╝/);
   });
 
   test('renders learningNote when provided', () => {
@@ -63,6 +71,10 @@ describe('Presenter.render', () => {
     const combined = logs.join('\n');
     expect(combined).toContain('📜 #4 ANALYZE');
     expect(combined).toContain('Earlier output applied');
+    // Verify box frame is present
+    expect(combined).toMatch(/╔.*╗/);
+    expect(combined).toMatch(/║.*║/);
+    expect(combined).toMatch(/╚.*╝/);
   });
 
   test('produces no output when entry is null', () => {
@@ -74,21 +86,35 @@ describe('Presenter.render', () => {
   test('formats PASSED binary outcome with elapsed time', () => {
     const p = new Presenter();
     p.appendStateEnter(makeStateDef('test', 'agent', { agent: 'a' }), 1, 1, '2026-03-19T10:00:00Z');
+    p.render();
     p.appendStateExit(makeStateDef('test', 'agent'), 'PASSED', 'nextState', 148000);
     p.render();
     const combined = logs.join('\n');
     expect(combined).toContain('PASSED');
     expect(combined).toContain('-> nextState');
     expect(combined).toContain('Elapsed time');
+    // Verify entry box frame exists
+    expect(combined).toMatch(/╔.*╗/);
+    expect(combined).toMatch(/║.*║/);
+    expect(combined).toMatch(/╚.*╝/);
+    // Verify exit border exists
+    expect(combined).toMatch(/─+/);
   });
 
   test('formats named transition outcome with arrow', () => {
     const p = new Presenter();
     p.appendStateEnter(makeStateDef('test', 'script'), 1, 1, '2026-03-19T10:00:00Z');
+    p.render();
     p.appendStateExit(makeStateDef('test', 'script'), 'approve', 'done', 5000);
     p.render();
     const combined = logs.join('\n');
     expect(combined).toContain('approve');
     expect(combined).toContain('-> done');
+    // Verify entry box frame exists
+    expect(combined).toMatch(/╔.*╗/);
+    expect(combined).toMatch(/║.*║/);
+    expect(combined).toMatch(/╚.*╝/);
+    // Verify exit border exists
+    expect(combined).toMatch(/─+/);
   });
 });

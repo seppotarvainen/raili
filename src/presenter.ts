@@ -10,8 +10,8 @@ interface PresenterEntry {
   learningsApplied: boolean;
   outputsApplied: boolean;
   lines: Lines;
-  borderTop?: string;
-  borderBottom?: string;
+  border?: string;
+  frame?: Frame;
 }
 
 export const EMOJI_MAP: Record<string, string> = {
@@ -31,15 +31,12 @@ class Lines {
   push(content: string, emojiCount = 0): void {
     this._entries.push({ content, emojiCount });
   }
+}
 
-  maxLength() {
-    let currentMax = 0;
-
-    this._entries.forEach((l) => {
-      currentMax = Math.max(currentMax, l.emojiCount * 2 + l.content.length);
-    });
-    return currentMax;
-  }
+interface Frame {
+  vertical: string;
+  horizontal: string;
+  corners?: [string, string, string, string];
 }
 
 export class Presenter {
@@ -80,8 +77,11 @@ export class Presenter {
       learningsApplied,
       outputsApplied,
       lines,
-      borderTop: '=',
-      borderBottom: '=',
+      frame: {
+        horizontal: '═',
+        vertical: '║',
+        corners: ['╔', '╗', '╚', '╝'],
+      },
     };
   }
 
@@ -94,7 +94,7 @@ export class Presenter {
     const type = stateDef.config.type ?? 'engine';
     const emoji = outcome === 'PASSED' ? '✅' : outcome === 'FAILED' ? '❌' : '➡️';
 
-    const lines = this.entry ? this.entry.lines : new Lines();
+    const lines = new Lines();
 
     // Compose message
     const outcomePart = `${emoji} ${outcome}`;
@@ -113,24 +113,55 @@ export class Presenter {
       learningsApplied: false,
       outputsApplied: false,
       lines,
-      borderTop: '-',
+      border: '─',
     };
   }
 
   render(): void {
     if (!this.entry) {return;}
-    const { lines, borderTop, borderBottom } = this.entry;
+    const { lines, border, frame } = this.entry;
 
-    const totalWidth = lines.maxLength() + 2;
-    const bt = (borderTop || '').repeat(totalWidth);
-    const bb = (borderBottom || '').repeat(totalWidth);
+    // Use terminal width, fall back to 80 if not available
+    const terminalWidth = process.stdout.columns ?? 80;
+    const boxWidth = terminalWidth - 2; // -2 for the side borders (║)
+    const innerWidth = boxWidth - 2; // -2 for padding inside frame
 
-    if (bt) {console.log(colors.cyan(bt));}
-    for (const l of lines.entries) {
-      console.log(l.content + ' '.repeat(totalWidth - l.content.length + l.emojiCount));
+    // Exit state: top border + content lines
+    if (border && !frame) {
+      const topBorder = border.repeat(terminalWidth);
+      console.log(colors.cyan(topBorder));
+
+      // Content lines (no side borders for exit)
+      for (const l of lines.entries) {
+        console.log(l.content);
+      }
+
+      console.log('');
+      this.entry.lines = new Lines();
+      return;
     }
-    if (bb) {console.log(colors.cyan(bb));}
-    console.log('');
+
+    // Enter state: full box frame
+    if (frame) {
+      const [topLeft, topRight, bottomLeft, bottomRight] = frame.corners || ['┌', '┐', '└', '┘'];
+      const horizontal = frame.horizontal.repeat(innerWidth);
+      const vertical = frame.vertical;
+
+      // Top border
+      console.log(colors.cyan(`${topLeft}${horizontal}${topRight}`));
+
+      // Content lines with side borders
+      for (const l of lines.entries) {
+        const padding = innerWidth - (l.content.length + 2);
+        const line = `${colors.cyan(vertical)} ${l.content}${' '.repeat(Math.max(0, padding))} ${colors.cyan(vertical)}`;
+        console.log(line);
+      }
+
+      // Bottom border
+      console.log(colors.cyan(`${bottomLeft}${horizontal}${bottomRight}`));
+      console.log('');
+    }
+
     this.entry.lines = new Lines();
   }
 }
