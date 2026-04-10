@@ -82,10 +82,20 @@ export function visualCommand(
 
   if (target.endsWith('.mmd')) {
     fs.writeFileSync(target, mermaid);
+    printClickablePath(target);
     return;
   }
 
   // Default: produce HTML wrapper
   const html = wrapMermaidInHtml(mermaid);
   fs.writeFileSync(target, html);
+  printClickablePath(target);
+}
+
+function printClickablePath(filePath: string): void {
+  // Use OSC 8 hyperlink protocol for clickable paths in modern terminals
+  const absolutePath = path.resolve(filePath);
+  const fileUrl = `file://${absolutePath}`;
+  const link = `\x1b]8;;${fileUrl}\x1b\\${filePath}\x1b]8;;\x1b\\`;
+  console.log(`\nDiagram saved to: ${link}`);
 }
