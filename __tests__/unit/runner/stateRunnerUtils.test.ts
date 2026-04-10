@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import os from 'os';
-import { resolveStateOutputPath } from '../../../src/runner/stateRunnerUtils';
+import { resolveStateOutputPath, buildEnvOverrides } from '../../../src/runner/stateRunnerUtils';
 
 describe('stateRunnerUtils.resolveStateOutputPath', () => {
   let tmpDir: string;
@@ -38,5 +38,15 @@ describe('stateRunnerUtils.resolveStateOutputPath', () => {
     const p = resolveStateOutputPath(tmpDir, 's', wf);
     const expected = path.join(tmpDir, '.raili', wf, 'outputs', 's.md');
     expect(p).toBe(expected);
+  });
+
+  test('includes workflow as RAILI_VAR_WORKFLOW', () => {
+    const env = buildEnvOverrides({ workflow: 'main', ticket_id: '123' });
+    expect(env.RAILI_VAR_WORKFLOW).toBe('main');
+    expect(env.RAILI_VAR_TICKET_ID).toBe('123');
+  });
+
+  test('returns empty object when no vars', () => {
+    expect(buildEnvOverrides()).toEqual({});
   });
 });

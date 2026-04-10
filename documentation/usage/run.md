@@ -97,7 +97,7 @@ raili run --workflow main --dry-run --var ticket_id=123
 ## Execution Flow
 
 1. **Load & Validate** → Reads `.raili/` directory, shared registries, and the selected workflow
-2. **Initialize Context** → On clean run, creates fresh context with declared inputs; on continue, loads saved state
+2. **Initialize Context** → On clean run, creates a fresh, deterministic initial context (declared inputs merged with vars and a default `workflow` variable); on continue, loads saved state and preserves existing `workflow` value
 3. **Build State Machine** → Converts `workflow.yaml` into a runtime state DAG
 4. **Run Loop** → Executes states in order:
    - Enter state (run notify hook if present)
@@ -153,7 +153,7 @@ Raili saves execution state to `<workflow>/context.json`:
 ### Resume behavior
 - `raili run` with existing context → prompts "Continue from existing run (Enter) or clean run (c)?"
 - `raili run --continue` → resumes from the last recorded state. If the last recorded state was terminal (no routing defined), `--continue` will restart the workflow from the workflow's `initial` state (useful to rerun a completed workflow).
-- `raili run --clean` → always starts fresh (clears context.json and outputs)
+- `raili run --clean` → resets and persists a fresh initial context (cleared stateHistory, merged inputs, and the default `workflow` variable); outputs are cleared.
 
 ### Named workflow resume behavior
 When `--workflow` is given and no `context.json` exists, Raili treats the workflow as a fresh run and initializes an empty context so execution proceeds. Use `--continue` only to resume an existing run; use `--clean` to explicitly start fresh.

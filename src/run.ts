@@ -11,11 +11,14 @@ import {
   validateScriptRegistry,
   validateWorkflowReferences,
 } from './registry/registryValidator';
-import { clearContext, initializeContext, loadContext } from './context/context';
+import { clearContext, initializeContext, loadContext, saveContext } from './context/context';
+import { getWorkflowName } from './context/pathUtils';
 import { Runner } from './runner/runner';
 import { appendRunLog } from './context/runLog';
 import { loadVarsFile } from './variables/varsLoader';
 import { handleManualTransition } from './handlers/manualHandler';
+import { AgentRegistry } from './registry/agentRegistry';
+import { ScriptRegistry } from './registry/scriptRegistry';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -109,24 +112,22 @@ export async function runCommand(
     }
   }
 
-  // When doing a clean run, load vars file filtered to declared inputs and merge with supplied vars (flags override file)
-  let initialVars = vars;
+  const workflowName = getWorkflowName(cwd, workflowPath);
+
+  let context;
   if (mode === 'clean') {
     const declaredRaw = workflowConfig.inputs ?? [];
     const declaredNames: string[] = (declaredRaw as any[])
-      .map((it: any) =>
-        typeof it === 'string' ? it : it && typeof it.name === 'string' ? it.name : '',
-      )
+      .map((it: any) => (typeof it === 'string' ? it : it?.name ?? ''))
       .filter(Boolean);
     const fileVars = loadVarsFile(cwd, declaredNames, workflowPath);
-    initialVars = { ...fileVars, ...vars };
-  }
-
-  // Load (or create) the execution context, then merge any supplied vars
-  let context = mode === 'clean' ? initializeContext(initialVars) : loadContext(cwd, workflowPath);
-
-  if (mode !== 'clean' && Object.keys(vars).length > 0) {
-    context = { ...context, vars: { ...context.vars, ...vars } };
+    context = initializeContext({ ...fileVars, ...vars, workflow: workflowName });
+    saveContext(cwd, context, workflowPath);
+  } else {
+    context = loadContext(cwd, workflowPath);
+    if (!context.vars) context.vars = {};
+    // workflow is injected as a default; existing context value takes precedence; CLI vars win last
+    context.vars = { workflow: workflowName, ...context.vars, ...vars };
   }
 
   // Expose all vars as RAILI_VAR_* env vars for the entire process lifetime.

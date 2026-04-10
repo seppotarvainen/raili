@@ -108,11 +108,22 @@ Description: \${DESCRIPTION}`;
     });
   });
 
+  test('interpolates workflow variable in string', () => {
+    const res = interpolateString('Run ${workflow} now', { workflow: 'main' });
+    expect(res).toBe('Run main now');
+  });
+
   describe('interpolateObject', () => {
     test('interpolates string values in object', () => {
       const obj = { name: '${NAME}', greeting: 'Hello ${NAME}' };
       const result = interpolateObject(obj, { NAME: 'Alice' });
       expect(result).toEqual({ name: 'Alice', greeting: 'Hello Alice' });
+    });
+
+    test('interpolates workflow in object recursively', () => {
+      const obj = { a: 'deploy ${workflow}', list: ['x', '${workflow}'] };
+      const res = interpolateObject(obj, { workflow: 'feature/1' });
+      expect(res).toEqual({ a: 'deploy feature/1', list: ['x', 'feature/1'] });
     });
 
     test('preserves non-string values', () => {
