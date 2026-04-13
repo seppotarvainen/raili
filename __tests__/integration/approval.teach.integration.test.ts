@@ -71,7 +71,7 @@ states:
 
     await runCommand(tmpDir, 'clean', {});
 
-    const learningsFile = path.join(tmpDir, '.raili', 'main', 'learnings', 'raili-coding.md');
+    const learningsFile = path.join(tmpDir, '.raili', 'learnings', 'raili-coding.md');
     expect(fs.existsSync(learningsFile)).toBe(true);
     const stored = fs.readFileSync(learningsFile, 'utf8');
     expect(stored).toContain('Insufficient tests');

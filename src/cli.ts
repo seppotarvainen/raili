@@ -302,7 +302,14 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
         }
         // Derive agentId as the first non-flag argument (positional)
         const agentId = runArgs.find((a) => !a.startsWith('-'));
-        await teachCommand(process.cwd(), agentId, workflowPath);
+        // Parse optional --scope <global|workflow>
+        const scopeIndex = runArgs.findIndex((a) => a === '--scope');
+        let scope: 'global'|'workflow' = 'global';
+        if (scopeIndex !== -1 && runArgs[scopeIndex + 1]) {
+          const raw = runArgs[scopeIndex + 1];
+          scope = raw === 'workflow' ? 'workflow' : 'global';
+        }
+        await teachCommand(process.cwd(), agentId, workflowPath, scope);
         process.exit(0);
       } catch (err: unknown) {
         // If the error is an exit sentinel from a mocked process.exit in tests (e.g. 'EXIT:0'),

@@ -37,7 +37,13 @@ export interface FeedbackConfig {
   multiline?: boolean;
 }
 
-export type LearnSource = { output: string } | { var: string };
+/**
+ * LearnSource indicates a source of learnings for an agent. The optional `scope`
+ * determines where the learning is stored or read from. Default = 'global'.
+ */
+export type LearnSource =
+  | { output: string; scope?: 'global' | 'workflow' }
+  | { var: string; scope?: 'global' | 'workflow' };
 
 export interface StateConfig {
   type: StateType;

@@ -72,7 +72,7 @@ Full history is always stored on disk for audit trail. Use `use_latest` to contr
 - `use_latest: 5`: inject only the most recent 5 stored runs (useful for bounding context on long-running workflows).
 - `use_latest: 1`: inject only the latest stored run.
 
-Learnings (opt-in): States may declare a `teach:` mapping to push lessons to agents from outputs or variables. Learnings are stored at `.raili/<workflow>/learnings/<agentId>.md` and are injected into the agent prompt under `## Learnings from previous runs` before execution. Learnings are deduplicated on append to avoid loops.
+Learnings (opt-in): States may declare a `teach:` mapping to push lessons to agents from outputs or variables. By default learnings are stored globally at `.raili/learnings/<agentId>.md` so agents can accumulate knowledge across workflows. If a workflow-local file exists at `.raili/<workflow>/learnings/<agentId>.md`, both global and local learnings are merged when injected into the agent prompt; workflow-local lessons take precedence on conflicts and duplicates are removed. Merged learnings are injected into the agent prompt under `## Learnings from previous runs` before execution. Use `scope: workflow` on a teach source to keep a lesson local to the current workflow; omitting `scope` (or using `scope: global`) writes to the global store. See documentation/states.md for teach examples and usage.
 
 Note: when injecting learnings into agent prompts, source tags (e.g., `[var:...]`, `[manual]`, `[output:state]`) are removed; only the lesson bodies are included as bullet-prefixed items to reduce token usage and improve readability.
 

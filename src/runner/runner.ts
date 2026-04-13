@@ -484,6 +484,7 @@ export class Runner {
             `output:${ref}`,
             content,
             this.workflowArg,
+            entry.scope,
           );
           if (appended) {
             recorded.push({ agent: agentId, source: `output:${ref}` });
@@ -508,6 +509,7 @@ export class Runner {
               `var:${varName}`,
               val,
               this.workflowArg,
+              entry.scope,
             );
             if (appended) {
               recorded.push({ agent: agentId, source: `var:${varName}` });

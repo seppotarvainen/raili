@@ -24,7 +24,7 @@ analyze:
     # if transitions.default is present it will be used as a catch-all. If default is absent the engine fails fast.
 ```
 
-States may declare a `teach:` mapping to push lessons to agents. Learnings are stored under `.raili/learnings/<agentId>.md` and injected into the prompt under a header `## Learnings from previous runs` before agent execution. See documentation/output.md for storage semantics.
+States may declare a `teach:` mapping to push lessons to agents. By default learnings are written to the global store at `.raili/learnings/<agentId>.md` and are merged with any workflow-local learnings when injected into agent prompts (workflow-local lessons override duplicates). To keep a lesson local to a workflow, include `scope: workflow` on the teach source. See `documentation/output.md` for details and examples.
 
 When a state declares `teach:` and also uses `approval:`, approval-exposed variables (for example `CHECK_DONE_FAILED` or `REVIEW_FAILED`) are written into `context.vars` before the state's `teach:` mappings are processed. This allows `teach:` entries on the same state to reference approval-produced variables (e.g. `${REVIEW_FAILED}`) so learnings can be created directly from user-provided approval reasons in the originating state.
 

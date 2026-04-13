@@ -2,13 +2,25 @@ import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import * as path from 'path';
 import { learningsFilePath } from './pathUtils';
 
+type LearningsScope = 'global' | 'workflow';
+
 function normalizeForCompare(s: string): string {
   return s.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-export function readLearnings(cwd: string, agentId: string, workflowArg?: string): string {
+/**
+ * Read raw learnings file content for given scope. Default scope = 'global'.
+ */
+export function readLearnings(
+  cwd: string,
+  agentId: string,
+  workflowArg?: string,
+  scope?: LearningsScope,
+): string {
   const fs = getFileSystem();
-  const p = learningsFilePath(cwd, agentId, workflowArg);
+  // Default to workflow scope when workflowArg provided; otherwise global.
+  const effectiveScope: LearningsScope = scope ?? (workflowArg ? 'workflow' : 'global');
+  const p = learningsFilePath(cwd, agentId, workflowArg, effectiveScope);
   if (!fs.existsSync(p)) {
     return '';
   }
@@ -66,7 +78,9 @@ export function stripTimestampsFromLearnings(content: string): string[] {
     let lessonEscaped = m[3] || '';
     lessonEscaped = lessonEscaped.trim();
     // Decode literal "\\n" sequences back to real newlines for prompt consumption
-    const decoded = lessonEscaped.replace(/\\n/g, '\n');
+    let decoded = lessonEscaped.replace(/\\n/g, '\n');
+    // Remove any leading 'lesson:' marker (case-insensitive) to keep bullets clean
+    decoded = decoded.replace(/^\s*lesson:\s*/i, '');
     // Strip source tags entirely for prompt consumption. Only return the lesson body.
     // Prepend a dash to mimic a bullet point used in examples/communication.
     // Preserve multiline lesson bodies.
@@ -84,12 +98,83 @@ export function stripTimestampsFromLearnings(content: string): string[] {
  * injecting into agent prompts. This preserves lesson bodies and optional source tags while
  * removing noisy ISO timestamps to save tokens.
  */
-export function readLearningsForPrompt(cwd: string, agentId: string, workflowArg?: string): string {
-  const raw = readLearnings(cwd, agentId, workflowArg);
+export function readLearningsForPrompt(
+  cwd: string,
+  agentId: string,
+  workflowArg?: string,
+  scope?: LearningsScope,
+): string {
+  // Delegate scope resolution to readLearnings (it prefers workflow when .raili/main exists)
+  const raw = readLearnings(cwd, agentId, workflowArg, scope);
   const entries = stripTimestampsFromLearnings(raw);
   if (!entries.length) {
     return '';
   }
+  return entries.join('\n\n');
+}
+
+/**
+ * Read both global and workflow-scoped learnings and merge them. Workflow-scoped lessons win
+ * (i.e., if the same normalized lesson exists in both, the workflow version is kept).
+ * Returns merged raw file content (line-oriented format).
+ */
+export function readMergedLearnings(cwd: string, agentId: string, workflowArg?: string): string {
+  const globalRaw = readLearnings(cwd, agentId, workflowArg, 'global');
+  const workflowRaw = readLearnings(cwd, agentId, workflowArg, 'workflow');
+
+  // Parse lines into normalized map
+  const parseLines = (raw: string) => {
+    if (!raw) return [] as { rawLine: string; normalized: string }[];
+    const lines = raw.split(/\r?\n/);
+    const re = /^- \[[^\]]+\](?: \[[^\]]+\])? (.*)$/;
+    const out: { rawLine: string; normalized: string }[] = [];
+    for (const line of lines) {
+      const m = re.exec(line);
+      if (!m) continue;
+      const lessonEscaped = (m[1] || '').trim();
+      const decoded = lessonEscaped.replace(/\\n/g, '\n');
+      const normalized = normalizeForCompare(decoded.replace(/\n/g, ' '));
+      out.push({ rawLine: line, normalized });
+    }
+    return out;
+  };
+
+  const workflowLines = parseLines(workflowRaw);
+  const globalLines = parseLines(globalRaw);
+
+  // Build list of workflow normalized lessons for override detection
+  const workflowNorms = workflowLines.map((l) => l.normalized);
+
+  const merged: string[] = [];
+  // Include global lines that are not overridden by any workflow-normalized lesson
+  for (const g of globalLines) {
+    const isOverridden = workflowNorms.some((w) => {
+      return w === g.normalized || w.includes(g.normalized) || g.normalized.includes(w);
+    });
+    if (!isOverridden) {
+      merged.push(g.rawLine);
+    }
+  }
+  // Then include workflow lines (preserve order)
+  for (const w of workflowLines) {
+    merged.push(w.rawLine);
+  }
+
+  return merged.join('\n');
+}
+
+/**
+ * Like readMergedLearnings but returns a prompt-ready string with timestamps stripped and
+ * lessons formatted as bullet points. Returns empty string when no lessons.
+ */
+export function readMergedLearningsForPrompt(
+  cwd: string,
+  agentId: string,
+  workflowArg?: string,
+): string {
+  const mergedRaw = readMergedLearnings(cwd, agentId, workflowArg);
+  const entries = stripTimestampsFromLearnings(mergedRaw);
+  if (!entries.length) return '';
   return entries.join('\n\n');
 }
 
@@ -104,6 +189,7 @@ export function appendUniqueLearning(
   sourceTag: string,
   content: string,
   workflowArg?: string,
+  scope?: LearningsScope,
 ): boolean {
   if (!content?.trim()) {
     return false;
@@ -114,11 +200,13 @@ export function appendUniqueLearning(
     return false;
   } // nothing to store
 
-  const p = learningsFilePath(cwd, agentId, workflowArg);
+  const fs = getFileSystem();
+  // Default to global scope unless explicitly requested otherwise
+  const effectiveScope: LearningsScope = scope ?? 'global';
+  const p = learningsFilePath(cwd, agentId, workflowArg, effectiveScope);
 
   // Ensure directory exists
   const dir = path.dirname(p);
-  const fs = getFileSystem();
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -141,15 +229,18 @@ export function appendManualLearning(
   agentId: string,
   content: string,
   workflowArg?: string,
+  scope?: LearningsScope,
 ): boolean {
   if (!content?.trim()) {
     return false;
   }
 
-  const p = learningsFilePath(cwd, agentId, workflowArg);
+  const fs = getFileSystem();
+  // Default to global scope unless explicitly requested otherwise
+  const effectiveScope: LearningsScope = scope ?? 'global';
+  const p = learningsFilePath(cwd, agentId, workflowArg, effectiveScope);
 
   const dir = path.dirname(p);
-  const fs = getFileSystem();
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }

@@ -33,7 +33,7 @@ describe('teachCommand integration', () => {
 
     await teachCommand(tmp, 'agent1', 'main');
 
-    const file = path.join(tmp, '.raili', 'main', 'learnings', 'agent1.md');
+    const file = path.join(tmp, '.raili', 'learnings', 'agent1.md');
     expect(fs.existsSync(file)).toBe(true);
     const content = fs.readFileSync(file, 'utf8');
     expect(content).toContain('[manual]');

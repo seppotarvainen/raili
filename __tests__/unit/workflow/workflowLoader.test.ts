@@ -402,6 +402,25 @@ afterEach(() => {
     });
   });
 
+    test('throws when teach entry has invalid scope', () => {
+      const machine: any = {
+        initial: 'start',
+        states: {
+          start: {
+            id: 'start',
+            config: { type: 'engine', teach: { x: [{ output: 'prev', scope: 'bad' }] } },
+            transitions: ['prev'],
+          },
+          prev: {
+            id: 'prev',
+            config: { type: 'engine', output: { store: true } },
+            transitions: [],
+          },
+        },
+      };
+      expect(() => validateStateMachine(machine)).toThrow(/invalid.*scope/i);
+    });
+
   // ── buildStateMachine config.error and max_visits.continue ───────────────
 
   describe('buildStateMachine advanced paths', () => {

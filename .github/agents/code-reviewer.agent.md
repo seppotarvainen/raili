@@ -30,6 +30,7 @@ When reviewing:
 2. If a part file exists, read it to understand the exact scope for this iteration
 3. Read **show-diff-resource** — focus only on the files listed in the current part's scope
 4. Evaluate the implementation against the checklist below
+5. Confirm that test run looks reasonable.
 5. **Before flagging anything**: verify it by reading the actual source file, not just the diff. Diffs can be misleading — a removed line in the diff may be from a prior part, and a file that looks broken in the diff may be correct in its final state
 6. Output your verdict as the **last line**: `approve` or `revise`
 

@@ -406,10 +406,26 @@ export function validateStateMachine(machine: StateMachine): void {
             throw new Error(`Invalid state '${id}': teach entries must be objects`);
           }
           const keys = Object.keys(entry);
-          if (keys.length !== 1 || !['output', 'var'].includes(keys[0])) {
+          // Allow primary key 'output' or 'var' and optional 'scope' key
+          if (keys.length < 1 || keys.length > 2) {
             throw new Error(
-              `Invalid state '${id}': teach entries must be of form {output: <stateId>} or {var: "{VAR}"}`,
+              `Invalid state '${id}': teach entries must be objects like {output: <stateId>} or {var: "${'{VAR}'}"} with optional scope`,
             );
+          }
+          // Ensure one of output|var is present
+          if (!('output' in entry) && !('var' in entry)) {
+            throw new Error(
+              `Invalid state '${id}': teach entries must be of form {output: <stateId>} or {var: "<NAME>"} (optional scope)`,
+            );
+          }
+          // If scope provided, validate value
+          if ('scope' in entry) {
+            const val = (entry as any).scope;
+            if (val !== 'global' && val !== 'workflow') {
+              throw new Error(
+                `Invalid state '${id}': teach entry has invalid scope '${val}'; allowed: 'global'|'workflow'`,
+              );
+            }
           }
         }
       }
