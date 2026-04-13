@@ -54,7 +54,7 @@ test:
     FAILED: rework
 ```
 
-You may also pass an ordered list of arguments to the script using `args:`. These are forwarded as-is to the spawned process and are the script's responsibility to interpret.
+You may also pass an ordered list of arguments to the script using `args:`. Values in `args:` are interpolated for `${VARIABLE}` placeholders using the workflow's variables before the script is spawned. The engine fails fast if any referenced variable is missing. Use literal `$RAILI_VAR_<UPPERCASE>` when you want the shell-visible env var preserved.
 
 ```yaml
 my_script_state:

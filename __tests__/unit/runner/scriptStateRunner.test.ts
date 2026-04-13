@@ -82,3 +82,18 @@ describe('args forwarding', () => {
   });
 });
 
+describe('interpolation', () => {
+  test('interpolates variables in script args', async () => {
+    const state = makeState({ args: ['--ticket', '${TICKET_ID}'] });
+    const registry = {};
+    await runScriptState(state, registry, '/cwd', { TICKET_ID: 'R-123' });
+    expect(executeScript).toHaveBeenCalledWith(registry, 'hello', '/cwd', ['--ticket', 'R-123'], { RAILI_VAR_TICKET_ID: 'R-123' });
+  });
+
+  test('throws when interpolating undefined variable in script args', async () => {
+    const state = makeState({ args: ['--ticket', '${MISSING}'] });
+    const registry = {};
+    await expect(runScriptState(state, registry, '/cwd')).rejects.toThrow(/Variable 'MISSING' is not defined/);
+  });
+});
+

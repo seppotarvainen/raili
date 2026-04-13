@@ -195,6 +195,8 @@ run_tests_with_ticket:
 ## Important Notes
 
 - Only keys in `inputs:` are prompted/available — workflow.yaml is the source of truth
+
+- Script `args:` interpolation: `args:` declared on `script` states support `${VARIABLE}` interpolation using the workflow's variables. Interpolation runs before the script is spawned and Raili will fail fast with a clear error when any referenced variable is not defined. To pass raw shell env vars, continue to use `$RAILI_VAR_<UPPERCASE>` in `args:` or `notify`/`command` values.
 - A read-only `workflow` variable is injected into every run and set to the workflow directory name (for the default workflow this is `main`). Use `${workflow}` in agent prompts/approval questions and `$RAILI_VAR_WORKFLOW` in shell contexts. The `workflow` variable is set on clean runs and preserved when continuing an existing run (it is not read from `vars.yaml`).
 - Missing variables → immediate error (fail-fast)
 - Use `$$` to escape literal `$`: `$$100` becomes `$100`

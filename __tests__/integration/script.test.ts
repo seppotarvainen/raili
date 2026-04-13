@@ -201,3 +201,50 @@ states:
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
   });
 });
+
+// ---------------------------------------------------------------------------
+// 5. Script state variable interpolation (integration)
+// ---------------------------------------------------------------------------
+describe('script state variable interpolation', () => {
+  it('interpolates variables in script args during workflow execution', async () => {
+    writeWorkflow(
+      tmpDir,
+      `
+initial: backup
+inputs: [filename]
+states:
+  backup:
+    type: script
+    script: archiver
+    args:
+      - \${filename}
+      - backup.tar.gz
+    on:
+      PASSED: done
+      FAILED: error
+  done:
+    type: engine
+  error:
+    type: engine
+`,
+    );
+
+    writeAgentRegistry(tmpDir, {});
+    writeScriptRegistry(tmpDir, { archiver: { path: './scripts/archive.sh' } });
+    writeScriptFile(tmpDir, 'scripts/archive.sh', '#!/bin/bash\necho "Archived: $1 to $2"');
+
+    spawn.mockImplementation((cmd: string, args?: string[]) => {
+      if (typeof cmd === 'string' && cmd.endsWith('archive.sh')) {
+        // Verify interpolation happened: args should be ['myfile.txt', 'backup.tar.gz']
+        expect(args).toEqual(['myfile.txt', 'backup.tar.gz']);
+        return fakeChild('Archived: myfile.txt to backup.tar.gz', '', 0);
+      }
+      return fakeChild('', '', 0);
+    });
+
+    await runCommand(tmpDir, 'clean', { filename: 'myfile.txt' });
+
+    const ctx = loadContext(tmpDir);
+    expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
+  });
+});
