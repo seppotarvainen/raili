@@ -4,6 +4,7 @@ import { executeScript } from '../handlers/scriptHandler';
 import type { StateResult } from './runner';
 import { IStateRunner } from './stateRunner';
 import { buildEnvOverrides, processStateResult } from './stateRunnerUtils';
+import { interpolateObject } from '../variables/variableInterpolation';
 
 /**
  * ScriptStateRunner - executes shell scripts via script-registry.
@@ -18,7 +19,9 @@ class ScriptStateRunner implements IStateRunner {
     workflowArg?: string,
   ): Promise<StateResult> {
     const scriptId = state.config.script!;
-    const args = state.config.args ?? [];
+    const rawArgs = state.config.args ?? [];
+    // Interpolate args using workflow vars. Fail-fast on missing variables.
+    const args = interpolateObject(rawArgs, vars ?? {}, { throwOnMissing: true }) as string[];
     const envOverrides = buildEnvOverrides(vars);
 
     const result = await executeScript(this.registry, scriptId, cwd, args, envOverrides);
