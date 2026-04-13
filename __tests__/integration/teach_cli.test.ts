@@ -56,7 +56,7 @@ describe('CLI teach flow', () => {
       if (!String(err.message).startsWith('EXIT:0')) throw err;
     }
 
-    const file = path.join(tmp, '.raili', 'main', 'learnings', 'agent1.md');
+    const file = path.join(tmp, '.raili', 'learnings', 'agent1.md');
     expect(fs.existsSync(file)).toBe(true);
     const content = fs.readFileSync(file, 'utf8');
     expect(content).toContain('[manual]');

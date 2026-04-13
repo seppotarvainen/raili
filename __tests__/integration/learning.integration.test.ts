@@ -77,7 +77,7 @@ states:
 
     await runCommand(tmpDir, 'clean', {});
 
-    const learningsFile = path.join(tmpDir, '.raili', 'main', 'learnings', 'test_agent.md');
+    const learningsFile = path.join(tmpDir, '.raili', 'learnings', 'test_agent.md');
     expect(fs.existsSync(learningsFile)).toBe(true);
     const stored = fs.readFileSync(learningsFile, 'utf8');
     // Should contain only the lesson section, not the Prelude text

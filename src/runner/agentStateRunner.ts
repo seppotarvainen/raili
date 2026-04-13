@@ -6,7 +6,7 @@ import { storeOutput } from './stateRunnerUtils';
 import { interpolateString } from '../variables/variableInterpolation';
 import type { StateResult } from './runner';
 import { IStateRunner } from './stateRunner';
-import { readLearningsForPrompt } from '../context/learningStore';
+import { readMergedLearningsForPrompt } from '../context/learningStore';
 
 /**
  * AgentStateRunner - prototype implementation of the StateRunner interface
@@ -39,7 +39,7 @@ class AgentStateRunner implements IStateRunner {
     // Load cleaned learnings (timestamps removed) and inject into prompt if present
     // Note: when the learningStore module is mocked in tests the mocked function may return
     // undefined; coerce to empty string to avoid runtime errors in tests.
-    const rawLearnings = readLearningsForPrompt(cwd, agentId, workflowArg) || '';
+    const rawLearnings = readMergedLearningsForPrompt(cwd, agentId, workflowArg) || '';
     const fullLearnings = String(rawLearnings).trim();
     // Do not inject a default instructional prompt. If no prompt is defined, pass undefined so
     // handlers can decide how to behave. Only prepend learnings when an explicit prompt exists.

@@ -69,7 +69,7 @@ test('teach appends learning from feedback-exposed variable', async () => {
 
   await runner.run();
 
-  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'test_agent', 'var:note', 'FEEDBACK_CONTENT', undefined);
+  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'test_agent', 'var:note', 'FEEDBACK_CONTENT', undefined, undefined);
 });
 
 test('teach appends learning from approval FAILED reason variable', async () => {
@@ -94,7 +94,7 @@ test('teach appends learning from approval FAILED reason variable', async () => 
 
   await runner.run();
 
-  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'test_agent', 'var:START_FAILED', 'Bad reason', undefined);
+  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'test_agent', 'var:START_FAILED', 'Bad reason', undefined, undefined);
 });
 
 test('teach appends learning from exposed variable produced by state', async () => {
@@ -118,7 +118,7 @@ test('teach appends learning from exposed variable produced by state', async () 
 
   await runner.run();
 
-  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'test_agent', 'var:token', 'abc123', undefined);
+  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'test_agent', 'var:token', 'abc123', undefined, undefined);
 });
 
 test('teach runs after approval and uses approval-failure var on same state', async () => {
@@ -141,5 +141,5 @@ test('teach runs after approval and uses approval-failure var on same state', as
 
   await runner.run();
 
-  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'raili-coding', 'var:CHECK_DONE_FAILED', 'Bad reason', undefined);
+  expect(mockAppend).toHaveBeenCalledWith('/tmp', 'raili-coding', 'var:CHECK_DONE_FAILED', 'Bad reason', undefined, undefined);
 });

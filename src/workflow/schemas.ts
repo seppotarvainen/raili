@@ -192,7 +192,7 @@ export const StateConfigSchema: ObjectSchema = {
     required: false,
     type: 'record',
     description:
-      'Map of <agentId> -> list of sources to teach (objects like {output: stateId} or {var: "${VAR_NAME}"})',
+      'Map of <agentId> -> list of sources to teach (objects like {output: stateId} or {var: "${VAR_NAME}"}). Each source entry may include optional scope: "global"|"workflow" (default: "global").',
     validForTypes: ['agent', 'script', 'command', 'engine', 'group'],
   },
   approval: {

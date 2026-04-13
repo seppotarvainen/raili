@@ -75,9 +75,20 @@ export function getWorkflowName(cwd: string, workflowArg?: string): string {
 }
 
 /**
- * Return the canonical path to the learnings file for an agent inside the workflow directory.
+ * Return the canonical path to the learnings file for an agent.
+ * Scopes:
+ * - 'global' (default): .raili/learnings/<agentId>.md
+ * - 'workflow': .raili/<workflow>/learnings/<agentId>.md
  */
-export function learningsFilePath(cwd: string, agentId: string, workflowArg?: string): string {
+export function learningsFilePath(
+  cwd: string,
+  agentId: string,
+  workflowArg?: string,
+  scope: 'global' | 'workflow' = 'global',
+): string {
+  if (scope === 'global') {
+    return path.join(cwd, '.raili', 'learnings', `${agentId}.md`);
+  }
   const workflowDir = resolveWorkflowDir(cwd, workflowArg);
   return path.join(workflowDir, 'learnings', `${agentId}.md`);
 }

@@ -4,6 +4,7 @@ import * as notifyHandler from '../../../src/handlers/notifyHandler';
 import * as agentStateRunner from '../../../src/runner/agentStateRunner';
 import * as scriptStateRunner from '../../../src/runner/scriptStateRunner';
 import * as commandStateRunner from '../../../src/runner/commandStateRunner';
+import * as learningStore from '../../../src/context/learningStore';
 import {StateMachine, WorkflowContext} from '../../../src/types';
 
 jest.mock('../../../src/context/outputStore');
@@ -11,6 +12,7 @@ jest.mock('../../../src/handlers/notifyHandler');
 jest.mock('../../../src/runner/agentStateRunner');
 jest.mock('../../../src/runner/scriptStateRunner');
 jest.mock('../../../src/runner/commandStateRunner');
+jest.mock('../../../src/context/learningStore');
 jest.mock('../../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx) => ctx),
@@ -21,6 +23,7 @@ const mockClear = outputStore.clearAgentOutputs as jest.MockedFunction<typeof ou
 const mockRunAgent = agentStateRunner.runAgentState as jest.MockedFunction<typeof agentStateRunner.runAgentState>;
 const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<typeof scriptStateRunner.runScriptState>;
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
+const mockAppendUnique = learningStore.appendUniqueLearning as jest.MockedFunction<typeof learningStore.appendUniqueLearning>;
 
 function makeRunner(states: StateMachine['states'], initial = 'start'): Runner {
   const stateMachine: StateMachine = { initial, states };
@@ -229,5 +232,30 @@ test('throws when outcome not mapped and no default provided', async () => {
     done: { id: 'done', config: { type: 'engine' }, transitions: [] },
   });
   await expect(runner.run()).rejects.toThrow("has no matching transition");
+});
+
+test('handleTeach passes scope to appendUniqueLearning', async () => {
+  // ensure readLatestRun returns content for referenced output
+  (outputStore.readLatestRun as jest.MockedFunction<any>).mockReturnValue('lesson content');
+  (learningStore.appendUniqueLearning as jest.Mock).mockReturnValue(true);
+
+  const runner = makeRunner({
+    start: {
+      id: 'start',
+      config: {
+        type: 'engine',
+        teach: {
+          agent1: [{ output: 's1', scope: 'workflow' }],
+        },
+        on: { PASSED: 'done' },
+      },
+      transitions: ['done'],
+    },
+    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+  });
+
+  await runner.run();
+
+  expect(learningStore.appendUniqueLearning).toHaveBeenCalledWith('/tmp', 'agent1', 'output:s1', 'lesson content', undefined, 'workflow');
 });
 

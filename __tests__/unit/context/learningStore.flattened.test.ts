@@ -20,7 +20,7 @@ describe('learningStore flattened persistence', () => {
   });
 
   test('appendUniqueLearning stores learnings under parent workflow learnings dir', () => {
-    const added = appendUniqueLearning(cwd, 'agentX', 'test_source', 'lesson: important lesson\ndetails', 'main');
+    const added = appendUniqueLearning(cwd, 'agentX', 'test_source', 'lesson: important lesson\ndetails', 'main', 'workflow');
     expect(added).toBe(true);
 
     const p = path.join(cwd, '.raili', 'main', 'learnings', 'agentX.md');

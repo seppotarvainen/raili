@@ -29,7 +29,7 @@ beforeEach(() => {
   mockExecuteAgent.mockResolvedValue({ success: true, stdout: 'agent output', stderr: '' });
   mockLoad.mockReturnValue(null);
   mockReadLatest.mockReturnValue(null);
-  (learningStore.readLearningsForPrompt as jest.Mock).mockReturnValue('');
+  (learningStore.readMergedLearningsForPrompt as jest.Mock).mockReturnValue('');
   (learningStore.appendUniqueLearning as jest.Mock).mockReturnValue(true);
 });
 
@@ -92,5 +92,12 @@ test('returns last stdout line as outcome when transitions configured', async ()
   const state = makeState({ transitions: { approve: 'done', reject: 'code' }, on: undefined });
   const result = await runAgentState(state, registry, cwd);
   expect(result.outcome).toBe('approve');
+});
+
+test('injects merged learnings into prompt when present', async () => {
+  (learningStore.readMergedLearningsForPrompt as jest.Mock).mockReturnValue('- lesson body');
+  await runAgentState(makeState({ prompt: 'Do this' }), registry, cwd);
+  expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null, expect.stringContaining('## Learnings from previous runs'), undefined, undefined);
+  expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null, expect.stringContaining('- lesson body'), undefined, undefined);
 });
 

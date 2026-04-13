@@ -5,7 +5,9 @@ import {
     appendUniqueLearning,
     extractLessons,
     readLearnings,
-    stripTimestampsFromLearnings
+    stripTimestampsFromLearnings,
+    readMergedLearnings,
+    readMergedLearningsForPrompt
 } from '../../../src/context/learningStore';
 
 describe('learningStore extractLessons', () => {
@@ -108,7 +110,7 @@ describe('learningStore stripTimestampsFromLearnings', () => {
         const entries = stripTimestampsFromLearnings(sample);
         expect(entries.length).toBe(2);
         expect(entries[0]).not.toContain('[output:code]');
-        expect(entries[0]).toContain('Lesson: Remember to run');
+        expect(entries[0]).toContain('Remember to run');
         expect(entries[1]).not.toContain('[var:ticket_id]');
         expect(entries[1]).toContain('Ticket IDs should be validated');
         // No ISO timestamps
@@ -130,3 +132,113 @@ describe('learningStore stripTimestampsFromLearnings', () => {
     });
 });
 
+// ── New tests: merging/deduplication and scope routing ─────────────────────────
+
+describe('readMergedLearnings and prompt-ready merged output', () => {
+    let cwd: string;
+    let restoreFs: () => void;
+
+    beforeEach(() => {
+        restoreFs = setupFakeFs();
+        cwd = '/tmp/merge-workspace';
+        // ensure both global and workflow learnings dirs exist
+        getFileSystem().mkdirSync(path.join(cwd, '.raili', 'learnings'), { recursive: true } as any);
+        getFileSystem().mkdirSync(path.join(cwd, '.raili', 'main', 'learnings'), { recursive: true } as any);
+    });
+
+    afterEach(() => {
+        restoreFs();
+    });
+
+    test('readMergedLearnings merges global + workflow and workflow overrides duplicates', () => {
+        const agentId = 'agent-merge';
+        const globalPath = path.join(cwd, '.raili', 'learnings', `${agentId}.md`);
+        const workflowPath = path.join(cwd, '.raili', 'main', 'learnings', `${agentId}.md`);
+
+        // Global has a common lesson and a global-only lesson
+        const globalContent =
+            '- [2026-01-01T00:00:00Z] [output:global] lesson: This is common\\nMore\n' +
+            '- [2026-01-02T00:00:00Z] [output:global] lesson: Global only\n';
+        getFileSystem().writeFileSync(globalPath, globalContent, 'utf8');
+
+        // Workflow has a common lesson (should override global) and a workflow-only lesson
+        const workflowContent =
+            '- [2026-01-03T00:00:00Z] [output:wf] lesson: This is common\n' +
+            '- [2026-01-04T00:00:00Z] [output:wf] lesson: Workflow only\n';
+        getFileSystem().writeFileSync(workflowPath, workflowContent, 'utf8');
+
+        const merged = readMergedLearnings(cwd, agentId, 'main');
+        const mergedLines = merged.split(/\r?\n/).filter(Boolean);
+        // Expect global-only first, then workflow lines (common + workflow-only)
+        expect(mergedLines).toHaveLength(3);
+        expect(mergedLines[0]).toContain('Global only');
+        expect(mergedLines[1]).toContain('This is common');
+        expect(mergedLines[2]).toContain('Workflow only');
+    });
+
+    test('readMergedLearningsForPrompt returns bullet list with timestamps stripped', () => {
+        const agentId = 'agent-merge-2';
+        const globalPath = path.join(cwd, '.raili', 'learnings', `${agentId}.md`);
+        const workflowPath = path.join(cwd, '.raili', 'main', 'learnings', `${agentId}.md`);
+
+        const globalContent = '- [2026-01-01T00:00:00Z] [output:g] lesson: G1\\nLine';
+        const workflowContent = '- [2026-01-02T00:00:00Z] [output:w] lesson: W1';
+        getFileSystem().writeFileSync(globalPath, globalContent, 'utf8');
+        getFileSystem().writeFileSync(workflowPath, workflowContent, 'utf8');
+
+        const promptReady = readMergedLearningsForPrompt(cwd, agentId, 'main');
+        // Should include bullet lines without ISO timestamps and without source tags
+        expect(promptReady).toContain('- G1');
+        expect(promptReady).toContain('- W1');
+        expect(promptReady).not.toMatch(/\d{4}-\d{2}-\d{2}T/);
+    });
+});
+
+describe('appendUniqueLearning scope routing', () => {
+    let cwd: string;
+    let restoreFs: () => void;
+
+    beforeEach(() => {
+        restoreFs = setupFakeFs();
+        cwd = '/tmp/scope-workspace';
+        // ensure both possible target dirs exist
+        getFileSystem().mkdirSync(path.join(cwd, '.raili', 'learnings'), { recursive: true } as any);
+        getFileSystem().mkdirSync(path.join(cwd, '.raili', 'main', 'learnings'), { recursive: true } as any);
+    });
+
+    afterEach(() => {
+        restoreFs();
+    });
+
+    test('scope=global writes to .raili/learnings', () => {
+        const agentId = 'agent-scope';
+        const added = appendUniqueLearning(cwd, agentId, 'source:unit', 'LESSON: Global write test', undefined, 'global');
+        expect(added).toBe(true);
+        const p = path.join(cwd, '.raili', 'learnings', `${agentId}.md`);
+        expect(getFileSystem().existsSync(p)).toBe(true);
+        const stored = getFileSystem().readFileSync(p, 'utf8');
+        expect(stored).toContain('Global write test');
+    });
+
+    test('scope=workflow writes to workflow learnings dir', () => {
+        const agentId = 'agent-scope-wf';
+        const added = appendUniqueLearning(cwd, agentId, 'source:unit', 'LESSON: Workflow write test', 'main', 'workflow');
+        expect(added).toBe(true);
+        const p = path.join(cwd, '.raili', 'main', 'learnings', `${agentId}.md`);
+        expect(getFileSystem().existsSync(p)).toBe(true);
+        const stored = getFileSystem().readFileSync(p, 'utf8');
+        expect(stored).toContain('Workflow write test');
+    });
+});
+
+// Types test appended below
+
+describe('types: LearnSource scope optional', () => {
+  test('LearnSource accepts objects with and without scope', () => {
+    // Type-level check: these should compile
+    const a: import('../../../src/types').LearnSource = { output: 'state' };
+    const b: import('../../../src/types').LearnSource = { var: 'ticket_id', scope: 'workflow' };
+    expect(a).toBeDefined();
+    expect(b).toBeDefined();
+  });
+});

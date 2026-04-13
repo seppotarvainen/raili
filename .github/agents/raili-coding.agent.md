@@ -24,8 +24,8 @@ Resource file contents may be empty if there are no failures or feedback. If the
 
 Always follow this workflow:
 
-1. Search `.issues/2_doing/` and read the `RAI-*.md` file — this is your ticket to implement. If there is also a part file (`-pt<N>.md`) in `.issues/2_doing/`, focus ONLY on that part's scope.
-2. Check any `*-resources` (see above) for feedback from previous steps.
+1. Check any `*-resources` (see above) for feedback or failures from previous steps. Address those first before moving on to new implementation.
+2. Search `.issues/2_doing/` and read the `RAI-*.md` file — this is your ticket to implement. If there is also a part file (`-pt<N>.md`) in `.issues/2_doing/`, focus ONLY on that part's scope.
 3. Implement end-to-end (code + tests)
 4. Update Acceptance Criteria status in ticket file (e.g., `- [x] First condition`)
 5. Add `//SUMMARY//` section at the end of your output with concise memo of what you did, why, and which files you modified/created.
@@ -52,6 +52,8 @@ Print a concise memo at the end of your response to preserve context for the nex
 //SUMMARY//
 **What:** Brief one-liner describing the implementation (e.g., "Added skip logic to runner.ts")
 **Why:** One sentence explaining the architectural reason (e.g., "Enable workflow state jumping on demand")
+**Resources:** List resources and their locations given to you in your prompt.
+**Context:** Files you read to understand the task you were given. (e.g. test resource location, ticket description, etc.)
 **Files:** List key files modified/created, one per line:
   - src/runner/runner.ts (added skipState phase)
   - src/runner/stateRunnerUtils.ts (new resolveSkipTarget helper)
