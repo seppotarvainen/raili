@@ -21,15 +21,24 @@ import { loadVarsFile } from './variables/varsLoader';
 const args = process.argv.slice(2);
 
 export function parseRunArgs(argv: string[]): RailiRunArgs {
+  // Support bare --next (no value) by converting it to --next=1 before parsing
+  const normalizedArgv = argv.slice();
+  for (let i = 0; i < normalizedArgv.length; i++) {
+    if (normalizedArgv[i] === '--next') {
+      normalizedArgv[i] = '--next=1';
+    }
+  }
+
   const optionDefinitions = [
     { name: 'workflow', alias: 'w', type: String },
     { name: 'clean', type: Boolean },
     { name: 'continue', type: Boolean },
+    { name: 'next', type: Number },
     { name: 'var', type: String, multiple: true, defaultValue: [] },
     { name: 'help', alias: 'h', type: Boolean },
     { name: 'dry-run', type: Boolean },
   ];
-  const parsed = commandLineArgs(optionDefinitions, { argv }) as { workflow?: string; clean?: boolean; continue?: boolean; var?: string[]; help?: boolean; 'dry-run'?: boolean };
+  const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; var?: string[]; help?: boolean; 'dry-run'?: boolean };
   const varsArray: string[] = (parsed.var as string[]) || [];
   const vars: Record<string, string> = {};
   for (const entry of varsArray) {
@@ -37,8 +46,15 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     if (!key || rest.length === 0) {continue;}
     vars[key.trim()] = rest.join('=').trim();
   }
-  const mode = parsed.clean ? 'clean' : parsed.continue ? 'continue' : undefined;
-  return { workflow: parsed.workflow, mode, vars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
+  // If --next is provided, force continue mode
+  const next = typeof parsed.next === 'number' ? parsed.next : undefined;
+  if (typeof next !== 'undefined') {
+    if (!Number.isInteger(next) || next <= 0) {
+      throw new Error('--next must be a positive integer');
+    }
+  }
+  const mode = next !== undefined ? 'continue' : parsed.clean ? 'clean' : parsed.continue ? 'continue' : undefined;
+  return { workflow: parsed.workflow, mode, next, vars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
 }
 
 function promptLine(rl: readline.Interface, question: string): Promise<string> {
@@ -205,7 +221,7 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
         vars = mode === 'clean' ? await collectVars(process.cwd(), flagVars, workflowPath) : flagVars;
       }
 
-      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun);
+      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun, parsed.next);
     } else if (command.help) {
       // raili help [topic]
       const topic = runArgs[0];

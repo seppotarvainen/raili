@@ -12,6 +12,8 @@ raili run --dry-run                    # Validate workflow and registries withou
 raili run --var key=value              # Supply workflow inputs
 raili run --workflow <name>            # Run a named workflow (e.g. .raili/dev/)
 raili run --workflow <name> --clean    # Start a named workflow fresh
+raili run --next=2                     # Execute the next N states (forces continue mode)
+raili run --next                        # Shorthand for `--next=1` (execute the next single state)
 ```
 
 ## Examples
@@ -37,6 +39,18 @@ raili run --workflow dev --clean --var ticket_id=PROJ-123
 ```bash
 raili run --continue
 # Reuses context.json from previous run
+```
+
+### Limiting execution with --next
+```bash
+# Execute the next 2 states from the current position (forces continue mode)
+raili run --next=2
+
+# Execute exactly one next state (shorthand)
+raili run --next
+
+# Resume existing run and execute two more states
+raili run --continue --next=2
 ```
 
 ### Multiple input variables

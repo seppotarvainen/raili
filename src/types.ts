@@ -222,6 +222,7 @@ type FeedbackResolverFn = (
 export interface RailiRunArgs {
   workflow?: string;
   mode?: 'clean' | 'continue';
+  next?: number;
   vars: Record<string, string>;
   help?: boolean;
   dryRun?: boolean;

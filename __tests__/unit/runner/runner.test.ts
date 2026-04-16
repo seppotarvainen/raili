@@ -25,7 +25,7 @@ const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<ty
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
 const mockAppendUnique = learningStore.appendUniqueLearning as jest.MockedFunction<typeof learningStore.appendUniqueLearning>;
 
-function makeRunner(states: StateMachine['states'], initial = 'start'): Runner {
+function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps?: number): Runner {
   const stateMachine: StateMachine = { initial, states };
   const context: WorkflowContext = { stateHistory: [] };
   return new Runner({
@@ -34,6 +34,7 @@ function makeRunner(states: StateMachine['states'], initial = 'start'): Runner {
     scriptRegistry: {},
     context,
     cwd: '/tmp',
+    nextSteps,
   } as RunnerConfig);
 }
 
@@ -259,3 +260,48 @@ test('handleTeach passes scope to appendUniqueLearning', async () => {
   expect(learningStore.appendUniqueLearning).toHaveBeenCalledWith('/tmp', 'agent1', 'output:s1', 'lesson content', undefined, 'workflow');
 });
 
+
+// nextSteps behavior tests
+
+test('stops after nextSteps limit on linear workflow', async () => {
+  const ctx = require('../../../src/context/context');
+  const runner = makeRunner({
+    start: { id: 'start', config: { type: 'engine', on: { PASSED: 's2' } }, transitions: ['s2'] },
+    s2: { id: 's2', config: { type: 'engine', on: { PASSED: 's3' } }, transitions: ['s3'] },
+    s3: { id: 's3', config: { type: 'engine' }, transitions: [] },
+  }, 'start', 2);
+
+  await runner.run();
+
+  const calledStates = ctx.addStateToHistory.mock.calls.map((c: any) => c[1]);
+  expect(calledStates).toContain('start');
+  expect(calledStates).toContain('s2');
+  expect(calledStates).not.toContain('s3');
+});
+
+test('stops after nextSteps limit for branching', async () => {
+  const ctx = require('../../../src/context/context');
+  const runner = makeRunner({
+    start: { id: 'start', config: { type: 'engine', transitions: { NEXT: 'b1' } }, transitions: ['b1'] },
+    b1: { id: 'b1', config: { type: 'engine' }, transitions: [] },
+  }, 'start', 1);
+
+  await runner.run();
+
+  const calledStates = ctx.addStateToHistory.mock.calls.map((c: any) => c[1]);
+  // only start should be present
+  expect(calledStates).toContain('start');
+  expect(calledStates).not.toContain('b1');
+});
+
+test('stops when terminal reached before limit', async () => {
+  const ctx = require('../../../src/context/context');
+  const runner = makeRunner({
+    start: { id: 'start', config: { type: 'engine' }, transitions: [] },
+  }, 'start', 5);
+
+  await runner.run();
+
+  const calledStates = ctx.addStateToHistory.mock.calls.map((c: any) => c[1]);
+  expect(calledStates).toContain('start');
+});

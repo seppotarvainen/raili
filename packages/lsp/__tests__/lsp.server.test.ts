@@ -37,36 +37,36 @@ describe('LSP server wiring', () => {
     expect(diags[0].message).toContain('missing_state');
   });
 
-   test('definition, references, hover, rename handlers return expected shapes', () => {
-     createServer(connection);
-     const uri = 'file:///test/workflow2.yaml';
-     const text = `states:\n  start:\n    type: engine\n    on:\n      PASSED: done\n  done:\n    type: engine\n`;
-     handlers.didOpen({ textDocument: { uri, text } });
+  test('definition, references, hover, rename handlers return expected shapes', () => {
+    createServer(connection);
+    const uri = 'file:///test/workflow2.yaml';
+    const text = `states:\n  start:\n    type: engine\n    on:\n      PASSED: done\n  done:\n    type: engine\n`;
+    handlers.didOpen({ textDocument: { uri, text } });
 
-     // Call definition at the position of the definition itself (line of 'start')
-     const def = handlers.definition({ textDocument: { uri }, position: { line: 2, column: 3 } });
-     expect(def).not.toBeNull();
-     // Definition should return a Location object with range
-     expect(def).toHaveProperty('range');
-     expect(def.range).toHaveProperty('start');
-     expect(def.range).toHaveProperty('end');
+    // Call definition at the position of the definition itself (line of 'start')
+    const def = handlers.definition({ textDocument: { uri }, position: { line: 2, column: 3 } });
+    expect(def).not.toBeNull();
+    // Definition should return a Location object with range
+    expect(def).toHaveProperty('range');
+    expect(def.range).toHaveProperty('start');
+    expect(def.range).toHaveProperty('end');
 
-     const refs = handlers.references({ textDocument: { uri }, position: { line: 2, column: 3 } });
-     expect(Array.isArray(refs)).toBe(true);
+    const refs = handlers.references({ textDocument: { uri }, position: { line: 2, column: 3 } });
+    expect(Array.isArray(refs)).toBe(true);
 
-     const h = handlers.hover({ textDocument: { uri }, position: { line: 2, column: 3 } });
-     // Hover should return { contents: string } or null
-     if (h !== null) {
-       expect(h).toHaveProperty('contents');
-     }
+    const h = handlers.hover({ textDocument: { uri }, position: { line: 2, column: 3 } });
+    // Hover should return { contents: string } or null
+    if (h !== null) {
+      expect(h).toHaveProperty('contents');
+    }
 
-     const edits = handlers.rename({
-       textDocument: { uri },
-       position: { line: 2, column: 3 },
-       newName: 'newStart',
-     });
-     expect(Array.isArray(edits)).toBe(true);
-   });
+    const edits = handlers.rename({
+      textDocument: { uri },
+      position: { line: 2, column: 3 },
+      newName: 'newStart',
+    });
+    expect(Array.isArray(edits)).toBe(true);
+  });
 });
 
 // Appended tests merged from lsp_server.test.ts (duplicate)
@@ -115,4 +115,3 @@ states:
     expect(messages).toMatch(/State 'missingState' not found/);
   });
 });
-

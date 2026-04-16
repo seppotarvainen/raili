@@ -19,12 +19,28 @@ function toInternalPosition(pos: AnyPosition): Position {
 
 export type LspConnectionLike = {
   onInitialize?: (handler: (params: unknown) => void) => void;
-  onDidOpenTextDocument: (handler: (params: { textDocument: { uri: string; text: string } }) => void) => void;
-  onDidChangeTextDocument: (handler: (params: { textDocument: { uri: string; text: string } }) => void) => void;
-  onDefinition: (handler: (params: { textDocument: { uri: string }; position: AnyPosition }) => unknown) => void;
-  onReferences: (handler: (params: { textDocument: { uri: string }; position: AnyPosition }) => unknown) => void;
-  onHover: (handler: (params: { textDocument: { uri: string }; position: AnyPosition }) => unknown) => void;
-  onRenameRequest: (handler: (params: { textDocument: { uri: string }; position: AnyPosition; newName: string }) => unknown) => void;
+  onDidOpenTextDocument: (
+    handler: (params: { textDocument: { uri: string; text: string } }) => void,
+  ) => void;
+  onDidChangeTextDocument: (
+    handler: (params: { textDocument: { uri: string; text: string } }) => void,
+  ) => void;
+  onDefinition: (
+    handler: (params: { textDocument: { uri: string }; position: AnyPosition }) => unknown,
+  ) => void;
+  onReferences: (
+    handler: (params: { textDocument: { uri: string }; position: AnyPosition }) => unknown,
+  ) => void;
+  onHover: (
+    handler: (params: { textDocument: { uri: string }; position: AnyPosition }) => unknown,
+  ) => void;
+  onRenameRequest: (
+    handler: (params: {
+      textDocument: { uri: string };
+      position: AnyPosition;
+      newName: string;
+    }) => unknown,
+  ) => void;
   sendDiagnostics: (uri: string, diags: Diagnostic[]) => void;
 };
 
@@ -41,7 +57,11 @@ export function createServer(connection: LspConnectionLike) {
     const errors: ValidatorError[] = [];
     for (const r of doc.stateReferences()) {
       if (!states.has(r.name)) {
-        errors.push({ message: `State '${r.name}' not found`, severity: 'error', location: r.location });
+        errors.push({
+          message: `State '${r.name}' not found`,
+          severity: 'error',
+          location: r.location,
+        });
       }
     }
 

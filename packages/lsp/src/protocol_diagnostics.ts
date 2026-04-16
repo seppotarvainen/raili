@@ -25,5 +25,9 @@ function mapSeverity(s: ValidatorError['severity']): number {
 }
 
 export function mapDiagnostics(errors: ValidatorError[]): Diagnostic[] {
-  return errors.map((e) => ({ message: e.message, severity: mapSeverity(e.severity), location: e.location }));
+  return errors.map((e) => ({
+    message: e.message,
+    severity: mapSeverity(e.severity),
+    location: e.location,
+  }));
 }
