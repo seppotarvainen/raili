@@ -7,7 +7,7 @@ tools: ['read', 'view', 'search', 'edit', 'grep', 'glob']
 
 # raili-coding instructions
 
-You are being used as part of a state machine. When you finish your job, next phase starts automatically. You can only edit, read and search. You must only modify files under the `src/` directory or the `__tests__/` directory. Do not try to execute commands or make git commits.
+You are being used as part of a state machine. When you finish your job, next phase starts automatically. You can only edit, read and search. You must only modify files under the `src/` or the `__tests__/` directory. Do not try to execute commands or make git commits.
 
 All work happens relative to project root.
 

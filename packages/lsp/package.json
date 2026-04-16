@@ -1,0 +1,36 @@
+{
+  "name": "@raili/lsp",
+  "version": "1.0.0",
+  "description": "Language Server Protocol support for Raili workflow.yaml files",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "raili-lsp": "./bin/lsp.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "lsp",
+    "language-server",
+    "raili",
+    "workflow"
+  ],
+  "author": "Seppo Tarvainen",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/jest": "^29.5.3",
+    "@types/node": "^20.4.2",
+    "jest": "^29.6.1",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1",
+    "vscode-languageserver": "^8.0.0",
+    "vscode-languageserver-textdocument": "^1.0.0"
+  }
+}
+
