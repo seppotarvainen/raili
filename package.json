@@ -5,23 +5,27 @@
   "main": "dist/cli.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "raili": "./dist/cli.js"
+    "raili": "./dist/cli.js",
+    "raili-lsp": "packages/lsp/bin/lsp.js"
   },
   "directories": {
     "doc": "docs"
   },
   "scripts": {
     "build:docs": "node scripts/build-docs.js",
-    "build": "npm run build:docs && tsc && chmod +x dist/cli.js",
+    "build": "npm run build:docs && tsc && chmod +x dist/cli.js && npm run build:lsp",
+    "build:lsp": "cd packages/lsp && tsc && chmod +x bin/lsp.js",
     "start": "node dist/cli.js",
-    "test": "jest --runInBand",
+    "test": "jest --runInBand && npm run test:lsp",
+    "test:cli": "jest --runInBand",
+    "test:lsp": "cd packages/lsp && jest --runInBand",
     "mutate": "stryker run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write src/**/*.ts __tests__/**/*.ts",
-    "format:check": "prettier --check src/**/*.ts __tests__/**/*.ts",
-    "knip": "knip",
-    "knip:fix": "knip --fix --allow-remove-files",
+    "format": "prettier --write src/**/*.ts __tests__/**/*.ts packages/lsp/src/**/*.ts packages/lsp/__tests__/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts __tests__/**/*.ts packages/lsp/src/**/*.ts packages/lsp/__tests__/**/*.ts",
+    "knip": "knip -W=src/** -W=__tests__/**",
+    "knip:fix": "knip -W=src/** -W=__tests__/** --fix --allow-remove-files",
     "loc": "cloc src/ --by-file",
     "prepublishOnly": "npm run build"
   },
@@ -53,6 +57,8 @@
     "colors": "^1.4.0",
     "command-line-args": "^6.0.1",
     "js-yaml": "^4.1.1",
-    "knip": "^5.85.0"
+    "knip": "^5.85.0",
+    "vscode-languageserver": "^8.0.0",
+    "vscode-languageserver-textdocument": "^1.0.0"
   }
 }

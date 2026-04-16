@@ -10,8 +10,12 @@ const outputFile = path.join(__dirname, '..', 'src', 'cli', 'generatedDocs.ts');
 const usage = {};
 const sections = {};
 
-// Process root-level files (feature sections), excluding architecture directory
-const rootFiles = fs.readdirSync(docsDir).filter(f => f.endsWith('.md') && f !== 'architecture');
+// Process root-level files (excluding certain ones)
+const excludeNames = new Set(['architecture', 'lsp']);
+const rootFiles = fs.readdirSync(docsDir, { withFileTypes: true })
+    .filter(d => d.isFile() && d.name.endsWith('.md'))
+    .map(d => d.name)
+    .filter(name => !excludeNames.has(name.replace(/\.md$/, '')));
 
 rootFiles.forEach(file => {
   const content = fs.readFileSync(path.join(docsDir, file), 'utf-8');
