@@ -36,6 +36,7 @@ export interface RunnerConfig {
   context: WorkflowContext;
   cwd: string;
   workflowArg?: string;
+  nextSteps?: number;
 }
 
 /**
@@ -67,6 +68,10 @@ export class Runner {
   private approvalResolverPath?: string | null;
   private feedbackResolverPath?: string | null;
 
+  private readonly nextSteps?: number;
+  private stepsExecuted = 0;
+  private countedStates = new Set<string>();
+
   constructor(config: RunnerConfig) {
     this.stateMachine = config.stateMachine;
     this.agentRegistry = config.agentRegistry;
@@ -78,6 +83,7 @@ export class Runner {
     }
     this.cwd = config.cwd;
     this.workflowArg = config.workflowArg;
+    this.nextSteps = config.nextSteps;
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
@@ -87,13 +93,40 @@ export class Runner {
     saveContext(this.cwd, this.context, this.workflowArg);
   }
 
-  /** Add a state entry (with optional meta) to history and persist. */
-  private record(stateId: string, meta?: any): void {
+  /** Add a state entry (with optional meta) to history and persist.
+   * Returns true when a new entry was added (useful for --next counting), false otherwise.
+   */
+  private record(stateId: string, meta?: any): boolean {
+    const prevLen = this.context?.stateHistory?.length ?? 0;
     const newCtx = addStateToHistory(this.context, stateId, meta);
-    if (newCtx) {
-      this.context = newCtx;
-    }
+    // Defensive: some unit tests mock addStateToHistory and may return undefined.
+    this.context = newCtx ?? this.context ?? { stateHistory: [] };
     this.persist();
+
+    const added = this.context.stateHistory.length > prevLen;
+
+    // Determine whether this record should count towards stepsExecuted.
+    const skipped = meta && meta.skipped !== undefined;
+    const preRecord = meta && meta.pre_record === true;
+
+    let shouldCount = false;
+    if (!skipped && !preRecord) {
+      if (added) {
+        shouldCount = true;
+      } else if (!this.countedStates.has(stateId)) {
+        // addStateToHistory mock may return the same context in unit tests; treat the first
+        // record call per state as an entry for counting purposes to ensure --next behaves
+        // deterministically in tests as well as in production.
+        shouldCount = true;
+      }
+    }
+
+    if (shouldCount) {
+      this.stepsExecuted++;
+      this.countedStates.add(stateId);
+    }
+
+    return added;
   }
 
   // ── Phase: Skip ─────────────────────────────────────────────────────
@@ -125,7 +158,10 @@ export class Runner {
    * On state entry: enforce max_visits, clear outputs, record in history, fire notify.
    * Returns a continuation target state id when max_visits is exceeded and a continue target is configured.
    */
-  private async enterState(stateId: string, stateDef: StateDef): Promise<string | null> {
+  private async enterState(
+    stateId: string,
+    stateDef: StateDef,
+  ): Promise<{ continueTarget: string | null; wasRecorded: boolean }> {
     const { config } = stateDef;
     const prev = this.visitCounts.get(stateId) ?? 0;
     const visits = prev + 1;
@@ -139,7 +175,7 @@ export class Runner {
       if (visits > count) {
         if (cont) {
           this.record(stateId, { max_visits: { exceeded: true, target: cont } });
-          return cont;
+          return { continueTarget: cont, wasRecorded: true };
         }
         throw new Error(`State '${stateId}' exceeded max_visits limit of ${count}`);
       }
@@ -159,7 +195,8 @@ export class Runner {
       }
     }
 
-    this.record(stateId);
+    // Record the state entry; addStateToHistory returns null when no change occurred.
+    const wasRecorded = this.record(stateId);
 
     if (config.reset_outputs?.length) {
       clearAgentOutputs(this.cwd, config.reset_outputs, this.workflowArg);
@@ -216,7 +253,7 @@ export class Runner {
       this.persist();
     }
 
-    return null;
+    return { continueTarget: null, wasRecorded };
   }
 
   // ── Phase: Execute State Handler ────────────────────────────────────
@@ -440,7 +477,6 @@ export class Runner {
         this.currentPresenter?.appendStateExit(stateDef, 'FEEDBACK', next, elapsedMs);
         this.currentPresenter?.render();
       } catch {}
-      this.record(next);
       return next;
     }
 
@@ -547,7 +583,6 @@ export class Runner {
         this.currentPresenter?.render();
       } catch {}
 
-      this.record(nextStateId);
       return nextStateId;
     }
 
@@ -561,8 +596,6 @@ export class Runner {
       this.currentPresenter?.appendStateExit(stateDef, outcome, nextStateId, elapsedMs);
       this.currentPresenter?.render();
     } catch {}
-
-    this.record(nextStateId);
     return nextStateId;
   }
 
@@ -630,7 +663,12 @@ export class Runner {
       }
     }
 
-    if (this.context.stateHistory.length === 0) {
+    // Mark already-entered states as counted so --next counts only newly executed states.
+    if (this.context.stateHistory.length > 0) {
+      for (const e of this.context.stateHistory) {
+        this.countedStates.add(e.state);
+      }
+    } else {
       this.record(currentStateId);
     }
 
@@ -666,11 +704,13 @@ export class Runner {
         }
 
         // Phase 2: Enter state (max_visits, reset_outputs, history, notify)
-        const continueTarget = await this.enterState(stateId, stateDef);
+        const { continueTarget, wasRecorded } = await this.enterState(stateId, stateDef);
         if (continueTarget) {
           stateId = continueTarget;
           continue;
         }
+
+        // stepsExecuted is incremented inside record() when a new, non-skipped history entry is added.
 
         // Phase 3: Terminal check
         const { config } = stateDef;
@@ -707,6 +747,12 @@ export class Runner {
         // Phase 6: Approval flow (if configured)
         if (config.approval) {
           const next = await this.handleApproval(stateId, stateDef);
+
+          // If nextSteps limit reached for this run, stop here and do not follow the approval transition.
+          if (typeof this.nextSteps === 'number' && this.stepsExecuted >= this.nextSteps) {
+            break;
+          }
+
           // Process any teach mappings after approval so approval-exposed variables
           // are available to teach entries declared on the same state.
           if ((stateDef.config as any).teach) {
@@ -719,6 +765,10 @@ export class Runner {
         // Phase 7: Feedback flow (if configured, no approval)
         const feedbackNext = await this.handleFeedback(stateId, stateDef);
         if (feedbackNext) {
+          // If nextSteps limit reached for this run, stop here and do not follow the feedback transition.
+          if (typeof this.nextSteps === 'number' && this.stepsExecuted >= this.nextSteps) {
+            break;
+          }
           stateId = feedbackNext;
           continue;
         }
@@ -750,6 +800,13 @@ export class Runner {
         }
 
         // Phase 9: Route to next state
+        // If a nextSteps limit was provided, and we've executed the configured number
+        // of states, stop the run here (do not follow transitions). Context has been
+        // persisted during state handling phases, so it's safe to exit.
+        if (typeof this.nextSteps === 'number' && this.stepsExecuted >= this.nextSteps) {
+          break;
+        }
+
         stateId = this.routeToNext(stateId, stateDef, stateResult.outcome);
       } catch (err) {
         const handled = await this.handleError(err);

@@ -20,6 +20,8 @@ review:
 - Press **Enter** → routes to PASSED state
 - Type **anything** → routes to FAILED state
 
+When running with `--next=N`, Raili may stop after the approval state if the configured `--next` execution limit has been reached; in that case Raili records the approval response but will not follow the configured approval transition. This enables single-step inspection (for example `--next=1`) without progressing the workflow.
+
 There is an optional multiline mode (see below).
 
 ## Approval Fields

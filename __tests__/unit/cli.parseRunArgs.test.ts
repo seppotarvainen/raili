@@ -6,4 +6,22 @@ describe('parseRunArgs', () => {
     expect(res.dryRun).toBe(true);
     expect(res.workflow).toBe('main');
   });
+
+  test('parses --next=3 and forces continue mode', () => {
+    const res = parseRunArgs(['--next=3']);
+    expect(res.next).toBe(3);
+    expect(res.mode).toBe('continue');
+  });
+
+  test('parses bare --next as 1 and forces continue mode', () => {
+    const res = parseRunArgs(['--next']);
+    expect(res.next).toBe(1);
+    expect(res.mode).toBe('continue');
+  });
+
+  test('--next with --clean still forces continue mode', () => {
+    const res = parseRunArgs(['--next=2', '--clean']);
+    expect(res.next).toBe(2);
+    expect(res.mode).toBe('continue');
+  });
 });

@@ -60,7 +60,15 @@ states:
       const states = doc.states();
       expect(states.length).toBe(7);
       expect(states.map((s) => s.name)).toEqual(
-        expect.arrayContaining(['analyze', 'implement', 'review', 'merge', 'done', 'error', 'close'])
+        expect.arrayContaining([
+          'analyze',
+          'implement',
+          'review',
+          'merge',
+          'done',
+          'error',
+          'close',
+        ]),
       );
 
       // Verify routing references are extracted
@@ -276,9 +284,7 @@ states:
       // Parser extracts state definitions
       const states = doc.states();
       expect(states.length).toBe(3);
-      expect(states.map((s) => s.name)).toEqual(
-        expect.arrayContaining(['start', 'middle', 'end'])
-      );
+      expect(states.map((s) => s.name)).toEqual(expect.arrayContaining(['start', 'middle', 'end']));
     });
 
     test('handles reset_outputs and reset_max_visits lists', () => {
@@ -318,4 +324,3 @@ states:
     });
   });
 });
-

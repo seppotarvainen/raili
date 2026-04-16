@@ -29,13 +29,24 @@ export function findReferences(doc: WorkflowDocument, pos: Position): ReferenceL
   // definition
   const def = doc.states().find((s) => s.name === name);
   if (def) {
-    results.push({ kind: 'def', name: def.name, location: def.location, range: toRange(def.location, name.length) });
+    results.push({
+      kind: 'def',
+      name: def.name,
+      location: def.location,
+      range: toRange(def.location, name.length),
+    });
   }
 
   // all references
   for (const r of doc.stateReferences()) {
     if (r.name === name) {
-      results.push({ kind: 'ref', name: r.name, location: r.location, context: r.context, range: toRange(r.location, name.length) });
+      results.push({
+        kind: 'ref',
+        name: r.name,
+        location: r.location,
+        context: r.context,
+        range: toRange(r.location, name.length),
+      });
     }
   }
 

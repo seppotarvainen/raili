@@ -28,6 +28,7 @@ export async function runCommand(
   vars: Record<string, string> = {},
   workflowPath?: string,
   dryRun = false,
+  nextSteps?: number,
 ) {
   const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
@@ -151,6 +152,7 @@ export async function runCommand(
     context,
     cwd,
     workflowArg: workflowPath,
+    nextSteps: nextSteps,
   });
 
   await runner.run();

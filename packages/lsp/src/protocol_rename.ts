@@ -9,7 +9,11 @@ export type TextEdit = {
   newText: string;
 };
 
-export function computeRenameEdits(doc: WorkflowDocument, pos: Position, newName: string): TextEdit[] | null {
+export function computeRenameEdits(
+  doc: WorkflowDocument,
+  pos: Position,
+  newName: string,
+): TextEdit[] | null {
   const entry = doc.findAtPosition(pos.line, pos.column);
   if (!entry) return null;
   const oldName = entry.name;

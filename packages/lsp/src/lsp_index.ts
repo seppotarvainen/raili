@@ -50,7 +50,10 @@ export function runFromStdio(connectionFactory?: () => LspConnectionLike) {
 /**
  * Adapts vscode-languageserver connection to our LspConnectionLike interface
  */
-function createVscodeAdapter(connection: any, documents: TextDocuments<TextDocument>): LspConnectionLike {
+function createVscodeAdapter(
+  connection: any,
+  documents: TextDocuments<TextDocument>,
+): LspConnectionLike {
   const diagnosticMap = new Map<string, LSPDiagnostic[]>();
 
   return {
@@ -69,21 +72,27 @@ function createVscodeAdapter(connection: any, documents: TextDocuments<TextDocum
         return result;
       });
     },
-    onDidOpenTextDocument: (handler: (params: { textDocument: { uri: string; text: string } }) => void) => {
+    onDidOpenTextDocument: (
+      handler: (params: { textDocument: { uri: string; text: string } }) => void,
+    ) => {
       documents.onDidOpen((event) => {
         const { uri } = event.document;
         const text = event.document.getText();
         handler({ textDocument: { uri, text } });
       });
     },
-    onDidChangeTextDocument: (handler: (params: { textDocument: { uri: string; text: string } }) => void) => {
+    onDidChangeTextDocument: (
+      handler: (params: { textDocument: { uri: string; text: string } }) => void,
+    ) => {
       documents.onDidChangeContent?.((event: any) => {
         const { uri } = event.document;
         const text = event.document.getText();
         handler({ textDocument: { uri, text } });
       });
     },
-    onDefinition: (handler: (params: { textDocument: { uri: string }; position: any }) => unknown) => {
+    onDefinition: (
+      handler: (params: { textDocument: { uri: string }; position: any }) => unknown,
+    ) => {
       connection.onDefinition((params: any) => {
         const result: any = handler(params);
         if (!result) return null;
@@ -91,9 +100,11 @@ function createVscodeAdapter(connection: any, documents: TextDocuments<TextDocum
         return { uri: params.textDocument.uri, range: result.range };
       });
     },
-    onReferences: (handler: (params: { textDocument: { uri: string }; position: any }) => unknown) => {
+    onReferences: (
+      handler: (params: { textDocument: { uri: string }; position: any }) => unknown,
+    ) => {
       connection.onReferences((params: any) => {
-        const results: any[] = handler(params) as any[] || [];
+        const results: any[] = (handler(params) as any[]) || [];
         // Convert to LSP Location format
         return results.map((r: any) => ({
           uri: params.textDocument.uri,
@@ -108,7 +119,13 @@ function createVscodeAdapter(connection: any, documents: TextDocuments<TextDocum
         return { contents: { kind: 'markdown', value: result.contents } };
       });
     },
-    onRenameRequest: (handler: (params: { textDocument: { uri: string }; position: any; newName: string }) => unknown) => {
+    onRenameRequest: (
+      handler: (params: {
+        textDocument: { uri: string };
+        position: any;
+        newName: string;
+      }) => unknown,
+    ) => {
       connection.onRenameRequest((params: any) => {
         const edits: any = handler(params);
         if (!edits || !Array.isArray(edits) || edits.length === 0) return null;

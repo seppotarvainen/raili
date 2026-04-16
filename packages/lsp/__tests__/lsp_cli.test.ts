@@ -5,16 +5,19 @@ describe('src/lsp_index runFromStdio', () => {
     const sendDiagnostics = jest.fn();
     let onDidOpen: any = null;
 
-    const factory = () => ({
-      onInitialize: jest.fn(),
-      onDidOpenTextDocument: (h: any) => { onDidOpen = h; },
-      onDidChangeTextDocument: jest.fn(),
-      onDefinition: jest.fn(),
-      onReferences: jest.fn(),
-      onHover: jest.fn(),
-      onRenameRequest: jest.fn(),
-      sendDiagnostics,
-    } as any);
+    const factory = () =>
+      ({
+        onInitialize: jest.fn(),
+        onDidOpenTextDocument: (h: any) => {
+          onDidOpen = h;
+        },
+        onDidChangeTextDocument: jest.fn(),
+        onDefinition: jest.fn(),
+        onReferences: jest.fn(),
+        onHover: jest.fn(),
+        onRenameRequest: jest.fn(),
+        sendDiagnostics,
+      }) as any;
 
     const server = runFromStdio(factory);
     expect(server).toBeDefined();
