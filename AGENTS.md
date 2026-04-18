@@ -25,7 +25,8 @@ src/
     railiCommand.ts           # CLI command parser (init, run, docs, schema, stats, help)
     help.ts                   # Help text printer (topic-aware)
     docs.ts                   # Built-in docs command
-    generatedDocs.ts          # DO NOT LOOK AT THIS FILE, IT ONLY FILLS UP YOUR CONTEXT WINDOW!!! Auto-generated documentation content
+    generatedDocs.ts          # Stable adapter — imports from generatedDocs.json (build artifact, gitignored)
+    generatedDocs.json        # DO NOT LOOK AT THIS FILE. Auto-generated docs data (build artifact, gitignored)
     schema.ts                 # Prints workflow YAML schema reference
     schemaFormatter.ts       # Formats schema definitions for display
     stats.ts                  # Run statistics (avg loops, success rate, etc.)

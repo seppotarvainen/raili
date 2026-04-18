@@ -5,6 +5,7 @@
 # Build files and dependencies
 dist
 node_modules
+src/cli/generatedDocs.json
 
 # Manual testing
 .raili

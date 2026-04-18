@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const docsDir = path.join(__dirname, '..', 'documentation');
-const outputFile = path.join(__dirname, '..', 'src', 'cli', 'generatedDocs.ts');
+const outputFile = path.join(__dirname, '..', 'src', 'cli', 'generatedDocs.json');
 
 // Read markdown files from both root and subdirectories
 const usage = {};
@@ -93,71 +93,16 @@ if (fs.existsSync(usageDir)) {
   });
 }
 
-// Generate TypeScript file
-const helpTopics = Object.entries(sections)
-  .map(entry => {
-    const key = entry[0];
-    const help = entry[1].help;
-    const escaped = help.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-    return `  ${key}: "${escaped}"`;
-  })
-  .join(',\n');
-
-const usageHelp = Object.entries(usage)
-  .map(entry => {
-    const key = entry[0];
-    const help = entry[1].help;
-    const escaped = help.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-    return `  ${key}: "${escaped}"`;
-  })
-  .join(',\n');
-
-const docsSections = Object.entries(sections)
-  .map(entry => {
-    const key = entry[0];
-    const docs = entry[1].docs;
-    const escaped = docs.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-    return `  ${key}: "${escaped}"`;
-  })
-  .join(',\n');
-
-const usageDocs = Object.entries(usage)
-  .map(entry => {
-    const key = entry[0];
-    const docs = entry[1].docs;
-    const escaped = docs.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-    return `  ${key}: "${escaped}"`;
-  })
-  .join(',\n');
-
-const availableTopics = Object.keys(sections);
-const availableSections = Object.keys(sections);
-const availableUsage = Object.keys(usage);
-
-const output = `// AUTO-GENERATED FILE: Do not edit manually
-// Generated from documentation/ markdown files at build time
-// Run: npm run build:docs
-
-export const HELP_TOPICS: Record<string, string> = {
-${helpTopics}
-};
-
-export const USAGE_HELP: Record<string, string> = {
-${usageHelp}
-};
-
-export const DOCS_SECTIONS: Record<string, string> = {
-${docsSections}
-};
-
-export const USAGE_DOCS: Record<string, string> = {
-${usageDocs}
-};
-
-export const AVAILABLE_TOPICS = [${availableTopics.map(t => `'${t}'`).join(', ')}];
-export const AVAILABLE_SECTIONS = [${availableSections.map(s => `'${s}'`).join(', ')}];
-export const AVAILABLE_USAGE = [${availableUsage.map(u => `'${u}'`).join(', ')}];
-`;
+// Generate JSON data file
+const output = JSON.stringify({
+  helpTopics: Object.fromEntries(Object.entries(sections).map(([k, v]) => [k, v.help])),
+  usageHelp:  Object.fromEntries(Object.entries(usage).map(([k, v]) => [k, v.help])),
+  docsSections: Object.fromEntries(Object.entries(sections).map(([k, v]) => [k, v.docs])),
+  usageDocs:  Object.fromEntries(Object.entries(usage).map(([k, v]) => [k, v.docs])),
+  availableTopics: Object.keys(sections),
+  availableSections: Object.keys(sections),
+  availableUsage: Object.keys(usage),
+}, null, 2);
 
 fs.writeFileSync(outputFile, output, 'utf-8');
 console.log(`✓ Generated documentation from markdown files`);
