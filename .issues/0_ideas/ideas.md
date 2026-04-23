@@ -3,7 +3,7 @@
 ```yaml
 title: Refactor `runner.ts` in multiple files
 intent: |
-  Currenlty ` 
+  Currenlty `runner.ts` is a monolith of 700+ lines that handles the entire workflow execution loop, including state machine traversal, context management, output storage, approval handling, and more. This makes it difficult to maintain and reason about. A refactor is needed to break it into smaller, focused modules that each handle a specific concern. This will improve readability, testability, and maintainability.
 ```
 
 
