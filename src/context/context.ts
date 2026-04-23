@@ -166,3 +166,50 @@ export function initializeContext(vars: Record<string, string>): WorkflowContext
     stateHistory: [],
   };
 }
+
+/**
+ * Rollback history by numeric count or state id.
+ * - If `rollbackArg` is all digits, treat as numeric count N and remove last N entries.
+ * - Otherwise treat as a state id and truncate history to the last occurrence of that state (inclusive).
+ * Returns a NEW WorkflowContext object (no in-place mutation). Throws descriptive errors on invalid requests.
+ */
+export function rollbackHistory(context: WorkflowContext, rollbackArg: string): WorkflowContext {
+  if (typeof rollbackArg !== 'string' || rollbackArg.length === 0) {
+    throw new Error('rollbackArg must be a non-empty string');
+  }
+
+  const history = context.stateHistory ?? [];
+
+  // Numeric rollback
+  if (/^\d+$/.test(rollbackArg)) {
+    const n = parseInt(rollbackArg, 10);
+    if (n > history.length) {
+      throw new Error(`Cannot rollback ${n} steps: history only has ${history.length} entries`);
+    }
+
+    // Removing zero entries returns a new context identical to input
+    if (n === 0) {
+      return { ...context, stateHistory: [...history] };
+    }
+
+    const newHistory = history.slice(0, history.length - n);
+    return { ...context, stateHistory: newHistory };
+  }
+
+  // State-id rollback: find last occurrence from the end
+  const targetState = rollbackArg;
+  let idx = -1;
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].state === targetState) {
+      idx = i;
+      break;
+    }
+  }
+
+  if (idx === -1) {
+    throw new Error(`State '${targetState}' not found in history`);
+  }
+
+  const newHistory = history.slice(0, idx + 1);
+  return { ...context, stateHistory: newHistory };
+}

@@ -75,7 +75,7 @@ This agent is called in two scenarios:
     - **Logic failures**: These are beyond the scope of structure fixing. Output a note identifying which tests have pure logic failures that need manual review.
 3. Make minimal, targeted edits — don't rewrite tests, just fix the structural issue.
 
-### Scenario 2: Fix test failures after structure is fixed
+## Output format
 
 Print a `//SUMMARY//` at the end of your output. This is used as a marker for output storage.
 

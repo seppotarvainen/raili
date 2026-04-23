@@ -1,24 +1,14 @@
 /// <reference types="node" />
-import { getFileSystem } from './infrastructure/fileSystemProvider';
+import {getFileSystem} from './infrastructure/fileSystemProvider';
 import * as path from 'path';
-import {
-  buildStateMachine,
-  loadWorkflowConfig,
-  validateStateMachine,
-} from './workflow/workflowLoader';
-import {
-  validateAgentRegistry,
-  validateScriptRegistry,
-  validateWorkflowReferences,
-} from './registry/registryValidator';
-import { clearContext, initializeContext, loadContext, saveContext } from './context/context';
-import { getWorkflowName } from './context/pathUtils';
-import { Runner } from './runner/runner';
-import { appendRunLog } from './context/runLog';
-import { loadVarsFile } from './variables/varsLoader';
-import { handleManualTransition } from './handlers/manualHandler';
-import { AgentRegistry } from './registry/agentRegistry';
-import { ScriptRegistry } from './registry/scriptRegistry';
+import {buildStateMachine, loadWorkflowConfig, validateStateMachine,} from './workflow/workflowLoader';
+import {validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences,} from './registry/registryValidator';
+import {clearContext, initializeContext, loadContext, rollbackHistory, saveContext} from './context/context';
+import {getWorkflowName} from './context/pathUtils';
+import {Runner} from './runner/runner';
+import {appendRunLog} from './context/runLog';
+import {loadVarsFile} from './variables/varsLoader';
+import {handleManualTransition} from './handlers/manualHandler';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -29,6 +19,7 @@ export async function runCommand(
   workflowPath?: string,
   dryRun = false,
   nextSteps?: number,
+  rollback?: string,
 ) {
   const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
@@ -129,6 +120,13 @@ export async function runCommand(
     if (!context.vars) context.vars = {};
     // workflow is injected as a default; existing context value takes precedence; CLI vars win last
     context.vars = { workflow: workflowName, ...context.vars, ...vars };
+
+    // Apply rollback when provided (rollback is only meaningful in non-clean runs)
+    if (rollback) {
+      context = rollbackHistory(context, rollback);
+      // Persist rolled-back context immediately before runner starts
+      saveContext(cwd, context, workflowPath);
+    }
   }
 
   // Expose all vars as RAILI_VAR_* env vars for the entire process lifetime.
