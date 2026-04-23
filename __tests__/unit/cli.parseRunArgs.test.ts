@@ -24,4 +24,22 @@ describe('parseRunArgs', () => {
     expect(res.next).toBe(2);
     expect(res.mode).toBe('continue');
   });
+
+  test('parses --rollback=3 and returns rollback string and forces continue', () => {
+    const res = parseRunArgs(['--rollback=3']);
+    expect(res.rollback).toBe('3');
+    expect(res.mode).toBe('continue');
+  });
+
+  test('parses --rollback=analyze and returns rollback string', () => {
+    const res = parseRunArgs(['--rollback=analyze']);
+    expect(res.rollback).toBe('analyze');
+    expect(res.mode).toBe('continue');
+  });
+
+  test('bare --rollback forces continue mode without setting rollback value', () => {
+    const res = parseRunArgs(['--rollback']);
+    expect(res.mode).toBe('continue');
+    expect(res.rollback).toBeUndefined();
+  });
 });

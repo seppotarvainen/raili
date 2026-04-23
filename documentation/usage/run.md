@@ -14,6 +14,7 @@ raili run --workflow <name>            # Run a named workflow (e.g. .raili/dev/)
 raili run --workflow <name> --clean    # Start a named workflow fresh
 raili run --next=2                     # Execute the next N states (forces continue mode)
 raili run --next                        # Shorthand for `--next=1` (execute the next single state)
+raili run --rollback=<N|state>         # Truncate stateHistory and resume from target (forces continue mode)
 ```
 
 ## Examples
@@ -111,7 +112,7 @@ raili run --workflow main --dry-run --var ticket_id=123
 ## Execution Flow
 
 1. **Load & Validate** → Reads `.raili/` directory, shared registries, and the selected workflow
-2. **Initialize Context** → On clean run, creates a fresh, deterministic initial context (declared inputs merged with vars and a default `workflow` variable); on continue, loads saved state and preserves existing `workflow` value
+2. **Initialize Context** → On clean run, creates a fresh, deterministic initial context (declared inputs merged with vars and a default `workflow` variable); on continue, loads saved state and preserves existing `workflow` value. If `--rollback` is provided in continue mode, Raili will truncate `context.stateHistory` according to the supplied value (numeric count or state ID), save the rolled-back context immediately, and then resume execution from the new last entry in the history.
 3. **Build State Machine** → Converts `workflow.yaml` into a runtime state DAG
 4. **Run Loop** → Executes states in order:
    - Enter state (run notify hook if present)

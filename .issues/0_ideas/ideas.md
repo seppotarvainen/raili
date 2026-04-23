@@ -1,12 +1,9 @@
 # Ideas
 
 ```yaml
-title: Fix teach command to check for agent name in registry
+title: Refactor `runner.ts` in multiple files
 intent: |
-  The `raili teach` command currently doesn't check if the provided agent name exists in the
-  agent registry. It will just create a new learning file for that agent name, even if the agent 
-  doesn't exist. Command should fail fast with an error message if the agent name is not found in 
-  the registry, to prevent confusion and ensure that learnings are only created for valid agents.
+  Currenlty ` 
 ```
 
 

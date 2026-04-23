@@ -23,9 +23,15 @@ const args = process.argv.slice(2);
 export function parseRunArgs(argv: string[]): RailiRunArgs {
   // Support bare --next (no value) by converting it to --next=1 before parsing
   const normalizedArgv = argv.slice();
+  let hadBareRollback = false;
   for (let i = 0; i < normalizedArgv.length; i++) {
     if (normalizedArgv[i] === '--next') {
       normalizedArgv[i] = '--next=1';
+    }
+    if (normalizedArgv[i] === '--rollback') {
+      // Allow bare --rollback to force continue mode without a value
+      hadBareRollback = true;
+      normalizedArgv[i] = '--rollback=';
     }
   }
 
@@ -34,11 +40,12 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     { name: 'clean', type: Boolean },
     { name: 'continue', type: Boolean },
     { name: 'next', type: Number },
+    { name: 'rollback', type: String },
     { name: 'var', type: String, multiple: true, defaultValue: [] },
     { name: 'help', alias: 'h', type: Boolean },
     { name: 'dry-run', type: Boolean },
   ];
-  const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; var?: string[]; help?: boolean; 'dry-run'?: boolean };
+  const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; rollback?: string; var?: string[]; help?: boolean; 'dry-run'?: boolean };
   const varsArray: string[] = (parsed.var as string[]) || [];
   const vars: Record<string, string> = {};
   for (const entry of varsArray) {
@@ -53,8 +60,9 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
       throw new Error('--next must be a positive integer');
     }
   }
-  const mode = next !== undefined ? 'continue' : parsed.clean ? 'clean' : parsed.continue ? 'continue' : undefined;
-  return { workflow: parsed.workflow, mode, next, vars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
+  const rollback = typeof parsed.rollback === 'string' && parsed.rollback.length > 0 ? String(parsed.rollback) : undefined;
+  const mode = next !== undefined ? 'continue' : (rollback !== undefined || hadBareRollback) ? 'continue' : parsed.clean ? 'clean' : parsed.continue ? 'continue' : undefined;
+  return { workflow: parsed.workflow, mode, next, rollback, vars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
 }
 
 function promptLine(rl: readline.Interface, question: string): Promise<string> {
@@ -221,7 +229,7 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
         vars = mode === 'clean' ? await collectVars(process.cwd(), flagVars, workflowPath) : flagVars;
       }
 
-      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun, parsed.next);
+      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun, parsed.next, parsed.rollback);
     } else if (command.help) {
       // raili help [topic]
       const topic = runArgs[0];

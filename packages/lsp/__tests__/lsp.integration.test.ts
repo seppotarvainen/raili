@@ -297,7 +297,9 @@ states:
       );
 
       // Should capture inline continue reference
-      const continueRef = doc.stateReferences().find((r) => r.name === 'middle' && r.context === 'continue');
+      const continueRef = doc
+        .stateReferences()
+        .find((r) => r.name === 'middle' && r.context === 'continue');
       expect(continueRef).toBeDefined();
       if (continueRef) {
         const def = gotoDefinition(doc, continueRef.location);

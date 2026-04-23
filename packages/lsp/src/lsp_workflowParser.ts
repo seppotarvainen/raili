@@ -59,9 +59,7 @@ export function parseWorkflow(text: string): {
   };
 
   // ── initial: <state> ──────────────────────────────────────────────
-  const initialPair = root.items.find(
-      (p) => isPair(p) && scalarValue(p.key) === 'initial',
-  );
+  const initialPair = root.items.find((p) => isPair(p) && scalarValue(p.key) === 'initial');
   if (initialPair && isPair(initialPair)) {
     const target = scalarValue(initialPair.value);
     const pos = scalarPosition(text, initialPair.value);
@@ -71,9 +69,7 @@ export function parseWorkflow(text: string): {
   }
 
   // ── states: ────────────────────────────────────────────────────────
-  const statesPair = root.items.find(
-      (p) => isPair(p) && scalarValue(p.key) === 'states',
-  );
+  const statesPair = root.items.find((p) => isPair(p) && scalarValue(p.key) === 'states');
   if (!statesPair || !isPair(statesPair) || !isMap(statesPair.value)) {
     return { states, references, positionMap };
   }
@@ -90,7 +86,7 @@ export function parseWorkflow(text: string): {
     let type: string | undefined;
     if (isMap(item.value)) {
       const typePair = (item.value as YAMLMap).items.find(
-          (p) => isPair(p) && scalarValue(p.key) === 'type',
+        (p) => isPair(p) && scalarValue(p.key) === 'type',
       );
       if (typePair && isPair(typePair)) {
         type = scalarValue(typePair.value) || undefined;
@@ -112,9 +108,9 @@ export function parseWorkflow(text: string): {
 // ── helpers ──────────────────────────────────────────────────────────
 
 function extractRefsFromState(
-    text: string,
-    stateMap: YAMLMap,
-    addRef: (name: string, ctx: string, pos: Position) => void,
+  text: string,
+  stateMap: YAMLMap,
+  addRef: (name: string, ctx: string, pos: Position) => void,
 ) {
   for (const prop of stateMap.items) {
     if (!isPair(prop)) continue;
@@ -153,10 +149,10 @@ function extractRefsFromState(
 }
 
 function extractMapRefs(
-    text: string,
-    node: unknown,
-    context: string,
-    addRef: (name: string, ctx: string, pos: Position) => void,
+  text: string,
+  node: unknown,
+  context: string,
+  addRef: (name: string, ctx: string, pos: Position) => void,
 ) {
   if (!isMap(node)) return;
   for (const pair of (node as YAMLMap).items) {

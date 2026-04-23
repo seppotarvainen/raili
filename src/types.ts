@@ -223,6 +223,7 @@ export interface RailiRunArgs {
   workflow?: string;
   mode?: 'clean' | 'continue';
   next?: number;
+  rollback?: string;
   vars: Record<string, string>;
   help?: boolean;
   dryRun?: boolean;
