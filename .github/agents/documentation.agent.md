@@ -43,32 +43,31 @@ You will receive:
 
 ## Documentation Structure
 
-Raili's documentation lives in the `documentation/` directory and is split into two categories:
+Raili's documentation lives in the `documentation/` directory and is split into categories:
 
-**User Documentation** (published via `npm run build:docs`):
-```
-documentation/
-├── approval.md      # Manual approval states and prompts
-├── groups.md        # Group state type and sub-workflows
-├── output.md        # Output storage, filtering, learnings, run log
-├── routing.md       # Routing rules (on, transitions, approval, terminal)
-├── states.md        # State types overview (agent, script, command, engine, group)
-├── variables.md     # Input declaration, interpolation, env vars, expose
-└── usage/
-    ├── init.md      # raili init command
-    ├── run.md       # raili run command and execution flow
-    └── stats.md     # raili stats command
-```
+**Core Concepts** (primary user-facing topics):
+- `approval.md` — Manual approval states and prompts
+- `groups.md` — Group state type and sub-workflows
+- `output.md` — Output storage, filtering, learnings, run log
+- `routing.md` — Routing rules (on, transitions, approval, terminal)
+- `states.md` — State types overview (agent, script, command, engine, group)
+- `variables.md` — Input declaration, interpolation, env vars, expose
+- `visual.md` — Visual workflow representation
 
-**Architecture Documentation** (excluded from build; for contributors):
-```
-documentation/architecture/
-├── infrastructure.md  # File system abstraction and provider patterns
-├── presenter.md       # Console presentation layer
-└── ... (high-level docs for extending/maintaining Raili's core)
-```
+**Usage Guides** (`usage/` directory):
+- `init.md`, `run.md`, `stats.md` — Primary CLI commands
+- `create.md`, `listen.md`, `teach.md` — Additional commands
+- *Note: The usage/ directory may contain additional command docs not listed here*
 
-Only update **User Documentation** files. If changes relate to internal architecture or implementation patterns, they belong in `documentation/architecture/` and are outside your scope.
+**Architecture Documentation** (`documentation/architecture/`, excluded from build):
+- For contributors and maintainers
+- Contains infrastructure patterns, presenter layers, and core design docs
+- Outside the scope of documentation agent updates
+
+**Special Directories**:
+- `documentation/lsp/` — LSP-related documentation, no need to update.
+
+> **Update only core concepts and usage guides.** Skip architecture docs and special directories unless specifically related to a user-facing feature change.
 
 ## Documentation Conventions
 
