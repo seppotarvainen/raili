@@ -3,7 +3,17 @@
 ```yaml
 title: Refactor `runner.ts` in multiple files
 intent: |
-  Currenlty `runner.ts` is a monolith of 700+ lines that handles the entire workflow execution loop, including state machine traversal, context management, output storage, approval handling, and more. This makes it difficult to maintain and reason about. A refactor is needed to break it into smaller, focused modules that each handle a specific concern. This will improve readability, testability, and maintainability.
+   Currenlty `runner.ts` is a monolith of 700+ lines that handles the entire workflow execution loop, including state 
+   machine traversal, context management, output storage, approval handling, and more. This makes it difficult to 
+   maintain and reason about. A refactor is needed to break it into smaller, focused modules that each handle a specific 
+   concern. This will improve readability, testability, and maintainability.
+
+   Group conceptually similar things into separate files. Give them clear responsibilities and interfaces. Use classes
+   or functions as appropriate to encapsulate logic. The main `runner.ts` should then orchestrate these modules to 
+   execute the workflow, but the details of each concern should be handled in their respective files.
+
+   I like the fact that presenter is only instantiated in the runner, keep it that way. I also like the Presenter style,
+   clear class with its dedicated methods.
 ```
 
 
