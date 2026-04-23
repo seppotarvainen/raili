@@ -2,7 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { EventEmitter } from 'events';
-import { createTmpWorkspace, cleanupTmpWorkspace } from './testUtils';
+import {
+  createTmpWorkspace,
+  cleanupTmpWorkspace,
+  writeAgentRegistry,
+  writeAgentFile,
+} from './testUtils';
 
 jest.mock('readline');
 
@@ -33,6 +38,10 @@ describe('CLI teach flow', () => {
     // Change cwd to tmp workspace
     process.chdir(tmp);
 
+    // Ensure agent registry and agent file exist so teachCommand can succeed
+    writeAgentRegistry(tmp, { agent1: { path: '.raili/main/learnings/agent1.md' } });
+    writeAgentFile(tmp, '.raili/main/learnings/agent1.md', '# agent1\n');
+
     // Mock readline to emit a line and then /q
     (readline.createInterface as unknown as jest.Mock).mockImplementation(() => {
       const rl = new EventEmitter();
@@ -61,5 +70,25 @@ describe('CLI teach flow', () => {
     const content = fs.readFileSync(file, 'utf8');
     expect(content).toContain('[manual]');
     expect(content).toContain('Remember to document edge cases.');
+  });
+
+  test('raili teach nonexistent agent fails fast', async () => {
+    process.argv = ['node', 'raili', 'teach', 'ghost'];
+    process.chdir(tmp);
+
+    // No agent registry or registry missing the agent -> should exit non-zero
+    let cliModule: any;
+    try {
+      jest.isolateModules(() => {
+        cliModule = require('../../src/cli');
+      });
+      await cliModule.main();
+      throw new Error('Expected process.exit with non-zero');
+    } catch (err: any) {
+      // Exit should have been called with non-zero code
+      expect(String(err.message)).toMatch(/^EXIT:/);
+      const code = Number(String(err.message).split(':')[1]);
+      expect(code).not.toBe(0);
+    }
   });
 });

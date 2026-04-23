@@ -496,6 +496,13 @@ export class Runner {
       return;
     }
 
+    // Validate that all referenced agent ids exist in the agent registry before performing any I/O.
+    const agentIds = Object.keys(teach);
+    const missing = agentIds.filter((id) => !(id in this.agentRegistry));
+    if (missing.length > 0) {
+      throw new Error(`State '${stateId}': teach references missing agents: ${missing.join(', ')}`);
+    }
+
     const recorded: { agent: string; source: string }[] = [];
 
     for (const [agentId, arr] of Object.entries(teach)) {
