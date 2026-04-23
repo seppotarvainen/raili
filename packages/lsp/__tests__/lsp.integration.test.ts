@@ -276,6 +276,14 @@ states:
 
   end:
     type: engine
+
+  skipper:
+    type: engine
+    continue: middle
+
+  skippy:
+    type: engine
+    skip: end
 `;
 
       const parsed = parseWorkflow(yaml);
@@ -283,8 +291,28 @@ states:
 
       // Parser extracts state definitions
       const states = doc.states();
-      expect(states.length).toBe(3);
-      expect(states.map((s) => s.name)).toEqual(expect.arrayContaining(['start', 'middle', 'end']));
+      expect(states.length).toBe(5);
+      expect(states.map((s) => s.name)).toEqual(
+        expect.arrayContaining(['start', 'middle', 'end', 'skipper', 'skippy']),
+      );
+
+      // Should capture inline continue reference
+      const continueRef = doc.stateReferences().find((r) => r.name === 'middle' && r.context === 'continue');
+      expect(continueRef).toBeDefined();
+      if (continueRef) {
+        const def = gotoDefinition(doc, continueRef.location);
+        expect(def).toBeDefined();
+        expect(def?.range).toBeDefined();
+        expect(def?.range.start).toBeDefined();
+      }
+
+      // Should capture inline skip reference
+      const skipRef = doc.stateReferences().find((r) => r.name === 'end' && r.context === 'skip');
+      expect(skipRef).toBeDefined();
+      if (skipRef) {
+        const def2 = gotoDefinition(doc, skipRef.location);
+        expect(def2).toBeDefined();
+      }
     });
 
     test('handles reset_outputs and reset_max_visits lists', () => {

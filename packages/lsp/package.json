@@ -28,7 +28,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
-    "js-yaml": "^4.1.1",
+    "yaml": "^2.7.0",
     "vscode-languageserver": "^8.0.0",
     "vscode-languageserver-textdocument": "^1.0.0"
   }

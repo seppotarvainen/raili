@@ -1,10 +1,14 @@
 # Ideas
 
 ```yaml
-title: Add `continue` transition for states
+title: Fix teach command to check for agent name in registry
 intent: |
-   Quite often I have a situation where I want to execute some code, then regardless of the outcome, continue to the next state. Currently I have do workarounds (on: PASSED, FAILED leading to the same state or using transitions: default: next_state) but it would be nice to have a built in way to do this. I propose adding a `continue` transition that always triggers after state execution, regardless of the outcome. `continue` is already used in max_visits, but it would be nice to have it as a general transition option for any state.
+  The `raili teach` command currently doesn't check if the provided agent name exists in the
+  agent registry. It will just create a new learning file for that agent name, even if the agent 
+  doesn't exist. Command should fail fast with an error message if the agent name is not found in 
+  the registry, to prevent confusion and ensure that learnings are only created for valid agents.
 ```
+
 
 ```yaml
 title: GUI to follow the state machine execution
