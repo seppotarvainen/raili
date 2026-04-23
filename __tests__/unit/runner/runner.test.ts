@@ -25,12 +25,12 @@ const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<ty
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
 const mockAppendUnique = learningStore.appendUniqueLearning as jest.MockedFunction<typeof learningStore.appendUniqueLearning>;
 
-function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps?: number): Runner {
+function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps?: number, agentRegistry: any = { agent1: { path: 'agent.md' }, a: { path: 'agent.md' } }): Runner {
   const stateMachine: StateMachine = { initial, states };
   const context: WorkflowContext = { stateHistory: [] };
   return new Runner({
     stateMachine,
-    agentRegistry: {},
+    agentRegistry,
     scriptRegistry: {},
     context,
     cwd: '/tmp',

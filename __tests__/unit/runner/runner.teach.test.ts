@@ -28,12 +28,12 @@ const mockAppend = learningStore.appendUniqueLearning as jest.MockedFunction<typ
 const mockHandleFeedback = manualHandler.handleFeedbackPrompt as jest.MockedFunction<typeof manualHandler.handleFeedbackPrompt>;
 const mockRunApproval = approvalRunner.runApprovalStep as jest.MockedFunction<typeof approvalRunner.runApprovalStep>;
 
-function makeRunner(states: any, initial = 'start'): Runner {
+function makeRunner(states: any, initial = 'start', agentRegistry: any = { test_agent: { path: 'agent.md' }, 'raili-coding': { path: 'agent.md' } }): Runner {
   const stateMachine = { initial, states } as any;
   const context: any = { stateHistory: [] };
   return new Runner({
     stateMachine,
-    agentRegistry: {},
+    agentRegistry,
     scriptRegistry: {},
     context,
     cwd: '/tmp',
@@ -142,4 +142,22 @@ test('teach runs after approval and uses approval-failure var on same state', as
   await runner.run();
 
   expect(mockAppend).toHaveBeenCalledWith('/tmp', 'raili-coding', 'var:CHECK_DONE_FAILED', 'Bad reason', undefined, undefined);
+});
+
+test('handleTeach throws when teach references unknown agent(s) and performs no learning writes', async () => {
+  const runner = makeRunner({
+    start: {
+      id: 'start',
+      config: {
+        type: 'engine',
+        teach: { unknown_agent: [{ var: '${X}' }] },
+        on: { PASSED: 'done' },
+      },
+      transitions: ['done'],
+    },
+    done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+  }, 'start', {});
+
+  await expect(runner.run()).rejects.toThrow(/unknown_agent/);
+  expect(mockAppend).not.toHaveBeenCalled();
 });

@@ -1,6 +1,7 @@
 import * as readline from 'readline';
 import { appendManualLearning } from '../context/learningStore';
 import { learningsFilePath } from '../context/pathUtils';
+import { loadAgentRegistry } from '../registry/agentRegistry';
 
 export async function teachCommand(
   cwd: string,
@@ -10,6 +11,12 @@ export async function teachCommand(
 ) {
   if (!agentId) {
     throw new Error('Usage: raili teach <agentId>');
+  }
+
+  // Fail-fast: verify agent exists in the agent registry before prompting
+  const registry = loadAgentRegistry(cwd);
+  if (!registry[agentId]) {
+    throw new Error(`Agent '${agentId}' is not defined in agent-registry.json`);
   }
 
   console.log(`Write a lesson to the agent '${agentId}'. (Close with /q)`);

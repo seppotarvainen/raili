@@ -26,6 +26,8 @@ analyze:
 
 States may declare a `teach:` mapping to push lessons to agents. By default learnings are written to the global store at `.raili/learnings/<agentId>.md` and are merged with any workflow-local learnings when injected into agent prompts (workflow-local lessons override duplicates). To keep a lesson local to a workflow, include `scope: workflow` on the teach source. See `documentation/output.md` for details and examples.
 
+Validation note: Teach mappings are validated during workflow load. If a state's `teach:` block references an agent ID not present in `agent-registry.json`, the loader fails fast and reports the offending state and agent ID. The `raili teach` CLI command performs the same check and will error when the specified agent is not registered.
+
 When a state declares `teach:` and also uses `approval:`, approval-exposed variables (for example `CHECK_DONE_FAILED` or `REVIEW_FAILED`) are written into `context.vars` before the state's `teach:` mappings are processed. This allows `teach:` entries on the same state to reference approval-produced variables (e.g. `${REVIEW_FAILED}`) so learnings can be created directly from user-provided approval reasons in the originating state.
 
 **Fields:**

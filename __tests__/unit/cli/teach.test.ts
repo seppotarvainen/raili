@@ -7,16 +7,19 @@ jest.mock('../../../src/context/learningStore', () => ({
   learningsFilePath: jest.fn().mockReturnValue('/fake/path'),
 }));
 
-// Ensure module identity matches code imports when loaded via absolute path
-jest.mock('/Users/seppo.tarvainen/Competence/raili/src/context/learningStore', () => ({
-  appendManualLearning: jest.fn().mockReturnValue(true),
-  learningsFilePath: jest.fn().mockReturnValue('/fake/path'),
+// Mock agent registry to control registry contents for tests
+jest.mock('../../../src/registry/agentRegistry', () => ({
+  loadAgentRegistry: jest.fn(),
 }));
 
 describe('cli teach --scope flag', () => {
   let exitSpy: jest.SpyInstance;
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default mocked agent registry contains 'agent1' for tests that assume it exists
+    const agentRegistry = require('../../../src/registry/agentRegistry');
+    (agentRegistry.loadAgentRegistry as jest.Mock).mockReturnValue({ agent1: { path: '/fake' } });
+
     exitSpy = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
       throw new Error('EXIT:' + String(code));
     });
@@ -55,5 +58,13 @@ describe('cli teach --scope flag', () => {
     // last arg should be the scope 'workflow'
     const call = (appendManualLearning as jest.Mock).mock.calls[0];
     expect(call[4]).toBe('workflow');
+  });
+
+  test('fails fast when agent missing', async () => {
+    const agentRegistry = require('../../../src/registry/agentRegistry');
+    (agentRegistry.loadAgentRegistry as jest.Mock).mockReturnValue({ agent1: { path: '/fake' } });
+    const { teachCommand } = require('../../../src/cli/teach');
+
+    await expect(teachCommand(process.cwd(), 'agent2')).rejects.toThrow("Agent 'agent2' is not defined in agent-registry.json");
   });
 });

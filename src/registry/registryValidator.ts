@@ -88,6 +88,18 @@ export function validateWorkflowReferences(
         );
       }
     }
+
+    // Validate teach agent references (fail-fast)
+    const teach: any = (stateConfig as any).teach;
+    if (teach && typeof teach === 'object') {
+      for (const agentId of Object.keys(teach)) {
+        if (!(agentId in agents)) {
+          missingAgents.push(
+            `State '${stateName}': teach references agent '${agentId}' which is not defined in agent-registry.json`,
+          );
+        }
+      }
+    }
   }
 
   // Build comprehensive error message
