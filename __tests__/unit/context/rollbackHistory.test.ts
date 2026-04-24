@@ -3,10 +3,10 @@ import { WorkflowContext, StateHistoryEntry } from '../../../src/types';
 
 describe('rollbackHistory', () => {
   const baseHistory: StateHistoryEntry[] = [
-    { state: 'a', enteredAt: 't1' },
-    { state: 'b', enteredAt: 't2' },
-    { state: 'c', enteredAt: 't3' },
-    { state: 'b', enteredAt: 't4' },
+    { state: 'a', enteredAt: 't1', meta: {} },
+    { state: 'b', enteredAt: 't2', meta: {} },
+    { state: 'c', enteredAt: 't3', meta: {} },
+    { state: 'b', enteredAt: 't4', meta: {} },
   ];
 
   function makeCtx(): WorkflowContext {

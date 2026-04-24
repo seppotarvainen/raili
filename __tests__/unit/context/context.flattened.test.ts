@@ -12,8 +12,7 @@ describe('context flattened stateHistory', () => {
     expect(ctx.stateHistory.length).toBe(2);
     const first = ctx.stateHistory[0];
     expect(first.state).toBe('group');
-    expect(first.meta).toBeDefined();
-    expect(first.meta.waitMs).toBe(100);
+    expect(first.meta?.waitMs).toBe(100);
 
     const second = ctx.stateHistory[1];
     expect(second.state).toBe('group.sub');

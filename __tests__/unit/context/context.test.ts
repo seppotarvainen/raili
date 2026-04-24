@@ -41,8 +41,8 @@ describe('context', () => {
       const contextData = {
         vars: { ticket_id: 'TICKET-123', description: 'Test ticket' },
         stateHistory: [
-          { state: 'init', enteredAt: '2026-02-24T10:00:00Z' },
-          { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z' },
+          { state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} },
+          { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z', meta: {} },
         ],
       };
       getFileSystem().writeFileSync(path.join(railiDir, 'main', 'context.json'), JSON.stringify(contextData));
@@ -63,7 +63,7 @@ describe('context', () => {
     test('saves context to file', () => {
       const ctx = {
         vars: { ticket_id: 'TICKET-456', description: 'Another test' },
-        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T12:00:00Z' }],
+        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T12:00:00Z', meta: {} }],
       };
 
       saveContext(tmpdir, ctx);
@@ -90,9 +90,9 @@ describe('context', () => {
     test('returns last state from history', () => {
       const ctx = {
         stateHistory: [
-          { state: 'init', enteredAt: '2026-02-24T10:00:00Z' },
-          { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z' },
-          { state: 'plan', enteredAt: '2026-02-24T10:10:00Z' },
+          { state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} },
+          { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z', meta: {} },
+          { state: 'plan', enteredAt: '2026-02-24T10:10:00Z', meta: {} },
         ],
       };
       expect(getCurrentState(ctx)).toBe('plan');
@@ -104,16 +104,16 @@ describe('context', () => {
       const ctx1 = { stateHistory: [] };
       expect(getPreviousState(ctx1)).toBeNull();
 
-      const ctx2 = { stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }] };
+      const ctx2 = { stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} }] };
       expect(getPreviousState(ctx2)).toBeNull();
     });
 
     test('returns second-to-last state from history', () => {
       const ctx = {
         stateHistory: [
-          { state: 'init', enteredAt: '2026-02-24T10:00:00Z' },
-          { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z' },
-          { state: 'plan', enteredAt: '2026-02-24T10:10:00Z' },
+          { state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} },
+          { state: 'analyze', enteredAt: '2026-02-24T10:05:00Z', meta: {} },
+          { state: 'plan', enteredAt: '2026-02-24T10:10:00Z', meta: {} },
         ],
       };
       expect(getPreviousState(ctx)).toBe('analyze');
@@ -124,7 +124,7 @@ describe('context', () => {
     test('appends new state with timestamp', () => {
       const ctx = {
         vars: { ticket_id: 'TICKET-789' },
-        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }],
+        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} }],
       };
 
       const updated = addStateToHistory(ctx, 'analyze');
@@ -136,7 +136,7 @@ describe('context', () => {
 
     test('does not mutate original context', () => {
       const ctx = {
-        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }],
+        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} }],
       };
 
       const updated = addStateToHistory(ctx, 'analyze');
@@ -146,40 +146,40 @@ describe('context', () => {
 
     test('merges meta into existing last entry when updating same state', () => {
       const ctx = {
-        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }],
+        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} }],
       };
 
       const added = addStateToHistory(ctx, 'init', { notify: { command: 'echo hi', success: true } });
       expect(added.stateHistory).toHaveLength(1);
       expect(added.stateHistory[0].meta).toBeDefined();
-      expect(added.stateHistory[0].meta?.notify.command).toBe('echo hi');
-      expect(added.stateHistory[0].meta?.notify.success).toBe(true);
+      expect(added.stateHistory[0].meta?.notify?.command).toBe('echo hi');
+      expect(added.stateHistory[0].meta?.notify?.success).toBe(true);
     });
 
     test('adds meta when appending a new state', () => {
       const ctx = {
-        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z' }],
+        stateHistory: [{ state: 'init', enteredAt: '2026-02-24T10:00:00Z', meta: {} }],
       };
 
       const updated = addStateToHistory(ctx, 'analyze', { approval: { question: 'Q', chosen: 'PASSED' } });
       expect(updated.stateHistory).toHaveLength(2);
-      expect(updated.stateHistory[1].meta?.approval.question).toBe('Q');
-      expect(updated.stateHistory[1].meta?.approval.chosen).toBe('PASSED');
+      expect(updated.stateHistory[1].meta?.approval?.question).toBe('Q');
+      expect(updated.stateHistory[1].meta?.approval?.chosen).toBe('PASSED');
     });
 
     test('merges meta into most recent matching state even if not last entry', () => {
       const ctx = {
         stateHistory: [
-          { state: 'act', enteredAt: '2026-02-24T10:00:00Z' },
-          { state: 'done', enteredAt: '2026-02-24T10:05:00Z' },
+          { state: 'act', enteredAt: '2026-02-24T10:00:00Z', meta: {} },
+          { state: 'done', enteredAt: '2026-02-24T10:05:00Z', meta: undefined },
         ],
       };
 
       const updated = addStateToHistory(ctx, 'act', { approval: { question: 'Q', chosen: 'PASSED' } });
       expect(updated.stateHistory).toHaveLength(2);
       // The first entry (act) should have received the meta
-      expect(updated.stateHistory[0].meta?.approval.question).toBe('Q');
-      expect(updated.stateHistory[0].meta?.approval.chosen).toBe('PASSED');
+      expect(updated.stateHistory[0].meta?.approval?.question).toBe('Q');
+      expect(updated.stateHistory[0].meta?.approval?.chosen).toBe('PASSED');
       // The later 'done' entry must remain untouched
       expect(updated.stateHistory[1].meta).toBeUndefined();
     });

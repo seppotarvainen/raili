@@ -39,7 +39,7 @@ function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps
 }
 
 beforeEach(() => {
-  jest.resetAllMocks();
+  jest.clearAllMocks();
   (notifyHandler.runNotify as jest.Mock).mockResolvedValue(undefined);
   mockRunAgent.mockResolvedValue({ outcome: 'PASSED' });
   mockRunScript.mockResolvedValue({ outcome: 'PASSED' });
