@@ -27,7 +27,7 @@ export function loadContext(cwd: string, workflowArg?: string): WorkflowContext 
   parsed.stateHistory = parsed.stateHistory.map((e: any) => ({
     state: e.state,
     enteredAt: e.enteredAt,
-    meta: e.meta ?? undefined,
+    meta: e.meta ?? {},
   }));
 
   parsed.vars = parsed.vars ?? {};
@@ -131,7 +131,7 @@ export function addStateToHistory(
   const entry: StateHistoryEntry = {
     state,
     enteredAt: now,
-    meta: meta ?? undefined,
+    meta: meta ?? {},
   };
 
   return {

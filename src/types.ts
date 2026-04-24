@@ -118,11 +118,20 @@ interface ApprovalMeta {
   waitMs?: number;
 }
 
+export interface StateMeta {
+  notify?: NotifyMeta;
+  approval?: ApprovalMeta;
+  success?: boolean | null;
+  waitMs?: number;
+  // Allow additional arbitrary metadata keys for future extensions
+  [key: string]: unknown;
+}
+
 export interface StateHistoryEntry {
   state: string;
   enteredAt: string; // ISO timestamp
-  // Optional structured metadata about this entry (notify results, approval decisions, etc.)
-  meta?: any;
+  // Structured metadata about this entry (notify results, approval decisions, etc.)
+  meta?: StateMeta;
 }
 
 export interface WorkflowContext {

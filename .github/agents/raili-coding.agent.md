@@ -90,6 +90,11 @@ Print a concise memo at the end of your response to preserve context for the nex
 
 4. **Thin Engine**: Keep core small and simple. Move complexity to handlers. No dynamic DSL in MVP.
 
+5. **Refactoring Safety**: When extracting code into new classes/modules:
+   - Preserve EVERY control-flow path (especially `throw` statements). Returning null where the original threw creates infinite loops.
+   - Delete old dead methods from the source class after wiring up the new extraction. Never leave both old and new code paths.
+   - Never create catch-all test files like "coverage_booster.test.ts". Tests must live in files named after the module they test.
+
 ## Accessing Feature Details
 
 **Do not memorize feature details—they evolve.** Instead, reference the documentation:
