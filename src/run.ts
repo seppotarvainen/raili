@@ -1,14 +1,37 @@
 /// <reference types="node" />
-import {getFileSystem} from './infrastructure/fileSystemProvider';
+import { getFileSystem } from './infrastructure/fileSystemProvider';
 import * as path from 'path';
-import {buildStateMachine, loadWorkflowConfig, validateStateMachine,} from './workflow/workflowLoader';
-import {validateAgentRegistry, validateScriptRegistry, validateWorkflowReferences,} from './registry/registryValidator';
-import {clearContext, initializeContext, loadContext, rollbackHistory, saveContext} from './context/context';
-import {getWorkflowName} from './context/pathUtils';
-import {Runner} from './runner/runner';
-import {appendRunLog} from './context/runLog';
-import {loadVarsFile} from './variables/varsLoader';
-import {handleManualTransition} from './handlers/manualHandler';
+import {
+  buildStateMachine,
+  loadWorkflowConfig,
+  validateStateMachine,
+} from './workflow/workflowLoader';
+import {
+  validateAgentRegistry,
+  validateScriptRegistry,
+  validateWorkflowReferences,
+} from './registry/registryValidator';
+import {
+  clearContext,
+  initializeContext,
+  loadContext,
+  rollbackHistory,
+  saveContext,
+} from './context/context';
+import {
+  getWorkflowName,
+  resolveWorkflowDir,
+  resolveVarsResolverPath,
+} from './context/pathUtils';
+import { Runner } from './runner/runner';
+import { appendRunLog } from './context/runLog';
+import { loadVarsFile } from './variables/varsLoader';
+import {
+  parseResolveVarsArgs,
+  loadVarsResolver,
+  executeVarsResolver,
+} from './variables/varsResolverLoader';
+import { handleManualTransition } from './handlers/manualHandler';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -20,6 +43,7 @@ export async function runCommand(
   dryRun = false,
   nextSteps?: number,
   rollback?: string,
+  resolveVarsArgs?: string[],
 ) {
   const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
@@ -113,7 +137,42 @@ export async function runCommand(
       .map((it: any) => (typeof it === 'string' ? it : it?.name ?? ''))
       .filter(Boolean);
     const fileVars = loadVarsFile(cwd, declaredNames, workflowPath);
-    context = initializeContext({ ...fileVars, ...vars, workflow: workflowName });
+
+    // If resolver args were provided (flag present) call the vars resolver inside the workflow dir
+    let resolverVars: Record<string, string> = {};
+    if (typeof resolveVarsArgs !== 'undefined') {
+      const workflowDir = resolveWorkflowDir(cwd, workflowPath);
+      const parsed = parseResolveVarsArgs(resolveVarsArgs);
+      const resolverPath = resolveVarsResolverPath(workflowDir);
+      if (!resolverPath) {
+        throw new Error('vars-resolver.js not found in workflow directory, but --resolve-vars was provided');
+      }
+      let fn;
+      try {
+        fn = loadVarsResolver(resolverPath);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`Failed to load vars-resolver.js: ${msg}`);
+      }
+      try {
+        const res = await executeVarsResolver(fn as any, {
+          namedArgs: parsed.namedArgs,
+          positionalArgs: parsed.positionalArgs,
+          workflowDir: workflowDir,
+          context: undefined,
+        });
+        resolverVars = res ?? {};
+        console.log('Resolving variables from vars-resolver.js...');
+        console.log(`Resolver returned: ${JSON.stringify(resolverVars)}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`Failed to execute vars-resolver.js: ${msg}`);
+      }
+    }
+
+    // Merge precedence: fileVars (vars.yaml) < resolverVars < CLI vars
+    const mergedVars = { ...fileVars, ...resolverVars, ...vars };
+    context = initializeContext({ ...mergedVars, workflow: workflowName });
     saveContext(cwd, context, workflowPath);
   } else {
     context = loadContext(cwd, workflowPath);

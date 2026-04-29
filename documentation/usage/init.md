@@ -101,4 +101,5 @@ If `.raili/` already exists, `raili init` will not overwrite existing files and 
 - `.raili/main/learnings/` — Agent learnings (auto-created)
 - `.raili/main/approval-resolver.js` — *(optional)* JS module to programmatically resolve approvals
 - `.raili/main/feedback-resolver.js` — *(optional)* JS module to programmatically provide feedback for `feedback:` prompts
+- `.raili/main/vars-resolver.js` — *(optional)* JS module to programmatically resolve or augment input variables when `--resolve-vars` is used
 - `.raili/main/trigger.js` — *(optional)* JS module exporting an async function to poll external events for `raili listen`

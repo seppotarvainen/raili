@@ -33,6 +33,13 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
       hadBareRollback = true;
       normalizedArgv[i] = '--rollback=';
     }
+    if (normalizedArgv[i] === '--resolve-vars') {
+      // Normalize bare --resolve-vars (no values) to --resolve-vars= so the parser sees it as present
+      const next = normalizedArgv[i + 1];
+      if (!next || next.startsWith('-')) {
+        normalizedArgv[i] = '--resolve-vars=';
+      }
+    }
   }
 
   const optionDefinitions = [
@@ -42,10 +49,11 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     { name: 'next', type: Number },
     { name: 'rollback', type: String },
     { name: 'var', type: String, multiple: true, defaultValue: [] },
+    { name: 'resolve-vars', type: String, multiple: true },
     { name: 'help', alias: 'h', type: Boolean },
     { name: 'dry-run', type: Boolean },
   ];
-  const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; rollback?: string; var?: string[]; help?: boolean; 'dry-run'?: boolean };
+  const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; rollback?: string; var?: string[]; help?: boolean; 'dry-run'?: boolean; 'resolve-vars'?: string[] };
   const varsArray: string[] = (parsed.var as string[]) || [];
   const vars: Record<string, string> = {};
   for (const entry of varsArray) {
@@ -61,8 +69,19 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     }
   }
   const rollback = typeof parsed.rollback === 'string' && parsed.rollback.length > 0 ? String(parsed.rollback) : undefined;
+
+  // Resolve raw --resolve-vars behavior: if parser produced an array, use it (filter empty strings).
+  // If parser did not produce a value but the flag was present (normalizedArgv contains --resolve-vars=), return []
+  const rawResolve = parsed['resolve-vars'] as string[] | undefined;
+  let resolveVars: string[] | undefined;
+  if (Array.isArray(rawResolve)) {
+    resolveVars = rawResolve.filter((s) => s !== '');
+  } else if (normalizedArgv.some((a) => a.startsWith('--resolve-vars'))) {
+    resolveVars = [];
+  }
+
   const mode = next !== undefined ? 'continue' : (rollback !== undefined || hadBareRollback) ? 'continue' : parsed.clean ? 'clean' : parsed.continue ? 'continue' : undefined;
-  return { workflow: parsed.workflow, mode, next, rollback, vars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
+  return { workflow: parsed.workflow, mode, next, rollback, vars, resolveVars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
 }
 
 function promptLine(rl: readline.Interface, question: string): Promise<string> {
