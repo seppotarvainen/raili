@@ -49,7 +49,38 @@ branch: main
 description: "Fix login bug"
 ```
 
-Only keys declared in `inputs:` are read from these files.
+Only keys declared in `inputs:` are read from these files. If the `inputs:` list is empty, Raili will instead load all keys present in `.raili/<workflow>/vars.yaml` (useful for legacy projects or simple workflows that do not declare inputs).
+
+## Vars resolver (`--resolve-vars`)
+
+Raili supports a workflow-local JavaScript resolver that can programmatically provide or augment input variables at run start. Place a module named `vars-resolver.js` inside the workflow directory (for example `.raili/main/vars-resolver.js`). When the `--resolve-vars` flag is provided on the CLI, Raili will attempt to load and execute that module and merge returned values into the run's inputs.
+
+Key points:
+
+- Resolver path: `.raili/<workflow>/vars-resolver.js` (must export a function).
+- CLI flag: `--resolve-vars [key=val ...]` — optional positional tokens are forwarded to the resolver and parsed into named (`key=val`) and positional arguments.
+- Merge precedence (highest → lowest): CLI flags → resolver result → `vars.yaml` file.
+- If `--resolve-vars` is provided but the resolver file is missing, Raili fails fast with: `vars-resolver.js not found in workflow directory, but --resolve-vars was provided`.
+- If the resolver returns `null`, Raili treats it as an empty result and continues (the `vars.yaml` and CLI flags remain in effect).
+- The resolver must return an object mapping string keys to string values. Non-string values cause an error.
+
+Example resolver (`.raili/main/vars-resolver.js`):
+
+```js
+module.exports = async function resolveVars(input) {
+  // input.namedArgs = { card: '1' }, input.positionalArgs = ['a']
+  return { ticket_id: 'PROJ-123', branch: 'fromResolver' };
+};
+```
+
+CLI example:
+
+```bash
+# Call resolver with named args and positional tokens
+raili run --clean --resolve-vars card=1
+```
+
+The resolver feature is opt-in; `raili init` now includes a `vars-resolver.js` template in the generated workflow scaffold.
 
 ### Interactive Prompt
 

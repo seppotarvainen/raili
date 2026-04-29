@@ -135,6 +135,19 @@ export function resolveTriggerPath(workflowDir: string): string | null {
 }
 
 /**
+ * Resolve the absolute path to a vars resolver file inside the workflow directory.
+ * Returns the absolute path if the file exists, otherwise null.
+ */
+export function resolveVarsResolverPath(workflowDir: string): string | null {
+  const fs = getFileSystem();
+  const p = path.join(workflowDir, 'vars-resolver.js');
+  if (fs.existsSync(p)) {
+    return p;
+  }
+  return null;
+}
+
+/**
  * Resolve the absolute path to resolver configuration file inside the workflow directory.
  * Returns the absolute path if the file exists, otherwise null.
  */

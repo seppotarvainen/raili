@@ -125,6 +125,17 @@ export async function initCommand(cwd: string) {
   // Write workflow.yaml and vars.yaml into .raili/main/
   fs.writeFileSync(path.join(mainWorkflowDir, 'workflow.yaml'), workflowYaml);
   fs.writeFileSync(path.join(mainWorkflowDir, 'vars.yaml'), '# vars for main workflow\n');
+  // Provide a vars-resolver.js template for users to customize variable resolution
+  fs.writeFileSync(
+    path.join(mainWorkflowDir, 'vars-resolver.js'),
+    `module.exports = async function resolveVars(input) {
+  // Example: fetch from an API using input.namedArgs.card_id
+  // return { ticket_id: "PROJ-123", description: "..." };
+  return null;
+}
+`,
+    'utf8',
+  );
   fs.writeFileSync(path.join(mainWorkflowDir, 'config.json'), resolverConfig);
   fs.mkdirSync(path.join(mainWorkflowDir, 'outputs'), { recursive: true });
   fs.mkdirSync(path.join(mainWorkflowDir, 'learnings'), { recursive: true });

@@ -227,6 +227,20 @@ type FeedbackResolverFn = (
   input: FeedbackResolverInput,
 ) => Promise<FeedbackResolverResult | string | null> | FeedbackResolverResult | string | null;
 
+// Vars resolver types
+export interface VarsResolverInput {
+  namedArgs?: Record<string, string>;
+  positionalArgs?: string[];
+  workflowDir?: string;
+  context?: WorkflowContext;
+}
+
+export type VarsResolverResult = Record<string, string>;
+
+export type VarsResolverFn = (
+  input: VarsResolverInput,
+) => Promise<VarsResolverResult | null> | VarsResolverResult | null;
+
 // Parsed CLI/run arguments
 export interface RailiRunArgs {
   workflow?: string;
@@ -234,6 +248,7 @@ export interface RailiRunArgs {
   next?: number;
   rollback?: string;
   vars: Record<string, string>;
+  resolveVars?: string[]; // Raw tokens passed to --resolve-vars or [] when flag present without args
   help?: boolean;
   dryRun?: boolean;
 }

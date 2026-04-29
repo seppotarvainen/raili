@@ -56,7 +56,7 @@ describe('loadVarsFile', () => {
   test('returns empty object when declared list is empty', () => {
     getFileSystem().writeFileSync(path.join(railiDir, 'main', 'vars.yaml'), 'ticket_id: PROJ-123\n');
     const result = loadVarsFile(TMP, []);
-    expect(result).toEqual({});
+    expect(result).toEqual({ ticket_id: 'PROJ-123' });
   });
 
   test('only loads keys present in vars.yaml, skips missing declared keys', () => {

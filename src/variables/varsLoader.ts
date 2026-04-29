@@ -41,8 +41,9 @@ export function loadVarsFile(
     }
     const result: Record<string, string> = {};
     const declaredSet = new Set(declared);
+    const acceptAll = declared.length === 0;
     for (const [key, value] of Object.entries(parsed)) {
-      if (declaredSet.has(key)) {
+      if (acceptAll || declaredSet.has(key)) {
         if (value != null) {
           result[key] = String(value);
         }
