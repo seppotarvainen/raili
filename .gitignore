@@ -18,3 +18,4 @@ docs/exclude
 coverage
 .stryker-tmp
 reports
+.srclight/

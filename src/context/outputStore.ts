@@ -275,14 +275,21 @@ export function readLatestNRuns(
 
 /**
  * Delete saved output files for the given state IDs.
- * Silent if files do not exist.
+ * Silent if files do not exist. Also removes corresponding `.latest.md` files.
  */
 export function clearAgentOutputs(cwd: string, stateIds: string[], workflowArg?: string): void {
   const fs = getFileSystem();
   for (const stateId of stateIds) {
-    const p = outputPath(cwd, stateId, workflowArg);
-    if (fs.existsSync(p)) {
-      fs.unlinkSync(p);
+    const standard = outputPath(cwd, stateId, workflowArg);
+    if (fs.existsSync(standard)) {
+      fs.unlinkSync(standard);
+    }
+
+    const latest = standard.endsWith('.md')
+      ? standard.slice(0, -3) + '.latest.md'
+      : standard + '.latest.md';
+    if (fs.existsSync(latest)) {
+      fs.unlinkSync(latest);
     }
   }
 }

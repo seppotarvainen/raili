@@ -2,8 +2,10 @@
 description: This agent writes TypeScript code for Raili's core engine, handlers, and utilities. It ensures strict adherence to deterministic architecture, fail-fast validation, separation of concerns, and comprehensive unit tests. All code follows Raili's philosophy of explicit state machines with pluggable handlers.
 name: raili-coding
 model: gpt-5-mini
-tools: ['read', 'view', 'search', 'edit', 'grep', 'glob']
+tools: ['read', 'view', 'search', 'edit', 'grep', 'glob', 'srclight/*']
 ---
+
+Use `srclight` as the primary code-intelligence source.
 
 # raili-coding instructions
 

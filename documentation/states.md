@@ -203,7 +203,7 @@ All states support:
 
 - `notify` — Shell command run when state is entered (before handler)
 - `output` — Storage configuration (agent, script, command states)
-- `reset_outputs` — Clear outputs from other states on entry
+- `reset_outputs` — Clear outputs from other states on entry (deletes both `<state>.md` and `<state>.latest.md`). Use to reset agent memory when starting a new cycle.
 - `max_visits` — Prevent infinite loops (throw on Nth entry)
 - `skip` — Optional state id to immediately route to without executing this state. Skipped states do not run notify, do not increment visit counters, and do not produce outputs.
 
