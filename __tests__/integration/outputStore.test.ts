@@ -173,4 +173,53 @@ states:
     expect(historyContent).not.toContain('preamble');
     expect(latestContent).not.toContain('preamble');
   });
+
+  it('reset_outputs clears both history and latest files during state entry', async () => {
+    writeWorkflow(
+      tmpDir,
+      `initial: analyze
+states:
+  analyze:
+    type: agent
+    agent: test-agent
+    output:
+      store: true
+    on:
+      PASSED: reset_step
+  reset_step:
+    type: engine
+    reset_outputs:
+      - analyze
+    on:
+      PASSED: done
+  done:
+    type: engine
+`,
+    );
+
+    writeAgentRegistry(tmpDir, { 'test-agent': { path: '.github/agents/test-agent.md' } });
+    writeScriptRegistry(tmpDir, {});
+    writeAgentFile(tmpDir, '.github/agents/test-agent.md', '---\nmodel: test\n---\n');
+
+    // Agent returns an output which will be saved to both files
+    spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
+      if (cmd === 'copilot') return fakeChild('RESULT:\nlineA', '', 0);
+      return fakeChild('', '', 0);
+    });
+
+    // First run creates the files (limit to initial state so reset_step does not run yet)
+    await runCommand(tmpDir, 'clean', {}, undefined, false, 1);
+
+    const historyPath = path.join(tmpDir, '.raili', 'main', 'outputs', 'analyze.md');
+    const latestPath = path.join(tmpDir, '.raili', 'main', 'outputs', 'analyze.latest.md');
+
+    expect(fs.existsSync(historyPath)).toBe(true);
+    expect(fs.existsSync(latestPath)).toBe(true);
+
+    // Continue to advance into reset_step which should clear outputs for 'analyze'
+    await runCommand(tmpDir, 'continue', {});
+
+    expect(fs.existsSync(historyPath)).toBe(false);
+    expect(fs.existsSync(latestPath)).toBe(false);
+  });
 });

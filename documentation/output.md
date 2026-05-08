@@ -142,6 +142,8 @@ start_cycle:
     - test          # clear test's memory
 ```
 
+When outputs are cleared via `reset_outputs` (or programmatically via `clearAgentOutputs`) Raili deletes both the history file (`<state>.md`) and the companion latest file (`<state>.latest.md`). This ensures no stale `.latest.md` remains to be injected into agent prompts or used by scripts.
+
 This is useful when looping back to retry after failures.
 
 ## Full History

@@ -52,11 +52,16 @@ test('loadAgentOutputPath returns null when file does not exist', () => {
   expect(result).toBeNull();
 });
 
-test('clearAgentOutputs deletes specified files', () => {
+test('clearAgentOutputs deletes specified files including .latest.md', () => {
   saveOutput(tmpdir, 'code', 'some output', { store: true });
   saveOutput(tmpdir, 'analyze', 'other output', { store: true });
+  const latestPath = path.join(tmpdir, '.raili', 'main', 'outputs', 'code.latest.md');
+  expect(getFileSystem().existsSync(latestPath)).toBe(true);
+
   clearAgentOutputs(tmpdir, ['code']);
+
   expect(loadAgentOutputPath(tmpdir, 'code')).toBeNull();
+  expect(getFileSystem().existsSync(latestPath)).toBe(false);
   expect(loadAgentOutputPath(tmpdir, 'analyze')).not.toBeNull();
 });
 
@@ -64,12 +69,31 @@ test('clearAgentOutputs is silent when files do not exist', () => {
   expect(() => clearAgentOutputs(tmpdir, ['nonexistent'])).not.toThrow();
 });
 
-test('clearAgentOutputs deletes multiple files', () => {
+test('clearAgentOutputs deletes multiple files including their latest variants', () => {
   saveOutput(tmpdir, 'code', 'c', { store: true });
   saveOutput(tmpdir, 'analyze', 'a', { store: true });
+  const latestCode = path.join(tmpdir, '.raili', 'main', 'outputs', 'code.latest.md');
+  const latestAnalyze = path.join(tmpdir, '.raili', 'main', 'outputs', 'analyze.latest.md');
+  expect(getFileSystem().existsSync(latestCode)).toBe(true);
+  expect(getFileSystem().existsSync(latestAnalyze)).toBe(true);
+
   clearAgentOutputs(tmpdir, ['code', 'analyze']);
   expect(loadAgentOutputPath(tmpdir, 'code')).toBeNull();
+  expect(getFileSystem().existsSync(latestCode)).toBe(false);
   expect(loadAgentOutputPath(tmpdir, 'analyze')).toBeNull();
+  expect(getFileSystem().existsSync(latestAnalyze)).toBe(false);
+});
+
+test('clearAgentOutputs handles group sub-states by using final segment', () => {
+  // create files named 'sub.md' and 'sub.latest.md'
+  saveOutput(tmpdir, 'sub', 's', { store: true });
+  const latestSub = path.join(tmpdir, '.raili', 'main', 'outputs', 'sub.latest.md');
+  expect(getFileSystem().existsSync(latestSub)).toBe(true);
+
+  // ask to clear 'group.sub' - should remove 'sub.md' and 'sub.latest.md'
+  clearAgentOutputs(tmpdir, ['group.sub']);
+  expect(loadAgentOutputPath(tmpdir, 'sub')).toBeNull();
+  expect(getFileSystem().existsSync(latestSub)).toBe(false);
 });
 
 test('clearAllOutputs removes entire outputs directory', () => {
