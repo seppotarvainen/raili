@@ -24,6 +24,8 @@ inputs:
     description: "Short description of the change"
 ```
 
+Note: the `log` field defaults to `false`.
+
 ## Supplying Values
 
 Precedence (highest to lowest): flags → vars.yaml → interactive prompt
