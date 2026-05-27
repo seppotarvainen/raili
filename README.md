@@ -1,3 +1,15 @@
+```
+░█████████             ░██░██ ░██
+░██     ░██               ░██    
+░██     ░██  ░██████   ░██░██ ░██
+░█████████        ░██  ░██░██ ░██
+░██   ░██    ░███████  ░██░██ ░██
+░██    ░██  ░██   ░██  ░██░██ ░██
+░██     ░██  ░█████░██ ░██░██ ░██ 
+
+Keeping agents on the rails since 2026.
+```
+
 # Raili
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -21,7 +33,7 @@ Raili is a deterministic CLI workflow orchestrator for AI-assisted development w
 
 - Humans do what humans do best: defining the overall workflow, deciding which steps to include and in which order, and providing high-level guidance to the agents.
 - Agents do what agents do best: generating content, making decisions based on information, and performing tasks that require understanding and creativity.
-- Scripts and commands do what they do best: executing deterministic actions in the environment, such as running tests, building code, or performing file operations.
+- Scripts and commands do what they do best: executing deterministic actions in the environment, such as running tests, building code, or making commits to version control.
 
 # Installation
 
@@ -31,7 +43,7 @@ Works on macOS and Linux. Windows support is not yet tested.
 
 - **Node.js** 18+ (tested with 22.12.0)
 - **npm**
-- **GitHub Copilot CLI** — Install with `gh extension install github/gh-copilot` (requires [`gh`](https://cli.github.com) CLI)
+- **[GitHub Copilot CLI](https://github.com/features/copilot/cli)**
 
 ## Install globally
 
@@ -43,7 +55,8 @@ npm install -g raili
 
 ## Setup
 
-Run `raili init`.
+Run `raili init`. This creates a `.raili` directory along with basic scaffolding. `.raili/main/workflow.yaml` is your
+default workflow file.
 
 ## Define agents
 
