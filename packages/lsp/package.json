@@ -19,7 +19,10 @@
     "workflow"
   ],
   "author": "Seppo Tarvainen",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.3",
     "@types/node": "^20.4.2",
