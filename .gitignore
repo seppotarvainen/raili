@@ -7,10 +7,6 @@ dist
 node_modules
 src/cli/generatedDocs.json
 
-# Manual testing
-.raili
-example
-
 # Draft docs
 docs/exclude
 
@@ -19,3 +15,7 @@ coverage
 .stryker-tmp
 reports
 .srclight/
+
+# Development
+.raili
+.issues
