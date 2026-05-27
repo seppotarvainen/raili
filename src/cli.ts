@@ -20,6 +20,14 @@ import { loadVarsFile } from './variables/varsLoader';
 
 const args = process.argv.slice(2);
 
+// Early handling for --version: print package version and exit 0
+if (args.includes('--version') || args[0] === '--version') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pkg = require('../package.json');
+  process.stdout.write(`${pkg.version}\n`);
+  process.exit(0);
+}
+
 export function parseRunArgs(argv: string[]): RailiRunArgs {
   // Support bare --next (no value) by converting it to --next=1 before parsing
   const normalizedArgv = argv.slice();
