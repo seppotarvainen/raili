@@ -21,7 +21,7 @@ import { loadVarsFile } from './variables/varsLoader';
 const args = process.argv.slice(2);
 
 // Early handling for --version: print package version and exit 0
-if (args.includes('--version') || args[0] === '--version') {
+if (args.includes('--version') || args[0] === '--version' || args[0] === '-v') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pkg = require('../package.json');
   process.stdout.write(`${pkg.version}\n`);
