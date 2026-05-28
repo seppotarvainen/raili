@@ -17,8 +17,15 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npm run build:docs
       - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            dist/
+            packages/lsp/bin/
+            packages/lsp/dist/
 
   publish-npm:
     needs: build
@@ -29,7 +36,9 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
-      - run: npm publish
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+      - run: npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
