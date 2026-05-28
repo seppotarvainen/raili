@@ -43,6 +43,8 @@ When a state declares `teach:` and also uses `approval:`, approval-exposed varia
 
 **Memory:** With `output.store: true`, previous output is appended to prompt on next run.
 
+**Token accounting:** Agent handlers now parse Copilot CLI token-reporting lines (for example `↑ 256.9k (223.0k cached) • ↓ 9.7k`). When present, token usage is attached to the producing state's history entry in `.raili/<workflow>/context.json` under `meta.tokens`. The recorded `TokenUsage` contains numeric **input**, **output**, and optional **cached** fields plus display strings (`input_display`, `output_display`, `cached_display`). See `documentation/output.md` for an example and parsing details.
+
 ## Type: script
 
 Executes a shell script from script-registry.json. Exit code determines routing.

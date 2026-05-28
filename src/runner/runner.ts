@@ -1,4 +1,4 @@
-import { StateMachine, WorkflowContext } from '../types';
+import { StateMachine, WorkflowContext, TokenUsage } from '../types';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { ScriptRegistry } from '../registry/scriptRegistry';
 import { addStateToHistory, saveContext } from '../context/context';
@@ -27,6 +27,7 @@ import { VisitTracker } from './visitTracker';
 export interface StateResult {
   outcome: string;
   exports?: Record<string, string>;
+  tokens?: TokenUsage;
 }
 
 export interface RunnerConfig {
@@ -284,6 +285,12 @@ export class Runner {
           stateDef,
           this.context,
         );
+
+        // Persist token usage into the most recent history entry when present.
+        // This ensures token accounting is attached to the state that produced them.
+        if (stateResult.tokens) {
+          this.record(stateId, { tokens: stateResult.tokens });
+        }
 
         // Phase 6: Approval flow (if configured)
         if (config.approval) {

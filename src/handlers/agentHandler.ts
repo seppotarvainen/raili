@@ -4,11 +4,14 @@ import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { resolveRegistryPath } from '../context/pathUtils';
 import { readLatestNRuns } from '../context/outputStore';
+import { TokenUsage } from '../types';
+import { parseCopilotTokenLine } from './tokenParser';
 
 interface AgentExecutionResult {
   success: boolean;
   stdout: string;
   stderr: string;
+  tokens?: TokenUsage;
 }
 
 function parseFrontmatterModel(content: string): string | undefined {
@@ -90,7 +93,12 @@ export function executeAgent(
     });
 
     child.on('close', (code) => {
-      resolve({ success: code === 0, stdout, stderr });
+      const tokens = parseCopilotTokenLine(stdout) ?? parseCopilotTokenLine(stderr);
+      const result: AgentExecutionResult = { success: code === 0, stdout, stderr };
+      if (tokens) {
+        result.tokens = tokens;
+      }
+      resolve(result);
     });
   });
 }

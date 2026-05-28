@@ -68,7 +68,7 @@ class AgentStateRunner implements IStateRunner {
     storeOutput(cwd, state, result, workflowArg);
 
     if (state.config.on) {
-      return { outcome: result.success ? 'PASSED' : 'FAILED' };
+      return { outcome: result.success ? 'PASSED' : 'FAILED', tokens: result.tokens };
     }
 
     if (state.config.transitions) {
@@ -78,10 +78,10 @@ class AgentStateRunner implements IStateRunner {
           `State '${state.id}': agent produced no output — expected a transition key as last stdout line`,
         );
       }
-      return { outcome: lastLine };
+      return { outcome: lastLine, tokens: result.tokens };
     }
 
-    return { outcome: result.success ? 'PASSED' : 'FAILED' };
+    return { outcome: result.success ? 'PASSED' : 'FAILED', tokens: result.tokens };
   }
 }
 
