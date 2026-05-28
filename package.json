@@ -1,6 +1,6 @@
 {
   "name": "raili",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution.",
   "main": "dist/cli.js",
   "types": "dist/index.d.ts",
@@ -45,6 +45,9 @@
     "LICENSE",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@stryker-mutator/core": "^9.6.0",
