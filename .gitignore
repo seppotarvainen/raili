@@ -19,3 +19,6 @@ reports
 # Development
 .raili
 .issues
+.github
+scripts/*
+!scripts/build-docs.js
