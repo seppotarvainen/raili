@@ -7,6 +7,10 @@ jest.mock('../../../src/context/learningStore', () => ({
   learningsFilePath: jest.fn().mockReturnValue('/fake/path'),
 }));
 
+jest.mock('../../../src/context/pathUtils', () => ({
+  learningsFilePath: jest.fn().mockReturnValue('/fake/path'),
+}));
+
 // Mock agent registry to control registry contents for tests
 jest.mock('../../../src/registry/agentRegistry', () => ({
   loadAgentRegistry: jest.fn(),
