@@ -141,6 +141,15 @@ export interface WorkflowContext {
   stateHistory: StateHistoryEntry[];
 }
 
+// Token usage parsed from copilot CLI output. Numeric fields are absolute integers.
+export interface TokenUsage {
+  input: number;
+  cached?: number;
+  output: number;
+  input_display?: string;
+  cached_display?: string;
+  output_display?: string;
+}
 
 
 export type TriggerFunction = () => Promise<Record<string, string> | null>;

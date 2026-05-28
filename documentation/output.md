@@ -169,3 +169,28 @@ For longitudinal metrics, Raili also writes a compact JSONL run log to `.raili/<
 
 The canonical success indicator field in each run object is `success` (boolean). Older legacy `successful` field is no longer supported.
 
+Token accounting (per-state)
+
+In addition to run-level metrics, Raili records per-state token consumption when an agent emits a Copilot token-reporting line (for example: `↑ 256.9k (223.0k cached) • ↓ 9.7k`). When detected, the runner attaches a `meta.tokens` object to the producing state's history entry in `.raili/<workflow>/context.json` so tooling and UIs can attribute consumption to the exact state and run.
+
+The recorded `TokenUsage` object contains numeric fields **input**, **output**, and optional **cached**, plus the original display strings `input_display`, `output_display`, and `cached_display`. Numeric fields are absolute integers (suffixes such as `k`/`M` and commas are parsed). Example entry:
+
+```
+{
+  state: "analyze",
+  enteredAt: "2026-03-16T12:00:00Z",
+  meta: {
+    tokens: {
+      "input": 256900,
+      "cached": 223000,
+      "output": 9700,
+      "input_display": "256.9k",
+      "cached_display": "223.0k",
+      "output_display": "9.7k"
+    }
+  }
+}
+```
+
+Token parsing is intentionally tolerant (accepts commas and `k`/`M` suffixes). See `documentation/states.md` for a brief note about agent token emission and where the data is persisted.
+
