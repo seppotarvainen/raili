@@ -15,6 +15,8 @@ Keeping agents on the rails since 2026.
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js 18+](https://img.shields.io/badge/Node%20JS-18+-green)](https://nodejs.org)
 [![Pipeline status](https://github.com/seppotarvainen/raili/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/seppotarvainen/raili/actions/workflows/npm-publish.yml)
+[![npm version](https://img.shields.io/npm/v/%40seppotarvainen%2Fraili)](https://www.npmjs.com/package/@seppotarvainen/raili)
+
 
 Raili is a deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution. Instead of trusting agents to autonomously decide what to do, Raili gives you full control over the workflow by letting you define exactly which steps to run, in which order, and with what inputs. This makes it ideal for development tasks where precision and predictability are important.
 
