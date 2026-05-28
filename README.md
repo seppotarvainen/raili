@@ -48,7 +48,7 @@ Works on macOS and Linux. Windows support is not yet tested.
 ## Install globally
 
 ```bash
-npm install -g raili
+npm install -g @seppotarvainen/raili
 ```
 
 # How it works
