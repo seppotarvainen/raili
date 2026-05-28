@@ -20,5 +20,6 @@ reports
 .raili
 .issues
 .github
+!.github/workflows
 scripts/*
 !scripts/build-docs.js
