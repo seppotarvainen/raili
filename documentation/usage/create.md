@@ -2,13 +2,13 @@
 
 > Create a new named workflow scaffold under `.raili/<workflow>`.
 
-Usage
+## Usage
 
 ```
-raili create -w <workflow>
+raili create -w <workflow>  # Creates a new workflow scaffold under .raili/<workflow>
 ```
 
-Description
+## Description
 
 Creates a new workflow directory under `./.raili/<workflow>` containing a scaffolded `workflow.yaml`, `vars.yaml`, and the directories `outputs/` and `learnings/`.
 
@@ -49,13 +49,13 @@ states:
     type: engine
 ```
 
-Errors and messages
+## Errors and messages
 
 - `.raili/ directory not found. Run `raili init` first` — returned when `.raili/` is missing.
 - `Invalid workflow name` — returned for empty names or names containing path separators.
 - `.raili/<workflow> already exists` — returned if target directory exists.
 
-See also
+## See also
 
 - `documentation/usage/init.md` — initializing a project and `.raili/`
 - `documentation/usage/run.md` — running workflows once created

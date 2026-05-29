@@ -5,7 +5,7 @@
 ## Usage
 
 ```bash
-raili init
+raili init    # Initializes .raili/ with default workflow and registries
 ```
 
 ## What It Creates

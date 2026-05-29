@@ -226,9 +226,11 @@ states:
 // raili help
 // ---------------------------------------------------------------------------
 describe('raili help', () => {
-  it('returns global usage when called without args', () => {
+  it('returns full help documentation when called without args', () => {
     const output = formatHelp();
-    expect(output).toContain('Usage: raili');
+    expect(output).toContain('Help you asked');
+    expect(output).toContain('## Usage');
+    expect(output).not.toContain('# help');
   });
 
   it('returns command help for "run"', () => {

@@ -77,4 +77,3 @@ export function parseCopilotTokenLine(text: string): TokenUsage | undefined {
   }
   return res;
 }
-
