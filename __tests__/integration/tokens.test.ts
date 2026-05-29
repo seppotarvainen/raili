@@ -51,10 +51,9 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    // copilot emits a token line in stdout that should be parsed
     spawn.mockImplementation((cmd: string) => {
       if (cmd === 'copilot')
-        return fakeChild('analysis output\n↑ 10 (2 cached) ↓ 5\napprove', '', 0);
+        return fakeChild('analysis output\nTokens ↑ 10 (2 cached) ↓ 5\napprove', '', 0);
       return fakeChild('', '', 0);
     });
 
