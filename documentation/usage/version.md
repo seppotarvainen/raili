@@ -8,6 +8,8 @@
 raili --version  # Shows the installed Raili package version
 ```
 
+## Overview
+
 Prints the installed Raili package version to stdout and exits with status code 0. This is a global flag and may be used instead of a command to quickly inspect the version.
 
 Behavior

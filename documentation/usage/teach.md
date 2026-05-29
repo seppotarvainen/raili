@@ -9,6 +9,8 @@ raili teach <agentId>                 # Append a lesson to the agent's global le
 raili teach <agentId> -w <workflow>.  # Append a lesson to the agent's workflow-local learning file.
 ```
 
+## Overview
+
 Open a multiline prompt and append the provided content as a manual learning for the given agent.
 Terminate input with a line containing only `/q`.
 
