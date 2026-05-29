@@ -15,7 +15,7 @@ export function parseCopilotTokenLine(text: string): TokenUsage | undefined {
   if (!text) return undefined;
 
   const arrowRegex =
-    /↑\s*([0-9.,]+(?:[kKmM])?)\s*(?:\(\s*([0-9.,]+(?:[kKmM])?)\s*cached\s*\))?.*?↓\s*([0-9.,]+(?:[kKmM])?)/;
+    /↑\s*([0-9.,]+(?:[kKmM])?)(?:\s*\(\s*([0-9.,]+(?:[kKmM])?)\s*cached\s*\))?.*?↓\s*([0-9.,]+(?:[kKmM])?)/is;
   const m = arrowRegex.exec(text);
   if (m) {
     const input_display = m[1];

@@ -31,6 +31,32 @@ describe('parseCopilotTokenLine', () => {
     expect(res!.output).toBe(5000);
   });
 
+  test('parses bug format with reasoning parenthesis', () => {
+    const line = 'Tokens     ↑ 1.5m (1.4m cached) • ↓ 30.0k (6.4k reasoning)';
+    const res = parseCopilotTokenLine(line);
+    expect(res).toBeDefined();
+    expect(res!.input).toBe(1500000);
+    expect(res!.cached).toBe(1400000);
+    expect(res!.output).toBe(30000);
+    expect(res!.input_display).toBe('1.5m');
+    expect(res!.cached_display).toBe('1.4m');
+    expect(res!.output_display).toBe('30.0k');
+  });
+
+  test('parses tokens line embedded in multi-line output', () => {
+    const multi = `Some logs\nInfo: starting\nTokens ↑ 2.0k (1.0k cached) • ↓ 10\nDone`;
+    const res = parseCopilotTokenLine(multi);
+    expect(res).toBeDefined();
+    expect(res!.input).toBe(2000);
+    expect(res!.cached).toBe(1000);
+    expect(res!.output).toBe(10);
+  });
+
+  test('does not false-positive match unrelated numeric lines', () => {
+    const line = 'Summary: files=10 tests=2 failures=0';
+    expect(parseCopilotTokenLine(line)).toBeUndefined();
+  });
+
   test('returns undefined for malformed line', () => {
     expect(parseCopilotTokenLine('No tokens here')).toBeUndefined();
     expect(parseCopilotTokenLine('Tokens ↑ abc • ↓ xyz')).toBeUndefined();
