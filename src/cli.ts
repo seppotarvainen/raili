@@ -376,8 +376,7 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
       printHelp();
       process.exit(0);
     } else {
-      console.error(`Unknown command: ${command.value}\n`);
-      printHelp();
+      console.error(`Unknown command: ${command.value}\n\nGet help with \'raili help\' or \'raili --help\'.`);
       process.exit(2);
     }
   } catch (err: unknown) {
