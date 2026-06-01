@@ -1,0 +1,13 @@
+---
+pagination:
+  data: collections.docs
+  size: 1
+  alias: doc
+permalink: /docs/{{ doc.slug }}/
+layout: layout.njk
+eleventyComputed:
+  title: "{{ doc.title }}"
+---
+
+{{ doc.content | renderMarkdown | safe }}
+

@@ -1,24 +1,18 @@
+# visual
+
 > Generate a visual diagram of a workflow (Mermaid/HTML).
-
-## Overview
-
-`raili visual` builds a directed graph of the selected workflow and emits a Mermaid diagram or an HTML-wrapped Mermaid document. It performs the same strict, fail-fast validation as `raili run` (requires `.raili/` and valid registries and workflow references).
 
 ## Usage
 
 ```bash
-# Default: generate HTML into the workflow directory (.raili/<workflow>/diagram.html)
-raili visual
-
-# Named workflow, write Mermaid to stdout
-raili visual -w dev -f mermaid -o -
-
-# Write a .mmd file
-raili visual -o /tmp/my-diagram.mmd
-
-# Show help for visual
-raili visual -h
+raili visual                            # generate HTML into the workflow directory (.raili/<workflow>/diagram.html)
+raili visual -w dev                     # generate HTML for a specific workflow
+raili visual -o ./path/my-diagram.mmd   # Write a .mmd file to a specified path
 ```
+
+## Overview
+
+`raili visual` builds a directed graph of the selected workflow and emits a Mermaid diagram or an HTML-wrapped Mermaid document. It performs the same strict, fail-fast validation as `raili run` (requires `.raili/` and valid registries and workflow references).
 
 ## Flags
 
