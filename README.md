@@ -20,6 +20,8 @@ Keeping agents on the rails since 2026.
 
 Raili is a deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution. Instead of trusting agents to autonomously decide what to do, Raili gives you full control over the workflow by letting you define exactly which steps to run, in which order, and with what inputs. This makes it ideal for development tasks where precision and predictability are important.
 
+See full [documentation](https://seppotarvainen.github.io/raili/).
+
 ## Quick Take
 
 - **Define workflows as code** — YAML state machines with explicit transitions
