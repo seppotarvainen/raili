@@ -25,6 +25,54 @@ function parseParenValue(segment: string, label: string): string | undefined {
 }
 
 /**
+ * Parse a duration string like "1h30m45s" or "16s" into total seconds.
+ * Returns 0 for empty or invalid strings.
+ */
+export function parseTimeDuration(timeStr: string): number {
+  if (!timeStr) return 0;
+  const s = timeStr.trim();
+  if (!s) return 0;
+
+  let total = 0;
+  const re = /(\d+)\s*([hms])/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(s)) !== null) {
+    const val = parseInt(m[1], 10);
+    const unit = m[2].toLowerCase();
+    if (unit === 'h') total += val * 3600;
+    else if (unit === 'm') total += val * 60;
+    else if (unit === 's') total += val;
+  }
+  return total;
+}
+
+/**
+ * Parse an "AI Credits" footer line and extract ai_display, ai_credits (number) and ai_time (seconds).
+ * Looks for the last line containing an "AI Credits" pattern like:
+ *   AI Credits 0.72 (16s)
+ *   AI Credits 0.5 (1h30m45s)
+ */
+export function parseAICreditsLine(
+  text: string,
+): { ai_display: string; ai_credits: number; ai_time: number } | undefined {
+  if (!text) return undefined;
+  const lines = text.split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    // Try to match: AI Credits <number> (<time-spec>)
+    const re = /AI Credits\s+([0-9]*\.?[0-9]+)\s*\(([^)]+)\)/i;
+    const m = re.exec(line);
+    if (m) {
+      const credits = parseFloat(m[1]);
+      const timeStr = m[2];
+      const seconds = parseTimeDuration(timeStr);
+      return { ai_display: m[0], ai_credits: isNaN(credits) ? 0 : credits, ai_time: seconds };
+    }
+  }
+  return undefined;
+}
+
+/**
  * Find the last line starting with "Tokens" in the text, then parse:
  *   ↑ <input> (<cached> cached) • ↓ <output> (<reasoning> reasoning)
  *
@@ -75,5 +123,14 @@ export function parseCopilotTokenLine(text: string): TokenUsage | undefined {
     res.cached = cached;
     res.cached_display = cached_display;
   }
+
+  // Merge AI Credits info when present (search entire text for last AI Credits line)
+  const ai = parseAICreditsLine(text);
+  if (ai) {
+    res.ai_display = ai.ai_display;
+    res.ai_credits = ai.ai_credits;
+    res.ai_time = ai.ai_time;
+  }
+
   return res;
 }

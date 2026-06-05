@@ -173,7 +173,7 @@ Token accounting (per-state)
 
 In addition to run-level metrics, Raili records per-state token consumption when an agent emits a Copilot token-reporting line (for example: `↑ 256.9k (223.0k cached) • ↓ 9.7k`). When detected, the runner attaches a `meta.tokens` object to the producing state's history entry in `.raili/<workflow>/context.json` so tooling and UIs can attribute consumption to the exact state and run.
 
-The recorded `TokenUsage` object contains numeric fields **input**, **output**, and optional **cached**, plus the original display strings `input_display`, `output_display`, and `cached_display`. Numeric fields are absolute integers (suffixes such as `k`/`M` and commas are parsed). Example entry:
+The recorded `TokenUsage` object contains numeric fields **input**, **output**, and optional **cached**, plus the original display strings `input_display`, `output_display`, and `cached_display`. When present, an `AI Credits` footer (for example `AI Credits 0.72 (1h30m45s)`) is parsed and merged into the same object as `ai_display` (original footer string), `ai_credits` (numeric credit amount), and `ai_time` (duration converted to total seconds). Numeric token fields are absolute integers (suffixes such as `k`/`M` and commas are parsed). Example entry:
 
 ```
 {
@@ -186,10 +186,14 @@ The recorded `TokenUsage` object contains numeric fields **input**, **output**, 
       "output": 9700,
       "input_display": "256.9k",
       "cached_display": "223.0k",
-      "output_display": "9.7k"
+      "output_display": "9.7k",
+      "ai_display": "AI Credits 0.72 (1h30m45s)",
+      "ai_credits": 0.72,
+      "ai_time": 5445
     }
   }
 }
+```
 ```
 
 Token parsing is intentionally tolerant (accepts commas and `k`/`M` suffixes). See `documentation/states.md` for a brief note about agent token emission and where the data is persisted.

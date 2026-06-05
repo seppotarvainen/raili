@@ -149,6 +149,9 @@ export interface TokenUsage {
   input_display?: string;
   cached_display?: string;
   output_display?: string;
+  ai_display?: string;
+  ai_credits?: number;
+  ai_time?: number;
 }
 
 
