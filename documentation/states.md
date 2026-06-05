@@ -39,7 +39,10 @@ When a state declares `teach:` and also uses `approval:`, approval-exposed varia
 
 - NOTE: Inputs may be declared as shorthand strings (e.g. `- ticket_id`) or as objects with `name` and an optional `description`. See documentation/variables.md for details.
 
-**Routing:** Use `transitions:` (not `on:`), agent prints outcome key as last line.
+**Routing:** 
+
+- Use `transitions` (not `on`), instruct agent to print outcome key as last line.
+- If no transition is needed, simply use `continue`.
 
 **Memory:** With `output.store: true`, previous output is appended to prompt on next run.
 

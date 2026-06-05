@@ -57,6 +57,11 @@ export default function (eleventyConfig) {
     });
   });
 
+  // Expose a `base` global to templates so they can build correct absolute
+  // paths when the site is deployed under a repository path (e.g. /raili).
+  // This is helpful for GitHub Pages project sites.
+  eleventyConfig.addGlobalData("base", "/raili");
+
   return {
     dir: {
       input: "src",
@@ -64,6 +69,9 @@ export default function (eleventyConfig) {
       includes: "_includes",
       data: "_data",
     },
+    // When deployed to GitHub Pages for the repo site (e.g. username.github.io/raili)
+    // set a pathPrefix so Eleventy can use it for asset URLs and filters.
+    pathPrefix: "/raili/",
     markdownTemplateEngine: "njk",
     htmlTemplateEngine: "njk",
   };

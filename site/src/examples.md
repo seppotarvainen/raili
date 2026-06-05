@@ -40,9 +40,7 @@ states:
   merge:
     type: command
     command: "git merge ${branch}"
-    on:
-      PASSED: "done"
-      FAILED: "done"
+    continue: "done"
 
   done:
     type: engine
@@ -85,13 +83,12 @@ states:
     success: true
 ```
 
-## Script-Only CI Pipeline
+## Script-Only Workflow
 
 No agents — pure deterministic shell script orchestration.
 
 ```yaml
 initial: lint
-inputs: []
 
 states:
   lint:

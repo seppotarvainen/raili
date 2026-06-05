@@ -24,6 +24,10 @@
   box-sizing: border-box;
 }
 
+html {
+  background-color: var(--color-indigo-dark );
+}
+
 body {
   font-family: var(--font-sans);
   background: linear-gradient(135deg, var(--color-indigo) 0%, var(--color-indigo-dark) 100%);

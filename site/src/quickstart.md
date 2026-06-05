@@ -33,22 +33,26 @@ Edit `.raili/main/workflow.yaml`:
 
 ```yaml
 inputs:
-  - name: person
-    description: "Name of the person to greet"
+   - name: person
+     description: "Person you want to greet"
 
 initial: hello
 
 states:
-  hello:
-    type: command
-    command: echo "Hello $RAILI_VAR_PERSON"
+   hello:
+      type: command
+      command: echo "Hello $RAILI_VAR_PERSON"
+      continue: done
+
+   done:
+      type: engine
 ```
 
 **What it does?**
 
 1. Prompts you for the "person" input.
 2. Runs the `echo` command with the provided input, greeting the person.
-3. Workflow ends after executing the command.
+3. Routes to `done` state, where the workflow ends.
 
 ### Realistic example
 
@@ -197,8 +201,8 @@ Raili, prompts you with "ticket_id" input, validates everything upfront (registr
 
 ## Next steps
 
-- [State types](/docs/states/) — agent, script, command, engine, group
-- [Routing](/docs/routing/) — binary, named transitions, approval
-- [Variables](/docs/variables/) — interpolation, env exports, vars.yaml
-- [Examples](/examples/) — real-world workflow patterns
+- [State types]({{ base }}/docs/states/) — agent, script, command, engine, group
+- [Routing]({{ base }}/docs/routing/) — binary, named transitions, approval
+- [Variables]({{ base }}/docs/variables/) — interpolation, env exports, vars.yaml
+- [Examples]({{ base }}/examples/) — real-world workflow patterns
 

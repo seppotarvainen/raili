@@ -38,5 +38,5 @@ raili init
 raili run
 ```
 
-To get started for real, see [Quickstart guide](/quickstart/).
+To get started for real, see [Quickstart guide]({{ base }}/quickstart/).
 
