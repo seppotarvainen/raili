@@ -48,6 +48,8 @@ When a state declares `teach:` and also uses `approval:`, approval-exposed varia
 
 **Token accounting:** Agent handlers now parse Copilot CLI token-reporting lines (for example `↑ 256.9k (223.0k cached) • ↓ 9.7k`). When present, token usage is attached to the producing state's history entry in `.raili/<workflow>/context.json` under `meta.tokens`. The recorded `TokenUsage` contains numeric **input**, **output**, and optional **cached** fields plus display strings (`input_display`, `output_display`, `cached_display`). See `documentation/output.md` for an example and parsing details.
 
+Additionally, when agents emit an `AI Credits` footer line (for example `AI Credits 0.72 (1h30m45s)`), the parser extracts three additional fields: **ai_display** (original footer string), **ai_credits** (parsed numeric credit amount), and **ai_time** (duration parsed to total seconds). These fields are merged into `meta.tokens` alongside the numeric token counts so tooling can attribute both token usage and reported AI credits/time to the producing state. See `documentation/output.md` for parsing details and examples.
+
 ## Type: script
 
 Executes a shell script from script-registry.json. Exit code determines routing.

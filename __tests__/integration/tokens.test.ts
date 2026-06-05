@@ -51,9 +51,11 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
+    const copilotStdout =
+      'analysis output\nAI Credits 0.72 (1h 1m 16s)\nTokens ↑ 10 (2 cached) ↓ 5\napprove';
+
     spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot')
-        return fakeChild('analysis output\nTokens ↑ 10 (2 cached) ↓ 5\napprove', '', 0);
+      if (cmd === 'copilot') return fakeChild(copilotStdout, '', 0);
       return fakeChild('', '', 0);
     });
 
@@ -65,8 +67,12 @@ states:
     expect(producing).toBeDefined();
     const meta: any = producing!.meta ?? {};
     expect(meta.tokens).toBeDefined();
-    expect(meta.tokens.input).toBe(10);
-    expect(meta.tokens.output).toBe(5);
-    expect(meta.tokens.cached).toBe(2);
+    const tokens = meta.tokens;
+    expect(tokens.ai_display).toBe('AI Credits 0.72 (1h 1m 16s)');
+    expect(tokens.ai_credits).toBeCloseTo(0.72, 5);
+    expect(tokens.ai_time).toBe(3676);
+    expect(tokens.input).toBe(10);
+    expect(tokens.output).toBe(5);
+    expect(tokens.cached).toBe(2);
   });
 });

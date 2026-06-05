@@ -52,6 +52,37 @@ describe('parseCopilotTokenLine', () => {
     expect(res!.output).toBe(10);
   });
 
+  test('extracts AI Credits and merges with token parsing', () => {
+    const multi = `Some logs\nTokens ↑ 256.9k (223.0k cached) • ↓ 9.7k\nAI Credits 0.72 (16s)`;
+    const res = parseCopilotTokenLine(multi);
+    expect(res).toBeDefined();
+    expect(res!.input).toBe(256900);
+    expect(res!.cached).toBe(223000);
+    expect(res!.output).toBe(9700);
+    expect(res!.ai_display).toBe('AI Credits 0.72 (16s)');
+    expect(res!.ai_credits).toBeCloseTo(0.72);
+    expect(res!.ai_time).toBe(16);
+  });
+
+  test('parses complex AI Credits time format', () => {
+    const multi = `Header\nTokens ↑ 1k • ↓ 10\nAI Credits 0.5 (1h30m45s)`;
+    const res = parseCopilotTokenLine(multi);
+    expect(res).toBeDefined();
+    expect(res!.input).toBe(1000);
+    expect(res!.output).toBe(10);
+    expect(res!.ai_credits).toBeCloseTo(0.5);
+    expect(res!.ai_time).toBe(3600 + 30 * 60 + 45);
+  });
+
+  test('missing AI Credits leaves ai_* fields undefined', () => {
+    const multi = `Logs\nTokens ↑ 2.0k (1.0k cached) • ↓ 10\nEnd`;
+    const res = parseCopilotTokenLine(multi);
+    expect(res).toBeDefined();
+    expect(res!.ai_display).toBeUndefined();
+    expect(res!.ai_credits).toBeUndefined();
+    expect(res!.ai_time).toBeUndefined();
+  });
+
   test('does not false-positive match unrelated numeric lines', () => {
     const line = 'Summary: files=10 tests=2 failures=0';
     expect(parseCopilotTokenLine(line)).toBeUndefined();
