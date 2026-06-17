@@ -157,6 +157,8 @@ Accepted formats (case-insensitive key; whitespace and optional `export` prefix 
 - `name = "value"`
 - `name='value'`
 
+As a special case, if there is only one line of stdout and exactly one variable is declared in `expose:`, that entire line is exposed as the value of the variable (without needing to match a `key=value` format).
+
 The parser trims whitespace and surrounding quotes. If a state declares `expose`, the engine will fail-fast and throw a clear error when any listed variable is not produced (missing or empty). Important: using `export VAR=...` inside a child process does not propagate the value to the parent — the script must print the value to stdout in one of the accepted formats.
 
 Example:
@@ -168,6 +170,9 @@ echo "id=123"
 # Also accepted:
 echo "export id=123"
 echo "ID = '123'"
+
+# Also accepted (if 'id' is the only variable in the 'expose' list):
+echo "123"
 ```
 
 Workflow example:

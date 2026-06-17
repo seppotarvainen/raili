@@ -15,6 +15,10 @@ export function parseExports(stdout: string, names: string[]): Record<string, st
 
   const lines = stdout.split(/\r?\n/);
 
+  if (lines.length === 1 && names.length === 1) {
+    exports[names[0]] = lines[0].trim();
+  }
+
   for (const name of names) {
     // Strip optional marker — matching and storage always use the base name
     const baseName = name.endsWith('?') ? name.slice(0, -1) : name;
