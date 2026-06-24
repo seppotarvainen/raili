@@ -263,6 +263,7 @@ export interface RailiRunArgs {
   resolveVars?: string[]; // Raw tokens passed to --resolve-vars or [] when flag present without args
   help?: boolean;
   dryRun?: boolean;
+  verbose?: boolean;
 }
 
 // Graph types: nodes, edges, and graph model used by CLI utilities

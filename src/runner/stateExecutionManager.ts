@@ -1,11 +1,12 @@
-import { StateDef, WorkflowContext } from '../types';
-import { StateResult } from './runner';
+import {StateDef, WorkflowContext} from '../types';
+import {StateResult} from './runner';
 
 export type AgentRunner = (
   stateDef: StateDef,
   cwd: string,
   vars?: Record<string, string> | undefined,
   workflowArg?: string | undefined,
+  verbose?: boolean,
 ) => Promise<StateResult>;
 
 export type ScriptRunner = AgentRunner;

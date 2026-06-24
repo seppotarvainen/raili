@@ -44,6 +44,7 @@ export async function runCommand(
   nextSteps?: number,
   rollback?: string,
   resolveVarsArgs?: string[],
+  verbose?: boolean,
 ) {
   const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
@@ -210,6 +211,7 @@ export async function runCommand(
     cwd,
     workflowArg: workflowPath,
     nextSteps: nextSteps,
+    verbose: verbose,
   });
 
   await runner.run();

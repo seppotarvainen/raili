@@ -7,6 +7,7 @@ import * as learningStore from '../../../src/context/learningStore';
 jest.mock('../../../src/handlers/agentHandler');
 jest.mock('../../../src/context/outputStore');
 jest.mock('../../../src/context/learningStore');
+jest.mock('../../../src/presenter');
 
 const mockExecuteAgent = agentHandler.executeAgent as jest.MockedFunction<typeof agentHandler.executeAgent>;
 const mockSave = outputStore.saveOutput as jest.MockedFunction<typeof outputStore.saveOutput>;
@@ -99,5 +100,28 @@ test('injects merged learnings into prompt when present', async () => {
   await runAgentState(makeState({ prompt: 'Do this' }), registry, cwd);
   expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null, expect.stringContaining('## Learnings from previous runs'), undefined, undefined);
   expect(mockExecuteAgent).toHaveBeenCalledWith(registry, 'coder', cwd, null, expect.stringContaining('- lesson body'), undefined, undefined);
+});
+
+test('calls presenter.renderAgentVerbose when verbose=true', async () => {
+  const presenter = require('../../../src/presenter');
+  const mockRender = presenter.renderAgentVerbose as jest.MockedFunction<typeof presenter.renderAgentVerbose>;
+  mockRender.mockClear();
+
+  await runAgentState(makeState({ prompt: 'Verbose prompt' }), registry, cwd, undefined, 'main', true);
+
+  expect(mockRender).toHaveBeenCalled();
+  // ensure renderAgentVerbose received agent id and contains prompt
+  expect(mockRender.mock.calls[0][0]).toBe('coder');
+  expect(String(mockRender.mock.calls[0][2])).toContain('Verbose prompt');
+});
+
+test('does not call presenter.renderAgentVerbose when verbose=false', async () => {
+  const presenter = require('../../../src/presenter');
+  const mockRender = presenter.renderAgentVerbose as jest.MockedFunction<typeof presenter.renderAgentVerbose>;
+  mockRender.mockClear();
+
+  await runAgentState(makeState({ prompt: 'No verbose' }), registry, cwd, undefined, 'main',false);
+
+  expect(mockRender).not.toHaveBeenCalled();
 });
 
