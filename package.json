@@ -1,6 +1,6 @@
 {
   "name": "@seppotarvainen/raili",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Deterministic CLI workflow orchestrator for AI-assisted development with pluggable agent and script execution.",
   "main": "dist/cli.js",
   "types": "dist/index.d.ts",
