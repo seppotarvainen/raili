@@ -1,12 +1,13 @@
-import { StateDef } from '../types';
-import { AgentRegistry } from '../registry/agentRegistry';
-import { executeAgent } from '../handlers/agentHandler';
-import { loadAgentOutputPath, readLatestRun } from '../context/outputStore';
-import { storeOutput } from './stateRunnerUtils';
-import { interpolateString } from '../variables/variableInterpolation';
-import type { StateResult } from './runner';
-import { IStateRunner } from './stateRunner';
-import { readMergedLearningsForPrompt } from '../context/learningStore';
+import {StateDef} from '../types';
+import {AgentRegistry} from '../registry/agentRegistry';
+import {executeAgent} from '../handlers/agentHandler';
+import {loadAgentOutputPath} from '../context/outputStore';
+import {storeOutput} from './stateRunnerUtils';
+import {interpolateString} from '../variables/variableInterpolation';
+import type {StateResult} from './runner';
+import {IStateRunner} from './stateRunner';
+import {readMergedLearningsForPrompt} from '../context/learningStore';
+import {renderAgentVerbose} from '../presenter';
 
 /**
  * AgentStateRunner - prototype implementation of the StateRunner interface
@@ -21,6 +22,7 @@ class AgentStateRunner implements IStateRunner {
     cwd: string,
     vars?: Record<string, string>,
     workflowArg?: string,
+    verbose?: boolean,
   ): Promise<StateResult> {
     // Step 1: load previous output path for this state (may be null)
     const previousOutputPath = loadAgentOutputPath(cwd, state.id, workflowArg);
@@ -54,6 +56,15 @@ class AgentStateRunner implements IStateRunner {
     }
 
     const useLatest = state.config.output?.use_latest;
+
+    if (verbose) {
+      const entry = this.registry[agentId];
+      renderAgentVerbose(agentId, entry?.model, assembledPrompt ?? '');
+      // Small delay to ensure verbose logs are emitted before the agent subprocess is spawned.
+      // This avoids identical millisecond timestamps in tests that assert ordering.
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+
     const result = await executeAgent(
       this.registry,
       agentId,
@@ -92,7 +103,8 @@ export async function runAgentState(
   cwd: string,
   vars?: Record<string, string>,
   workflowArg?: string,
+  verbose?: boolean,
 ): Promise<StateResult> {
   const runner = new AgentStateRunner(registry);
-  return runner.run(state, cwd, vars, workflowArg);
+  return runner.run(state, cwd, vars, workflowArg, verbose);
 }

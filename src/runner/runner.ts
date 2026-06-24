@@ -38,6 +38,7 @@ export interface RunnerConfig {
   cwd: string;
   workflowArg?: string;
   nextSteps?: number;
+  verbose?: boolean;
 }
 
 export class Runner {
@@ -51,6 +52,7 @@ export class Runner {
   private feedbackResolverPath?: string | null;
 
   private readonly nextSteps?: number;
+  private readonly verbose?: boolean;
   private stepsExecuted = 0;
   private countedStates = new Set<string>();
 
@@ -66,6 +68,7 @@ export class Runner {
     this.cwd = config.cwd;
     this.workflowArg = config.workflowArg;
     this.nextSteps = config.nextSteps;
+    this.verbose = config.verbose;
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
@@ -209,7 +212,7 @@ export class Runner {
 
     const stateExecutionManager = new StateExecutionManager({
       agentStateRunner: (stateDef, cwd, vars, wfArg) =>
-        runAgentState(stateDef, this.agentRegistry, cwd, vars, wfArg),
+        runAgentState(stateDef, this.agentRegistry, cwd, vars, wfArg, this.verbose),
       scriptStateRunner: (stateDef, cwd, vars, wfArg) =>
         runScriptState(stateDef, this.scriptRegistry, cwd, vars, wfArg),
       commandStateRunner: (stateDef, cwd, vars, wfArg) =>

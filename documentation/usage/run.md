@@ -16,6 +16,7 @@ raili run --next=2                     # Execute the next N states (forces conti
 raili run --next                       # Shorthand for `--next=1` (execute the next single state)
 raili run --rollback=<N|state>         # Truncate stateHistory and resume from target (forces continue mode)
 raili run --resolve-vars [key=val ...] # Use workspace vars-resolver to provide/augment inputs
+raili run --verbose (or -v)            # Print verbose agent context before spawning agent subprocesses
 ```
 
 ## Examples

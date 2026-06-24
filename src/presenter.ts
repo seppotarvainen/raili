@@ -175,3 +175,18 @@ function formatElapsed(ms: number): string {
     {return `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;}
   return `${String(mins)}:${String(secs).padStart(2, '0')}`;
 }
+
+export function renderAgentVerbose(agentId: string, model?: string, prompt = ''): void {
+  // Use terminal width, fall back to 80
+  const terminalWidth = process.stdout.columns ?? 80;
+  const separator = '─'.repeat(terminalWidth);
+
+  console.log(colors.gray('VERBOSE: Agent context'));
+  console.log(colors.gray(`agent: ${agentId}`));
+  console.log(colors.gray(`model: ${model ?? '(uses frontmatter)'}`));
+
+  const truncated = typeof prompt === 'string' && prompt.length > 500 ? prompt.slice(0, 500) + '...' : prompt;
+  console.log(colors.gray(`prompt: ${truncated}`));
+
+  console.log(colors.gray(separator));
+}

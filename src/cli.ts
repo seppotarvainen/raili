@@ -21,7 +21,7 @@ import { loadVarsFile } from './variables/varsLoader';
 const args = process.argv.slice(2);
 
 // Early handling for --version: print package version and exit 0
-if (args.includes('--version') || args[0] === '--version' || args[0] === '-v') {
+if (args.includes('--version') || args[0] === '--version') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pkg = require('../package.json');
   process.stdout.write(`${pkg.version}\n`);
@@ -58,10 +58,11 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     { name: 'rollback', type: String },
     { name: 'var', type: String, multiple: true, defaultValue: [] },
     { name: 'resolve-vars', type: String, multiple: true },
+    { name: 'verbose', alias: 'v', type: Boolean },
     { name: 'help', alias: 'h', type: Boolean },
     { name: 'dry-run', type: Boolean },
   ];
-  const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; rollback?: string; var?: string[]; help?: boolean; 'dry-run'?: boolean; 'resolve-vars'?: string[] };
+  const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; rollback?: string; var?: string[]; help?: boolean; 'dry-run'?: boolean; 'resolve-vars'?: string[]; verbose?: boolean };
   const varsArray: string[] = (parsed.var as string[]) || [];
   const vars: Record<string, string> = {};
   for (const entry of varsArray) {
@@ -89,7 +90,7 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
   }
 
   const mode = next !== undefined ? 'continue' : (rollback !== undefined || hadBareRollback) ? 'continue' : parsed.clean ? 'clean' : parsed.continue ? 'continue' : undefined;
-  return { workflow: parsed.workflow, mode, next, rollback, vars, resolveVars, help: !!parsed.help, dryRun: !!parsed['dry-run'] };
+  return { workflow: parsed.workflow, mode, next, rollback, vars, resolveVars, help: !!parsed.help, dryRun: !!parsed['dry-run'], verbose: !!parsed.verbose };
 }
 
 function promptLine(rl: readline.Interface, question: string): Promise<string> {
@@ -256,7 +257,7 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
         vars = mode === 'clean' ? await collectVars(process.cwd(), flagVars, workflowPath) : flagVars;
       }
 
-      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun, parsed.next, parsed.rollback);
+      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun, parsed.next, parsed.rollback, parsed.resolveVars, parsed.verbose);
     } else if (command.help) {
       // raili help [topic]
       const topic = runArgs[0];

@@ -21,3 +21,20 @@ describe('parseRunArgs --resolve-vars handling', () => {
     expect(parsed.resolveVars).toEqual(['a', 'b', 'c']);
   });
 });
+
+describe('parseRunArgs --verbose handling', () => {
+  test('parses --verbose flag', () => {
+    const res = parseRunArgs(['--verbose']);
+    expect(res.verbose).toBe(true);
+  });
+
+  test('parses -v short flag', () => {
+    const res = parseRunArgs(['-v']);
+    expect(res.verbose).toBe(true);
+  });
+
+  test('default verbose is falsy/undefined', () => {
+    const res = parseRunArgs([]);
+    expect(res.verbose).toBeFalsy();
+  });
+});
