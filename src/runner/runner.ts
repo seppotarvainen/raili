@@ -1,4 +1,4 @@
-import { StateMachine, WorkflowContext, TokenUsage } from '../types';
+import { CancellationToken, StateMachine, WorkflowContext, TokenUsage } from '../types';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { ScriptRegistry } from '../registry/scriptRegistry';
 import { addStateToHistory, saveContext } from '../context/context';
@@ -26,6 +26,7 @@ import { VisitTracker } from './visitTracker';
 /** Result returned by every state runner: outcome and optional exports */
 export interface StateResult {
   outcome: string;
+  cancelled?: boolean;
   exports?: Record<string, string>;
   tokens?: TokenUsage;
 }
@@ -39,6 +40,7 @@ export interface RunnerConfig {
   workflowArg?: string;
   nextSteps?: number;
   verbose?: boolean;
+  cancellationToken?: CancellationToken;
 }
 
 export class Runner {
@@ -53,6 +55,7 @@ export class Runner {
 
   private readonly nextSteps?: number;
   private readonly verbose?: boolean;
+  private readonly cancellationToken?: CancellationToken;
   private stepsExecuted = 0;
   private countedStates = new Set<string>();
 
@@ -69,6 +72,7 @@ export class Runner {
     this.workflowArg = config.workflowArg;
     this.nextSteps = config.nextSteps;
     this.verbose = config.verbose;
+    this.cancellationToken = config.cancellationToken;
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
@@ -211,12 +215,20 @@ export class Runner {
     });
 
     const stateExecutionManager = new StateExecutionManager({
-      agentStateRunner: (stateDef, cwd, vars, wfArg) =>
-        runAgentState(stateDef, this.agentRegistry, cwd, vars, wfArg, this.verbose),
-      scriptStateRunner: (stateDef, cwd, vars, wfArg) =>
-        runScriptState(stateDef, this.scriptRegistry, cwd, vars, wfArg),
-      commandStateRunner: (stateDef, cwd, vars, wfArg) =>
-        runCommandState(stateDef, cwd, vars, wfArg),
+      agentStateRunner: (stateDef, cwd, vars, wfArg, cancellationToken) =>
+        runAgentState(
+          stateDef,
+          this.agentRegistry,
+          cwd,
+          vars,
+          wfArg,
+          this.verbose,
+          cancellationToken,
+        ),
+      scriptStateRunner: (stateDef, cwd, vars, wfArg, cancellationToken) =>
+        runScriptState(stateDef, this.scriptRegistry, cwd, vars, wfArg, cancellationToken),
+      commandStateRunner: (stateDef, cwd, vars, wfArg, cancellationToken) =>
+        runCommandState(stateDef, cwd, vars, wfArg, cancellationToken),
       cwd: this.cwd,
       workflowArg: this.workflowArg,
     });
@@ -254,6 +266,11 @@ export class Runner {
           continue;
         }
 
+        if (this.cancellationToken?.isCancellationRequested) {
+          this.record(stateId, { cancelled: new Date().toISOString() });
+          return;
+        }
+
         // stepsExecuted is incremented inside record() when a new, non-skipped history entry is added.
 
         // Phase 3: Terminal check
@@ -287,7 +304,17 @@ export class Runner {
           stateId,
           stateDef,
           this.context,
+          this.cancellationToken,
         );
+
+        if (
+          stateResult.cancelled ||
+          stateResult.outcome === 'CANCELLED' ||
+          this.cancellationToken?.isCancellationRequested
+        ) {
+          this.record(stateId, { cancelled: new Date().toISOString() });
+          return;
+        }
 
         // Persist token usage into the most recent history entry when present.
         // This ensures token accounting is attached to the state that produced them.

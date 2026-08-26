@@ -6,6 +6,7 @@ import type { StateResult } from './runner';
 /** Execution result shape shared by script and command handlers. */
 interface HandlerResult {
   success: boolean;
+  cancelled?: boolean;
   stdout: string;
   stderr: string;
 }
@@ -70,6 +71,9 @@ function resolveOutcome(
   result: HandlerResult,
   handlerType: 'script' | 'command',
 ): string {
+  if (result.cancelled) {
+    return 'CANCELLED';
+  }
   if (state.config.on) {
     return result.success ? 'PASSED' : 'FAILED';
   }
@@ -99,7 +103,7 @@ export function processStateResult(
   storeOutput(cwd, state, result, workflowArg);
   const exports = parseExposedVars(state, result.stdout);
   const outcome = resolveOutcome(state, result, handlerType);
-  return { outcome, exports };
+  return { outcome, exports, cancelled: result.cancelled };
 }
 
 /**

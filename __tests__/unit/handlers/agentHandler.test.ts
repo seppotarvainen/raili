@@ -1,12 +1,14 @@
 import path from 'path';
 import {EventEmitter} from 'events';
+import { spawn } from 'child_process';
 import {loadAgentRegistry} from '../../../src/registry/agentRegistry';
 import {executeAgent} from '../../../src/handlers/agentHandler';
 import { setupFakeFs } from '../infrastructure/fsFake.util';
 import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
+import { CancellationController } from '../../../src/types';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+const mockedSpawn = jest.mocked(spawn);
 
 const TMP = '/tmp';
 let restoreFs: () => void;
@@ -47,14 +49,14 @@ function setupAgent(model?: string, frontmatterModel?: string) {
 }
 
 beforeEach(() => {
-  spawn.mockClear();
-  spawn.mockImplementation(() => fakeChild('agent output', '', 0));
+  mockedSpawn.mockClear();
+  mockedSpawn.mockImplementation(() => fakeChild('agent output', '', 0));
 });
 
 test('runs copilot command without model when none specified', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP);
-  expect(spawn).toHaveBeenCalledWith(
+  expect(mockedSpawn).toHaveBeenCalledWith(
     'copilot',
     ['--agent=analyzer.agent', '--prompt', 'Work according to your rules', '--yolo'],
     expect.any(Object),
@@ -64,7 +66,7 @@ test('runs copilot command without model when none specified', async () => {
 test('uses model from agent frontmatter', async () => {
   const registry = setupAgent(undefined, 'claude-sonnet-4.6');
   await executeAgent(registry, 'analyzer.agent', TMP);
-  expect(spawn).toHaveBeenCalledWith(
+  expect(mockedSpawn).toHaveBeenCalledWith(
     'copilot',
     ['--agent=analyzer.agent', '--model=claude-sonnet-4.6', '--prompt', 'Work according to your rules', '--yolo'],
     expect.any(Object),
@@ -74,7 +76,7 @@ test('uses model from agent frontmatter', async () => {
 test('registry model overrides frontmatter model', async () => {
   const registry = setupAgent('gpt-5.1', 'claude-sonnet-4.6');
   await executeAgent(registry, 'analyzer.agent', TMP);
-  expect(spawn).toHaveBeenCalledWith(
+  expect(mockedSpawn).toHaveBeenCalledWith(
     'copilot',
     ['--agent=analyzer.agent', '--model=gpt-5.1', '--prompt', 'Work according to your rules', '--yolo'],
     expect.any(Object),
@@ -89,7 +91,7 @@ test('returns success and stdout on exit code 0', async () => {
 });
 
 test('returns failure on non-zero exit code', async () => {
-  spawn.mockImplementationOnce(() => fakeChild('', 'error occurred', 1));
+  mockedSpawn.mockImplementationOnce(() => fakeChild('', 'error occurred', 1));
   const registry = setupAgent();
   const res = await executeAgent(registry, 'analyzer.agent', TMP);
   expect(res.success).toBe(false);
@@ -104,7 +106,7 @@ test('throws when agent not in registry', () => {
 test('uses default prompt when no previousOutputPath given', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP);
-  expect(spawn).toHaveBeenCalledWith(
+  expect(mockedSpawn).toHaveBeenCalledWith(
     'copilot',
     expect.arrayContaining(['--prompt', 'Work according to your rules']),
     expect.any(Object),
@@ -118,7 +120,7 @@ test('injects previous output content into prompt when previousOutputPath is pro
 
   await executeAgent(registry, 'analyzer.agent', TMP, prevFile);
 
-  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const spawnArgs = mockedSpawn.mock.calls[0][1] as string[];
   const promptIndex = spawnArgs.indexOf('--prompt');
   const prompt = spawnArgs[promptIndex + 1];
   expect(prompt).toContain('Work according to your rules');
@@ -128,7 +130,7 @@ test('injects previous output content into prompt when previousOutputPath is pro
 test('uses default prompt when previousOutputPath is null', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP, null);
-  expect(spawn).toHaveBeenCalledWith(
+  expect(mockedSpawn).toHaveBeenCalledWith(
     'copilot',
     expect.arrayContaining(['--prompt', 'Work according to your rules']),
     expect.any(Object),
@@ -138,7 +140,7 @@ test('uses default prompt when previousOutputPath is null', async () => {
 test('uses default prompt when previousOutputPath points to nonexistent file', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP, '/nonexistent/path.md');
-  expect(spawn).toHaveBeenCalledWith(
+  expect(mockedSpawn).toHaveBeenCalledWith(
     'copilot',
     expect.arrayContaining(['--prompt', 'Work according to your rules']),
     expect.any(Object),
@@ -155,7 +157,7 @@ test('injects all runs when history file has multiple runs (default behavior)', 
 
   await executeAgent(registry, 'analyzer.agent', TMP, historyFile);
 
-  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const spawnArgs = mockedSpawn.mock.calls[0][1] as string[];
   const promptIndex = spawnArgs.indexOf('--prompt');
   const prompt = spawnArgs[promptIndex + 1];
   expect(prompt).toContain('first run output');
@@ -167,7 +169,7 @@ test('uses custom prompt when prompt param is provided', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP, null, 'Analyze ticket $RAILI_VAR_TICKET_ID');
 
-  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const spawnArgs = mockedSpawn.mock.calls[0][1] as string[];
   const promptIndex = spawnArgs.indexOf('--prompt');
   expect(spawnArgs[promptIndex + 1]).toBe('Analyze ticket $RAILI_VAR_TICKET_ID');
 });
@@ -179,7 +181,7 @@ test('appends previous output to custom prompt when both are provided', async ()
 
   await executeAgent(registry, 'analyzer.agent', TMP, prevFile, 'Do the thing');
 
-  const spawnArgs = spawn.mock.calls[0][1] as string[];
+  const spawnArgs = mockedSpawn.mock.calls[0][1] as string[];
   const promptIndex = spawnArgs.indexOf('--prompt');
   const prompt = spawnArgs[promptIndex + 1];
   expect(prompt).toContain('Do the thing');
@@ -192,8 +194,43 @@ test('spawn inherits process.env so RAILI_VAR_* set by run.ts are available', as
   await executeAgent(registry, 'analyzer.agent', TMP);
 
   // env is not passed explicitly — child inherits process.env by default
-  const spawnOptions = spawn.mock.calls[0][2] as any;
+  const spawnOptions = mockedSpawn.mock.calls[0][2] as any;
   expect(spawnOptions.env).toBeUndefined();
   expect(process.env.RAILI_VAR_TICKET_ID).toBe('PROJ-999');
   delete process.env.RAILI_VAR_TICKET_ID;
+});
+
+test('terminates an in-flight agent and returns cancelled', async () => {
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new EventEmitter(),
+    stderr: new EventEmitter(),
+    kill() {},
+  });
+  const kill = jest.spyOn(child, 'kill');
+  mockedSpawn.mockImplementationOnce(() => child as any);
+  const registry = setupAgent();
+  let cancellationRequested = false;
+  let listener: (() => void) | undefined;
+  const cancellation: CancellationController = {
+    get isCancellationRequested() {
+      return cancellationRequested;
+    },
+    onCancellationRequested: (callback) => {
+      listener = callback;
+      return () => {
+        listener = undefined;
+      };
+    },
+    requestCancellation: () => {
+      cancellationRequested = true;
+      listener?.();
+    },
+  };
+
+  const resultPromise = executeAgent(registry, 'analyzer.agent', TMP, null, undefined, null, undefined, cancellation);
+  cancellation.requestCancellation();
+  child.emit('close', 1);
+
+  await expect(resultPromise).resolves.toMatchObject({ success: false, cancelled: true });
+  expect(kill).toHaveBeenCalledTimes(1);
 });

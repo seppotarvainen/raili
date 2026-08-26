@@ -1,13 +1,13 @@
-import {StateDef} from '../types';
-import {AgentRegistry} from '../registry/agentRegistry';
-import {executeAgent} from '../handlers/agentHandler';
-import {loadAgentOutputPath} from '../context/outputStore';
-import {storeOutput} from './stateRunnerUtils';
-import {interpolateString} from '../variables/variableInterpolation';
-import type {StateResult} from './runner';
-import {IStateRunner} from './stateRunner';
-import {readMergedLearningsForPrompt} from '../context/learningStore';
-import {renderAgentVerbose} from '../presenter';
+import { CancellationToken, StateDef } from '../types';
+import { AgentRegistry } from '../registry/agentRegistry';
+import { executeAgent } from '../handlers/agentHandler';
+import { loadAgentOutputPath } from '../context/outputStore';
+import { storeOutput } from './stateRunnerUtils';
+import { interpolateString } from '../variables/variableInterpolation';
+import type { StateResult } from './runner';
+import { IStateRunner } from './stateRunner';
+import { readMergedLearningsForPrompt } from '../context/learningStore';
+import { renderAgentVerbose } from '../presenter';
 
 /**
  * AgentStateRunner - prototype implementation of the StateRunner interface
@@ -22,6 +22,7 @@ class AgentStateRunner implements IStateRunner {
     cwd: string,
     vars?: Record<string, string>,
     workflowArg?: string,
+    cancellationToken?: CancellationToken,
     verbose?: boolean,
   ): Promise<StateResult> {
     // Step 1: load previous output path for this state (may be null)
@@ -65,18 +66,33 @@ class AgentStateRunner implements IStateRunner {
       await new Promise((resolve) => setTimeout(resolve, 1));
     }
 
-    const result = await executeAgent(
-      this.registry,
-      agentId,
-      cwd,
-      previousOutputPath,
-      assembledPrompt,
-      useLatest,
-      workflowArg,
-    );
+    const result = cancellationToken
+      ? await executeAgent(
+          this.registry,
+          agentId,
+          cwd,
+          previousOutputPath,
+          assembledPrompt,
+          useLatest,
+          workflowArg,
+          cancellationToken,
+        )
+      : await executeAgent(
+          this.registry,
+          agentId,
+          cwd,
+          previousOutputPath,
+          assembledPrompt,
+          useLatest,
+          workflowArg,
+        );
 
     // Store output if configured (delegated to shared helper which also saves latest)
     storeOutput(cwd, state, result, workflowArg);
+
+    if (result.cancelled) {
+      return { outcome: 'CANCELLED', tokens: result.tokens, cancelled: true };
+    }
 
     if (state.config.on) {
       return { outcome: result.success ? 'PASSED' : 'FAILED', tokens: result.tokens };
@@ -104,7 +120,8 @@ export async function runAgentState(
   vars?: Record<string, string>,
   workflowArg?: string,
   verbose?: boolean,
+  cancellationToken?: CancellationToken,
 ): Promise<StateResult> {
   const runner = new AgentStateRunner(registry);
-  return runner.run(state, cwd, vars, workflowArg, verbose);
+  return runner.run(state, cwd, vars, workflowArg, cancellationToken, verbose);
 }

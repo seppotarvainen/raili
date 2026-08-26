@@ -101,6 +101,10 @@ export function fakeChild(stdoutData: string, stderrData: string, exitCode: numb
   const child = new EventEmitter() as any;
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
+  Object.defineProperty(child, 'kill', {
+    configurable: true,
+    value: jest.fn(),
+  });
   setImmediate(() => {
     if (stdoutData) child.stdout.emit('data', Buffer.from(stdoutData));
     if (stderrData) child.stderr.emit('data', Buffer.from(stderrData));

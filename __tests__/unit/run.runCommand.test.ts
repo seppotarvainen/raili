@@ -19,6 +19,7 @@ jest.mock('../../src/infrastructure/fileSystemProvider', () => ({
 }));
 import { clearContext, initializeContext, loadContext } from '../../src/context/context';
 import { Runner } from '../../src/runner/runner';
+import { createCancellationController } from '../../src/cancellation';
 
 jest.mock('../../src/workflow/workflowLoader');
 jest.mock('../../src/registry/registryValidator');
@@ -27,7 +28,7 @@ jest.mock('../../src/runner/runner');
 
 describe('runCommand', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
     (mockFs.existsSync as jest.Mock).mockImplementation((p: string) => true);
     (mockFs.statSync as jest.Mock).mockImplementation(() => ({ isDirectory: () => true }));
     (loadWorkflowConfig as jest.Mock).mockReturnValue({ initial: 'start', states: {} });
@@ -68,5 +69,47 @@ describe('runCommand', () => {
     expect(initializeContext).toHaveBeenCalled();
     const calledWith = (initializeContext as jest.Mock).mock.calls[0][0];
     expect(calledWith).toEqual({ ticket_id: 'OVERRIDE', secret: 'X', workflow: 'main' });
+  });
+
+  test('passes the run cancellation controller to Runner', async () => {
+    const cancellationController = createCancellationController();
+
+    await runCommand(
+      '/cwd',
+      'clean',
+      {},
+      'main',
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      cancellationController,
+    );
+
+    const runnerConfig = (Runner as unknown as jest.Mock).mock.calls[0][0] as {
+      cancellationToken: typeof cancellationController;
+    };
+    expect(runnerConfig.cancellationToken).toBe(cancellationController);
+  });
+
+  test('does not append a run log after cancellation', async () => {
+    const cancellationController = createCancellationController();
+    cancellationController.requestCancellation();
+
+    await runCommand(
+      '/cwd',
+      'clean',
+      {},
+      'main',
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      cancellationController,
+    );
+
+    expect(mockFs.appendFileSync).not.toHaveBeenCalled();
   });
 });

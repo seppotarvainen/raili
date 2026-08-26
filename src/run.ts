@@ -32,6 +32,8 @@ import {
   executeVarsResolver,
 } from './variables/varsResolverLoader';
 import { handleManualTransition } from './handlers/manualHandler';
+import { CancellationController } from './types';
+import { createCancellationController } from './cancellation';
 
 export type RunMode = 'continue' | 'clean';
 
@@ -45,6 +47,7 @@ export async function runCommand(
   rollback?: string,
   resolveVarsArgs?: string[],
   verbose?: boolean,
+  cancellationController: CancellationController = createCancellationController(),
 ) {
   const fs = getFileSystem();
   const railiDir = path.join(cwd, '.raili');
@@ -212,9 +215,12 @@ export async function runCommand(
     workflowArg: workflowPath,
     nextSteps: nextSteps,
     verbose: verbose,
+    cancellationToken: cancellationController,
   });
 
   await runner.run();
 
-  appendRunLog(cwd, workflowPath, runStart, workflowConfig);
+  if (!cancellationController.isCancellationRequested) {
+    appendRunLog(cwd, workflowPath, runStart, workflowConfig);
+  }
 }

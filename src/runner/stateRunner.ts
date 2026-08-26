@@ -1,4 +1,4 @@
-import { StateDef } from '../types';
+import { CancellationToken, StateDef } from '../types';
 import type { StateResult } from './runner';
 
 /**
@@ -6,5 +6,11 @@ import type { StateResult } from './runner';
  * Implementations should execute the state and return a StateResult.
  */
 export interface IStateRunner {
-  run(state: StateDef, cwd: string, vars?: Record<string, string>): Promise<StateResult>;
+  run(
+    state: StateDef,
+    cwd: string,
+    vars?: Record<string, string>,
+    workflowArg?: string,
+    cancellationToken?: CancellationToken,
+  ): Promise<StateResult>;
 }

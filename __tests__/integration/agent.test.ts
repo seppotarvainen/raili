@@ -2,6 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
+import { createCancellationController } from '../../src/cancellation';
+import { main } from '../../src/cli';
+import { RailiCommand } from '../../src/cli/railiCommand';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
@@ -69,6 +72,106 @@ states:
 
     const ctx = loadContext(tmpDir);
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
+  });
+});
+
+describe('agent cancellation', () => {
+  it('kills an in-flight agent, persists cancellation metadata, and does not route onward', async () => {
+    writeWorkflow(
+      tmpDir,
+      `
+initial: analyze
+states:
+  analyze:
+    type: agent
+    agent: test_agent
+    prompt: "Analyze the code"
+    transitions:
+      approve: done
+  done:
+    type: engine
+`,
+    );
+    writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
+    writeScriptRegistry(tmpDir, {});
+    writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
+
+    const cancellationController = createCancellationController();
+    const child = fakeChild('', '', 0);
+    const killSpy = jest.spyOn(child, 'kill');
+    spawn.mockImplementation((cmd: string) => {
+      if (cmd === 'copilot') {
+        cancellationController.requestCancellation();
+        return child;
+      }
+      return fakeChild('', '', 0);
+    });
+
+    const run = runCommand(
+      tmpDir,
+      'clean',
+      {},
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      cancellationController,
+    );
+    await run;
+
+    expect(spawn.mock.calls.some((call: unknown[]) => call[0] === 'copilot')).toBe(true);
+    expect(killSpy).toHaveBeenCalled();
+    const ctx = loadContext(tmpDir);
+    expect(ctx.stateHistory.map((entry) => entry.state)).not.toContain('done');
+    const analyze = ctx.stateHistory.find((entry) => entry.state === 'analyze');
+    expect(analyze?.meta?.cancelled).toEqual(expect.any(String));
+  });
+
+  it('cancels through the CLI boundary and persists cancellation metadata', async () => {
+    writeWorkflow(
+      tmpDir,
+      `
+initial: analyze
+states:
+  analyze:
+    type: agent
+    agent: test_agent
+    prompt: "Analyze the code"
+    transitions:
+      approve: done
+  done:
+    type: engine
+`,
+    );
+    writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
+    writeScriptRegistry(tmpDir, {});
+    writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
+
+    const child = fakeChild('', '', 0);
+    const killSpy = jest.spyOn(child, 'kill');
+    spawn.mockImplementation((cmd: string) => {
+      if (cmd === 'copilot') {
+        process.stdin.emit('data', Buffer.from([0x18]));
+        return child;
+      }
+      return fakeChild('', '', 0);
+    });
+
+    const previousCwd = process.cwd();
+    process.chdir(tmpDir);
+    try {
+      await main(new RailiCommand('run'), ['--clean']);
+    } finally {
+      process.chdir(previousCwd);
+    }
+
+    expect(killSpy).toHaveBeenCalled();
+    const ctx = loadContext(tmpDir);
+    expect(ctx.stateHistory.map((entry) => entry.state)).not.toContain('done');
+    const analyze = ctx.stateHistory.find((entry) => entry.state === 'analyze');
+    expect(analyze?.meta?.cancelled).toEqual(expect.any(String));
   });
 });
 

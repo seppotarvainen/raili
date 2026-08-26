@@ -4,11 +4,12 @@ import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import { AgentRegistry } from '../registry/agentRegistry';
 import { resolveRegistryPath } from '../context/pathUtils';
 import { readLatestNRuns } from '../context/outputStore';
-import { TokenUsage } from '../types';
+import { CancellationToken, TokenUsage } from '../types';
 import { parseCopilotTokenLine } from './tokenParser';
 
 interface AgentExecutionResult {
   success: boolean;
+  cancelled?: boolean;
   stdout: string;
   stderr: string;
   tokens?: TokenUsage;
@@ -31,6 +32,7 @@ export function executeAgent(
   prompt?: string,
   useLatest?: number | null,
   workflowArg?: string,
+  cancellationToken?: CancellationToken,
 ): Promise<AgentExecutionResult> {
   const fs = getFileSystem();
   const entry = registry[agentId];
@@ -79,6 +81,34 @@ export function executeAgent(
 
     let stdout = '';
     let stderr = '';
+    let settled = false;
+    let cancellationRequested = false;
+    let terminationRequested = false;
+    let removeCancellationListener: (() => void) | undefined;
+
+    const finish = (cancelled: boolean, code: number | null = null): void => {
+      if (settled) return;
+      settled = true;
+      removeCancellationListener?.();
+      const tokens = parseCopilotTokenLine(stdout) ?? parseCopilotTokenLine(stderr);
+      const result: AgentExecutionResult = {
+        success: cancelled ? false : code === 0,
+        stdout,
+        stderr,
+      };
+      if (cancelled) result.cancelled = true;
+      if (tokens) result.tokens = tokens;
+      resolve(result);
+    };
+
+    const cancel = (): void => {
+      cancellationRequested = true;
+      if (!terminationRequested) {
+        terminationRequested = true;
+        child.kill();
+      }
+      finish(true);
+    };
 
     child.stdout.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
@@ -93,13 +123,15 @@ export function executeAgent(
     });
 
     child.on('close', (code) => {
-      const tokens = parseCopilotTokenLine(stdout) ?? parseCopilotTokenLine(stderr);
-      const result: AgentExecutionResult = { success: code === 0, stdout, stderr };
-      if (tokens) {
-        result.tokens = tokens;
-      }
-      resolve(result);
+      finish(cancellationRequested || cancellationToken?.isCancellationRequested === true, code);
     });
+
+    if (cancellationToken) {
+      const unsubscribe = cancellationToken.onCancellationRequested(cancel);
+      removeCancellationListener = settled ? undefined : unsubscribe;
+      if (settled) unsubscribe();
+      if (cancellationToken.isCancellationRequested) cancel();
+    }
   });
 }
 

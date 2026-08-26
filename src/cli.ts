@@ -17,6 +17,7 @@ import { createCommand } from './cli/create';
 import { visualCommand } from './cli/visual';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
 import { loadVarsFile } from './variables/varsLoader';
+import { createCancellationController } from './cancellation';
 
 const args = process.argv.slice(2);
 
@@ -257,7 +258,51 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
         vars = mode === 'clean' ? await collectVars(process.cwd(), flagVars, workflowPath) : flagVars;
       }
 
-      await runCommand(process.cwd(), mode, vars, workflowPath, parsed.dryRun, parsed.next, parsed.rollback, parsed.resolveVars, parsed.verbose);
+      const cancellationController = createCancellationController();
+      const stdin = process.stdin;
+      const originalRawMode =
+        typeof stdin.isRaw === 'boolean' ? stdin.isRaw : false;
+      const canSetRawMode = typeof stdin.setRawMode === 'function' && stdin.isTTY;
+      const onInput = (chunk: Buffer | string): void => {
+        const input = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+        if (input.includes(0x18)) {
+          cancellationController.requestCancellation();
+        }
+        if (input.includes(0x03)) {
+          process.kill(process.pid, 'SIGINT');
+        }
+      };
+
+      let inputListenerInstalled = false;
+      try {
+        if (canSetRawMode) {
+          stdin.setRawMode(true);
+        }
+        stdin.on('data', onInput);
+        inputListenerInstalled = true;
+        await runCommand(
+          process.cwd(),
+          mode,
+          vars,
+          workflowPath,
+          parsed.dryRun,
+          parsed.next,
+          parsed.rollback,
+          parsed.resolveVars,
+          parsed.verbose,
+          cancellationController,
+        );
+        if (cancellationController.isCancellationRequested) {
+          console.log('Run cancelled gracefully.');
+        }
+      } finally {
+        if (inputListenerInstalled) {
+          stdin.removeListener('data', onInput);
+        }
+        if (canSetRawMode) {
+          stdin.setRawMode(originalRawMode);
+        }
+      }
     } else if (command.help) {
       // raili help [topic]
       const topic = runArgs[0];

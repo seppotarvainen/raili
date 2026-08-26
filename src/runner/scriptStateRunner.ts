@@ -1,4 +1,4 @@
-import { StateDef } from '../types';
+import { CancellationToken, StateDef } from '../types';
 import { ScriptRegistry } from '../registry/scriptRegistry';
 import { executeScript } from '../handlers/scriptHandler';
 import type { StateResult } from './runner';
@@ -17,6 +17,7 @@ class ScriptStateRunner implements IStateRunner {
     cwd: string,
     vars?: Record<string, string>,
     workflowArg?: string,
+    cancellationToken?: CancellationToken,
   ): Promise<StateResult> {
     const scriptId = state.config.script!;
     const rawArgs = state.config.args ?? [];
@@ -24,7 +25,9 @@ class ScriptStateRunner implements IStateRunner {
     const args = interpolateObject(rawArgs, vars ?? {}, { throwOnMissing: true }) as string[];
     const envOverrides = buildEnvOverrides(vars);
 
-    const result = await executeScript(this.registry, scriptId, cwd, args, envOverrides);
+    const result = cancellationToken
+      ? await executeScript(this.registry, scriptId, cwd, args, envOverrides, cancellationToken)
+      : await executeScript(this.registry, scriptId, cwd, args, envOverrides);
 
     return processStateResult(cwd, state, result, 'script', workflowArg);
   }
@@ -37,7 +40,8 @@ export async function runScriptState(
   cwd: string,
   vars?: Record<string, string>,
   workflowArg?: string,
+  cancellationToken?: CancellationToken,
 ): Promise<StateResult> {
   const runner = new ScriptStateRunner(registry);
-  return runner.run(state, cwd, vars, workflowArg);
+  return runner.run(state, cwd, vars, workflowArg, cancellationToken);
 }

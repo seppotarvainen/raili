@@ -1,16 +1,23 @@
-import {StateDef, WorkflowContext} from '../types';
-import {StateResult} from './runner';
+import { CancellationToken, StateDef, WorkflowContext } from '../types';
+import { StateResult } from './runner';
 
 export type AgentRunner = (
   stateDef: StateDef,
   cwd: string,
   vars?: Record<string, string> | undefined,
   workflowArg?: string | undefined,
+  cancellationToken?: CancellationToken,
   verbose?: boolean,
 ) => Promise<StateResult>;
 
-export type ScriptRunner = AgentRunner;
-export type CommandRunner = AgentRunner;
+export type ScriptRunner = (
+  stateDef: StateDef,
+  cwd: string,
+  vars?: Record<string, string>,
+  workflowArg?: string,
+  cancellationToken?: CancellationToken,
+) => Promise<StateResult>;
+export type CommandRunner = ScriptRunner;
 
 export interface StateExecutionDeps {
   agentStateRunner: AgentRunner;
@@ -48,21 +55,44 @@ export class StateExecutionManager {
     stateId: string,
     stateDef: StateDef,
     context: WorkflowContext,
+    cancellationToken?: CancellationToken,
   ): Promise<StateResult> {
     const cfg = stateDef.config;
     let result: StateResult;
 
     if (cfg.type === 'agent') {
-      result = await this.agentStateRunner(stateDef, this.cwd, context.vars, this.workflowArg);
+      result = await this.agentStateRunner(
+        stateDef,
+        this.cwd,
+        context.vars,
+        this.workflowArg,
+        cancellationToken,
+      );
     } else if (cfg.type === 'script') {
-      result = await this.scriptStateRunner(stateDef, this.cwd, context.vars, this.workflowArg);
+      result = await this.scriptStateRunner(
+        stateDef,
+        this.cwd,
+        context.vars,
+        this.workflowArg,
+        cancellationToken,
+      );
     } else if (cfg.type === 'command') {
-      result = await this.commandStateRunner(stateDef, this.cwd, context.vars, this.workflowArg);
+      result = await this.commandStateRunner(
+        stateDef,
+        this.cwd,
+        context.vars,
+        this.workflowArg,
+        cancellationToken,
+      );
     } else if (cfg.type === 'group') {
       throw new Error('groups must be flattened before execution');
     } else {
       // engine or unknown: no-op and returns PASSED
       result = { outcome: 'PASSED' };
+    }
+
+    if (result.cancelled) {
+      return result;
     }
 
     // Merge exports into context according to expose rules
