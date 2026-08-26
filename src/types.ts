@@ -122,6 +122,8 @@ export interface StateMeta {
   notify?: NotifyMeta;
   approval?: ApprovalMeta;
   success?: boolean | null;
+  /** ISO timestamp recorded when execution of this state is cancelled. */
+  cancelled?: string;
   waitMs?: number;
   // Allow additional arbitrary metadata keys for future extensions
   [key: string]: unknown;
@@ -139,6 +141,20 @@ export interface WorkflowContext {
   approvals?: Record<string, string>; // Approval reasons keyed by <STATE>_<OUTCOME> uppercase
   feedbacks?: Record<string, { value: string; metadata?: string }>;
   stateHistory: StateHistoryEntry[];
+}
+
+/**
+ * Coordinates a run-scoped cancellation request between the CLI and handlers.
+ * Implementations own the cancellation state and notify listeners while the
+ * runner and handlers only depend on this contract.
+ */
+export interface CancellationToken {
+  readonly isCancellationRequested: boolean;
+  onCancellationRequested(listener: () => void): () => void;
+}
+
+export interface CancellationController extends CancellationToken {
+  requestCancellation(): void;
 }
 
 // Token usage parsed from copilot CLI output. Numeric fields are absolute integers.

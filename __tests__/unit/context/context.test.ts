@@ -183,6 +183,48 @@ describe('context', () => {
       // The later 'done' entry must remain untouched
       expect(updated.stateHistory[1].meta).toBeUndefined();
     });
+
+    test('merges cancellation metadata while preserving the active state entry', () => {
+      const ctx = {
+        stateHistory: [
+          {
+            state: 'check_done',
+            enteredAt: '2026-06-24T06:20:00.000Z',
+            meta: { waitMs: 250, approval: { question: 'Q', chosen: 'PASSED' as const } },
+          },
+        ],
+      };
+
+      const updated = addStateToHistory(ctx, 'check_done', {
+        cancelled: '2026-06-24T06:25:28.212Z',
+      });
+      const entry = updated.stateHistory[0];
+
+      expect(entry.state).toBe('check_done');
+      expect(entry.enteredAt).toBe('2026-06-24T06:20:00.000Z');
+      expect(entry.meta).toEqual({
+        waitMs: 250,
+        approval: { question: 'Q', chosen: 'PASSED' },
+        cancelled: '2026-06-24T06:25:28.212Z',
+      });
+    });
+
+    test('round-trips cancellation metadata through save and load', () => {
+      const context = addStateToHistory(
+        {
+          vars: { ticket_id: 'TICKET-90' },
+          approvals: {},
+          feedbacks: {},
+          stateHistory: [{ state: 'check_done', enteredAt: '2026-06-24T06:20:00.000Z', meta: {} }],
+        },
+        'check_done',
+        { cancelled: '2026-06-24T06:25:28.212Z' },
+      );
+
+      saveContext(tmpdir, context);
+
+      expect(loadContext(tmpdir)).toEqual(context);
+    });
   });
 
   describe('initializeContext', () => {
@@ -238,4 +280,3 @@ describe('context', () => {
     });
   });
 });
-

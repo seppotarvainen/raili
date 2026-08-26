@@ -1,12 +1,14 @@
 import path from 'path';
 import {EventEmitter} from 'events';
+import { spawn } from 'child_process';
 import {loadScriptRegistry} from '../../../src/registry/scriptRegistry';
 import {executeScript} from '../../../src/handlers/scriptHandler';
 import { setupFakeFs } from '../infrastructure/fsFake.util';
 import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
+import { CancellationController } from '../../../src/types';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+const mockedSpawn = jest.mocked(spawn);
 
 const TMP = '/tmp';
 let restoreFs: () => void;
@@ -41,7 +43,7 @@ function setupRegistry() {
 }
 
 beforeEach(() => {
-  spawn.mockImplementation(() => fakeChild('hello\n', '', 0));
+  mockedSpawn.mockImplementation(() => fakeChild('hello\n', '', 0));
 });
 
 test('executeScript returns stdout on success', async () => {
@@ -52,7 +54,7 @@ test('executeScript returns stdout on success', async () => {
 });
 
 test('executeScript returns failure on non-zero exit', async () => {
-  spawn.mockImplementationOnce(() => fakeChild('', 'error msg\n', 1));
+  mockedSpawn.mockImplementationOnce(() => fakeChild('', 'error msg\n', 1));
   const loaded = setupRegistry();
   const res = await executeScript(loaded, 'archive-part', TMP);
   expect(res.success).toBe(false);
@@ -68,6 +70,41 @@ test('passes args to spawn when provided', async () => {
   const loaded = setupRegistry();
   await executeScript(loaded, 'archive-part', TMP, ['one', '--flag']);
   const fullPath = path.resolve(TMP, './scripts/archive.sh');
-  expect(spawn).toHaveBeenCalledWith(fullPath, ['one', '--flag'], expect.any(Object));
+  expect(mockedSpawn).toHaveBeenCalledWith(fullPath, ['one', '--flag'], expect.any(Object));
 });
 
+test('terminates an in-flight script and cancellation wins the close race', async () => {
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new EventEmitter(),
+    stderr: new EventEmitter(),
+    kill() {},
+  });
+  const kill = jest.spyOn(child, 'kill');
+  mockedSpawn.mockImplementationOnce(() => child as any);
+  const loaded = setupRegistry();
+  let cancellationRequested = false;
+  let listener: (() => void) | undefined;
+  const cancellation: CancellationController = {
+    get isCancellationRequested() {
+      return cancellationRequested;
+    },
+    onCancellationRequested: (callback) => {
+      listener = callback;
+      return () => {
+        listener = undefined;
+      };
+    },
+    requestCancellation: () => {
+      cancellationRequested = true;
+      listener?.();
+    },
+  };
+
+  const resultPromise = executeScript(loaded, 'archive-part', TMP, [], {}, cancellation);
+  cancellation.requestCancellation();
+  child.emit('close', 0);
+  child.emit('close', 1);
+
+  await expect(resultPromise).resolves.toMatchObject({ success: false, cancelled: true });
+  expect(kill).toHaveBeenCalledTimes(1);
+});

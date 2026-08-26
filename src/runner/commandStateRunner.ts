@@ -1,4 +1,4 @@
-import { StateDef } from '../types';
+import { CancellationToken, StateDef } from '../types';
 import { executeCommand } from '../handlers/commandHandler';
 import type { StateResult } from './runner';
 import { IStateRunner } from './stateRunner';
@@ -15,12 +15,15 @@ class CommandStateRunner implements IStateRunner {
     cwd: string,
     vars?: Record<string, string>,
     workflowArg?: string,
+    cancellationToken?: CancellationToken,
   ): Promise<StateResult> {
     const command = state.config.command!;
     const workdir = state.config.directory ?? cwd;
     const envOverrides = buildEnvOverrides(vars);
 
-    const result = await executeCommand(command, workdir, envOverrides);
+    const result = cancellationToken
+      ? await executeCommand(command, workdir, envOverrides, cancellationToken)
+      : await executeCommand(command, workdir, envOverrides);
 
     return processStateResult(cwd, state, result, 'command', workflowArg);
   }
@@ -32,7 +35,8 @@ export async function runCommandState(
   cwd: string,
   vars?: Record<string, string>,
   workflowArg?: string,
+  cancellationToken?: CancellationToken,
 ): Promise<StateResult> {
   const runner = new CommandStateRunner();
-  return runner.run(state, cwd, vars, workflowArg);
+  return runner.run(state, cwd, vars, workflowArg, cancellationToken);
 }

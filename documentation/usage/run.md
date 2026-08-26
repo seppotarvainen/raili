@@ -127,6 +127,26 @@ Startup confirmation: If any states in the selected workflow have `skip` configu
 
 5. **Stop** → Terminal state reached or error occurred
 
+## Graceful cancellation
+
+While `raili run` is active, press **Ctrl+X** (ASCII control byte `0x18`) to cancel the run gracefully. The shortcut works while an agent, script, or command is running: Raili terminates that external operation and stops without evaluating its outcome or routing to a successor state.
+
+Ctrl+X is distinct from **Ctrl+C**, which remains the normal `SIGINT` interrupt, and from a handler failure, which follows the workflow's configured failure route or error handling. Cancellation does not represent a successful completion and does not append a terminal run-log entry.
+
+The active state's history entry is persisted with a cancellation timestamp under `meta.cancelled`:
+
+```json
+{
+  "state": "check_done",
+  "enteredAt": "2026-06-24T06:24:25.712Z",
+  "meta": {
+    "cancelled": "2026-06-24T06:25:28.212Z"
+  }
+}
+```
+
+No successor state is entered. Use `raili run --continue` to resume from the cancelled state; its handler will run again and the workflow can then follow its normal routing.
+
 ## Input Variables
 
 ### Declare inputs in workflow.yaml
@@ -170,6 +190,7 @@ Raili saves execution state to `<workflow>/context.json`:
 ### Resume behavior
 - `raili run` with existing context → prompts "Continue from existing run (Enter) or clean run (c)?"
 - `raili run --continue` → resumes from the last recorded state. If the last recorded state was terminal (no routing defined), `--continue` will restart the workflow from the workflow's `initial` state (useful to rerun a completed workflow).
+- After a graceful Ctrl+X cancellation, `--continue` resumes by retrying the recorded active state.
 - `raili run --clean` → resets and persists a fresh initial context (cleared stateHistory, merged inputs, and the default `workflow` variable); outputs are cleared.
 
 ### Named workflow resume behavior

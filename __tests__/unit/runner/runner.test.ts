@@ -5,7 +5,8 @@ import * as agentStateRunner from '../../../src/runner/agentStateRunner';
 import * as scriptStateRunner from '../../../src/runner/scriptStateRunner';
 import * as commandStateRunner from '../../../src/runner/commandStateRunner';
 import * as learningStore from '../../../src/context/learningStore';
-import {StateMachine, WorkflowContext} from '../../../src/types';
+import {CancellationToken, StateMachine, StateMeta, WorkflowContext} from '../../../src/types';
+import * as contextApi from '../../../src/context/context';
 
 jest.mock('../../../src/context/outputStore');
 jest.mock('../../../src/handlers/notifyHandler');
@@ -25,7 +26,7 @@ const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<ty
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
 const mockAppendUnique = learningStore.appendUniqueLearning as jest.MockedFunction<typeof learningStore.appendUniqueLearning>;
 
-function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps?: number, agentRegistry: any = { agent1: { path: 'agent.md' }, a: { path: 'agent.md' } }): Runner {
+function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps?: number, agentRegistry: any = { agent1: { path: 'agent.md' }, a: { path: 'agent.md' } }, cancellationToken?: CancellationToken): Runner {
   const stateMachine: StateMachine = { initial, states };
   const context: WorkflowContext = { stateHistory: [] };
   return new Runner({
@@ -35,6 +36,7 @@ function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps
     context,
     cwd: '/tmp',
     nextSteps,
+    cancellationToken,
   } as RunnerConfig);
 }
 
@@ -133,6 +135,153 @@ test('does not call clearAgentOutputs when reset_outputs is not set', async () =
   await runner.run();
 
   expect(mockClear).not.toHaveBeenCalled();
+});
+
+test('records cancellation and stops without routing to a successor', async () => {
+  const cancellationToken: CancellationToken = {
+    isCancellationRequested: false,
+    onCancellationRequested: jest.fn(() => jest.fn()),
+  };
+  mockRunAgent.mockResolvedValue({ outcome: 'CANCELLED', cancelled: true });
+  const runner = makeRunner(
+    {
+      start: {
+        id: 'start',
+        config: { type: 'agent', agent: 'a', transitions: { approve: 'done', reject: 'retry' } },
+        transitions: ['done', 'retry'],
+      },
+      done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+      retry: { id: 'retry', config: { type: 'engine' }, transitions: [] },
+    },
+    'start',
+    undefined,
+    undefined,
+    cancellationToken,
+  );
+
+  await expect(runner.run()).resolves.toBeUndefined();
+
+  const cancellationRecord = (contextApi.addStateToHistory as jest.Mock).mock.calls.find(
+    (call: [unknown, string, { cancelled?: string } | undefined]) =>
+      call[1] === 'start' && call[2]?.cancelled,
+  );
+  expect(cancellationRecord?.[2]?.cancelled).toEqual(expect.any(String));
+  expect((contextApi.saveContext as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+  const enteredStates = (contextApi.addStateToHistory as jest.Mock).mock.calls.map(
+    (call: unknown[]) => call[1],
+  );
+  expect(enteredStates).not.toContain('done');
+  expect(enteredStates).not.toContain('retry');
+});
+
+test('records cancellation when the token is already requested before execution', async () => {
+  const cancellationToken: CancellationToken = {
+    isCancellationRequested: true,
+    onCancellationRequested: jest.fn(() => jest.fn()),
+  };
+  const runner = makeRunner(
+    {
+      start: {
+        id: 'start',
+        config: { type: 'command', command: 'echo hi', on: { PASSED: 'done' } },
+        transitions: ['done'],
+      },
+      done: { id: 'done', config: { type: 'engine' }, transitions: [] },
+    },
+    'start',
+    undefined,
+    undefined,
+    cancellationToken,
+  );
+
+  await expect(runner.run()).resolves.toBeUndefined();
+
+  expect(mockRunCommand).not.toHaveBeenCalled();
+  const enteredStates = (contextApi.addStateToHistory as jest.Mock).mock.calls.map(
+    (call: unknown[]) => call[1],
+  );
+  expect(enteredStates).toContain('start');
+  expect(enteredStates).not.toContain('done');
+  expect((contextApi.saveContext as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+});
+
+test('persists cancellation metadata on the active state when child completion races cancellation', async () => {
+  let cancellationRequested = false;
+  const cancellationToken: CancellationToken = {
+    get isCancellationRequested() {
+      return cancellationRequested;
+    },
+    onCancellationRequested: jest.fn(() => jest.fn()),
+  };
+  const context: WorkflowContext = { stateHistory: [] };
+  const savedContexts: WorkflowContext[] = [];
+  const addState = contextApi.addStateToHistory as jest.MockedFunction<typeof contextApi.addStateToHistory>;
+  const save = contextApi.saveContext as jest.MockedFunction<typeof contextApi.saveContext>;
+  const originalAddState = addState.getMockImplementation();
+  const originalSave = save.getMockImplementation();
+
+  addState.mockImplementation((ctx, state, meta?: StateMeta) => {
+    const existing = [...ctx.stateHistory].reverse().find((entry) => entry.state === state);
+    if (existing) {
+      if (meta) {
+        existing.meta = { ...existing.meta, ...meta };
+      }
+      return ctx;
+    }
+    ctx.stateHistory.push({
+      state,
+      enteredAt: '2026-08-26T07:00:00.000Z',
+      meta: meta ?? {},
+    });
+    return ctx;
+  });
+  save.mockImplementation((_cwd, ctx) => {
+    savedContexts.push(JSON.parse(JSON.stringify(ctx)) as WorkflowContext);
+  });
+  mockRunCommand.mockImplementation(async () => {
+    cancellationRequested = true;
+    return { outcome: 'FAILED' };
+  });
+
+  try {
+    const runner = new Runner({
+      stateMachine: {
+        initial: 'check_done',
+        states: {
+          check_done: {
+            id: 'check_done',
+            config: {
+              type: 'command',
+              command: 'echo hi',
+              on: { PASSED: 'finished', FAILED: 'revise' },
+            },
+            transitions: ['finished', 'revise'],
+          },
+          finished: { id: 'finished', config: { type: 'engine' }, transitions: [] },
+          revise: { id: 'revise', config: { type: 'engine' }, transitions: [] },
+        },
+      },
+      agentRegistry: {},
+      scriptRegistry: {},
+      context,
+      cwd: '/tmp',
+      cancellationToken,
+    });
+
+    await expect(runner.run()).resolves.toBeUndefined();
+
+    const persisted = savedContexts[savedContexts.length - 1];
+    expect(persisted.stateHistory).toHaveLength(1);
+    expect(persisted.stateHistory[0]).toMatchObject({
+      state: 'check_done',
+      enteredAt: '2026-08-26T07:00:00.000Z',
+      meta: { cancelled: expect.any(String) },
+    });
+    expect(Number.isNaN(Date.parse(persisted.stateHistory[0].meta?.cancelled as string))).toBe(false);
+  } finally {
+    addState.mockImplementation(originalAddState ?? ((ctx) => ctx));
+    save.mockImplementation(originalSave ?? (() => undefined));
+  }
 });
 
 test('clears reset_outputs before notify and handler run', async () => {
