@@ -54,6 +54,7 @@ describe('run cancellation input lifecycle', () => {
   let originalSetRawMode: NodeJS.ReadStream['setRawMode'];
   let onSpy: jest.SpiedFunction<NodeJS.ReadStream['on']>;
   let removeListenerSpy: jest.SpiedFunction<NodeJS.ReadStream['removeListener']>;
+  let pauseSpy: jest.SpiedFunction<NodeJS.ReadStream['pause']>;
   let setRawModeSpy: jest.Mock;
 
   beforeEach(() => {
@@ -66,6 +67,7 @@ describe('run cancellation input lifecycle', () => {
     Object.defineProperty(stdin, 'isRaw', { configurable: true, value: false });
     onSpy = jest.spyOn(stdin, 'on');
     removeListenerSpy = jest.spyOn(stdin, 'removeListener');
+    pauseSpy = jest.spyOn(stdin, 'pause');
     setRawModeSpy = jest.fn(() => stdin);
     Object.defineProperty(stdin, 'setRawMode', {
       configurable: true,
@@ -77,6 +79,7 @@ describe('run cancellation input lifecycle', () => {
   afterEach(() => {
     onSpy.mockRestore();
     removeListenerSpy.mockRestore();
+    pauseSpy.mockRestore();
     Object.defineProperty(stdin, 'isTTY', { configurable: true, value: originalIsTTY });
     Object.defineProperty(stdin, 'isRaw', { configurable: true, value: originalIsRaw });
     if (originalSetRawMode) {
@@ -109,6 +112,7 @@ describe('run cancellation input lifecycle', () => {
     expect(setRawModeSpy).toHaveBeenNthCalledWith(1, true);
     expect(setRawModeSpy).toHaveBeenLastCalledWith(false);
     expect(removeListenerSpy).toHaveBeenCalledWith('data', expect.any(Function));
+    expect(pauseSpy).toHaveBeenCalled();
   });
 
   test('does not treat Ctrl+C as cancellation and still cleans up after failure', async () => {

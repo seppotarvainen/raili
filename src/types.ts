@@ -1,7 +1,6 @@
 // Shared types for workflow configuration and state machine
 
 // Workflow configuration loaded from workflow.yaml
-import { deprecate } from 'node:util';
 
 export type StateType = 'agent' | 'script' | 'command' | 'engine' | 'group';
 
@@ -242,6 +241,7 @@ export interface FeedbackResolverInput {
 export interface FeedbackResolverResult {
   feedback: string;
   metadata?: string;
+  cancelled?: boolean;
 }
 
 /**

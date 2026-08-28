@@ -1,9 +1,10 @@
 import * as readline from 'readline';
 import {
-  FeedbackConfig,
   ApprovalResolverInput,
-  FeedbackResolverInput,
   ApprovalResolverResult,
+  CancellationToken,
+  FeedbackConfig,
+  FeedbackResolverInput,
   FeedbackResolverResult,
 } from '../types';
 
@@ -18,6 +19,7 @@ export interface ManualResult {
   target: string;
   reason: string;
   waitMs?: number;
+  cancelled?: boolean;
 }
 
 // Resolver interfaces (backward-compatible unions)
@@ -169,6 +171,7 @@ export async function handleManualTransition(
     stateName?: string;
   },
   timeoutMs?: number,
+  cancellationToken?: CancellationToken,
 ): Promise<ManualResult> {
   const keys = Object.keys(config.options || {});
   if (keys.length === 0) {
@@ -212,37 +215,74 @@ export async function handleManualTransition(
 
       return await new Promise<ManualResult>((resolve) => {
         const lines: string[] = [];
+        let settled = false;
+        let removeCancellationListener: (() => void) | undefined;
+
+        const finish = (result: ManualResult): void => {
+          if (settled) return;
+          settled = true;
+          removeCancellationListener?.();
+          resolve(result);
+        };
 
         const onLine = (line: string) => {
+          if (settled) return;
           if (line === '/q') {
             rl.close();
             const reason = lines.join('\n');
             const chosen = reason === '' ? 'PASSED' : 'FAILED';
             const waitMs = Date.now() - waitStart;
-            resolve({ chosen, target: config.options[chosen], reason, waitMs });
+            finish({ chosen, target: config.options[chosen], reason, waitMs });
           } else {
             lines.push(line);
             rl.prompt();
           }
         };
         rl.on('line', onLine);
+
+        if (cancellationToken) {
+          const onCancellation = (): void => {
+            rl.close();
+            finish({ chosen: '', target: '', reason: '', cancelled: true });
+          };
+          removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
+          if (cancellationToken.isCancellationRequested) onCancellation();
+        }
       });
     }
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     const waitStart = Date.now();
 
-    const answer = await new Promise<string>((resolve) => {
-      rl.question(`\n${config.question}\n[Enter = PASSED, type reason = FAILED]: `, resolve);
+    const result = await new Promise<ManualResult>((resolve) => {
+      let settled = false;
+      let removeCancellationListener: (() => void) | undefined;
+      const finish = (value: ManualResult): void => {
+        if (settled) return;
+        settled = true;
+        removeCancellationListener?.();
+        resolve(value);
+      };
+
+      rl.question(`\n${config.question}\n[Enter = PASSED, type reason = FAILED]: `, (answer) => {
+        rl.close();
+        const reason = answer.trim();
+        const chosen = reason === '' ? 'PASSED' : 'FAILED';
+        const waitMs = Date.now() - waitStart;
+        finish({ chosen, target: config.options[chosen], reason, waitMs });
+      });
+
+      if (cancellationToken) {
+        const onCancellation = (): void => {
+          rl.close();
+          finish({ chosen: '', target: '', reason: '', cancelled: true });
+        };
+        removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
+        if (cancellationToken.isCancellationRequested) onCancellation();
+      }
     });
 
-    rl.close();
-
-    const reason = answer.trim();
-    const chosen = reason === '' ? 'PASSED' : 'FAILED';
-    const waitMs = Date.now() - waitStart;
-
-    return { chosen, target: config.options[chosen], reason, waitMs };
+    return result;
   };
 
   if (typeof timeoutMs === 'number' && timeoutMs > 0) {
@@ -276,6 +316,7 @@ export async function handleFeedbackPrompt(
   feedback: FeedbackConfig,
   feedbackResolver?: FeedbackResolverFunction | null,
   timeoutMs?: number,
+  cancellationToken?: CancellationToken,
 ): Promise<FeedbackResolverResult | string | null> {
   const name = feedback.expose_var;
   if (!name || name.trim() === '') {
@@ -286,6 +327,9 @@ export async function handleFeedbackPrompt(
     // If resolver provided, execute it and return either the legacy string (when resolver returned a string),
     // or the structured object when resolver returned an object. Keep null as-is.
     if (feedbackResolver) {
+      if (cancellationToken?.isCancellationRequested) {
+        return { feedback: '', cancelled: true };
+      }
       const input: FeedbackResolverInput = {
         prompt: feedback.question ?? `Enter feedback for '${name}':`,
         stateName: '',
@@ -312,17 +356,38 @@ export async function handleFeedbackPrompt(
     const required = !!feedback.required;
 
     // Helper to prompt single-line
-    const promptSingle = async (): Promise<string> => {
+    const promptSingle = async (): Promise<string | FeedbackResolverResult> => {
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      const answer = await new Promise<string>((resolve) => {
-        rl.question(`\n${question}\n: `, resolve);
+      const answer = await new Promise<string | FeedbackResolverResult>((resolve) => {
+        let settled = false;
+        let removeCancellationListener: (() => void) | undefined;
+        const finish = (value: string | FeedbackResolverResult): void => {
+          if (settled) return;
+          settled = true;
+          removeCancellationListener?.();
+          resolve(value);
+        };
+
+        rl.question(`\n${question}\n: `, (value) => {
+          rl.close();
+          finish(value);
+        });
+
+        if (cancellationToken) {
+          const onCancellation = (): void => {
+            rl.close();
+            finish({ feedback: '', cancelled: true });
+          };
+          removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
+          if (cancellationToken.isCancellationRequested) onCancellation();
+        }
       });
-      rl.close();
+      if (typeof answer !== 'string') return answer;
       return answer.trim();
     };
 
     // Helper to prompt multiline
-    const promptMulti = async (): Promise<string> => {
+    const promptMulti = async (): Promise<string | FeedbackResolverResult> => {
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
       console.log(
         `\n${question}\n[Enter multiple lines, finish with a single line containing '/q']`,
@@ -330,23 +395,43 @@ export async function handleFeedbackPrompt(
       rl.setPrompt('> ');
       rl.prompt();
 
-      return await new Promise<string>((resolve) => {
+      return await new Promise<string | FeedbackResolverResult>((resolve) => {
         const lines: string[] = [];
+        let settled = false;
+        let removeCancellationListener: (() => void) | undefined;
+        const finish = (value: string | FeedbackResolverResult): void => {
+          if (settled) return;
+          settled = true;
+          removeCancellationListener?.();
+          resolve(value);
+        };
         const onLine = (line: string) => {
+          if (settled) return;
           if (line === '/q') {
             rl.close();
-            resolve(lines.join('\n'));
+            finish(lines.join('\n'));
           } else {
             lines.push(line);
             rl.prompt();
           }
         };
         rl.on('line', onLine);
+        if (cancellationToken) {
+          const onCancellation = (): void => {
+            rl.close();
+            finish({ feedback: '', cancelled: true });
+          };
+          removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
+          if (cancellationToken.isCancellationRequested) onCancellation();
+        }
       });
     };
 
     while (true) {
       const val = multiline ? await promptMulti() : await promptSingle();
+      if (typeof val !== 'string' && val.cancelled) {
+        return val;
+      }
       if (val !== '' || !required) {
         return val;
       }

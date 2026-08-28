@@ -1,20 +1,21 @@
-import { ApprovalConfig, WorkflowContext } from '../types';
+import {ApprovalConfig, CancellationToken, WorkflowContext} from '../types';
 import {
   handleManualTransition,
+  loadApprovalResolver,
   ManualResult,
   ManualTransitionConfig,
-  loadApprovalResolver,
 } from '../handlers/manualHandler';
-import { NotifyResult, runNotify } from '../handlers/notifyHandler';
-import { outputPath } from '../context/outputStore';
-import { interpolateString } from '../variables/variableInterpolation';
-import { resolveWorkflowDir, resolveResolverConfigPath } from '../context/pathUtils';
-import { loadResolverConfig } from '../resolverConfigLoader';
+import {NotifyResult, runNotify} from '../handlers/notifyHandler';
+import {outputPath} from '../context/outputStore';
+import {interpolateString} from '../variables/variableInterpolation';
+import {resolveResolverConfigPath, resolveWorkflowDir} from '../context/pathUtils';
+import {loadResolverConfig} from '../resolverConfigLoader';
 
 interface ApprovalStepOptions {
   cwd: string;
   context?: WorkflowContext;
   workflowArg?: string;
+  cancellationToken?: CancellationToken;
 }
 
 export interface ApprovalOutcome {
@@ -24,6 +25,7 @@ export interface ApprovalOutcome {
   question: string;
   notify?: NotifyResult;
   waitMs?: number;
+  cancelled?: boolean;
 }
 
 /**
@@ -102,7 +104,18 @@ export async function runApprovalStep(
         stateName: stateId,
       },
       timeoutMs,
+      options.cancellationToken,
     );
+    if (result.cancelled) {
+      return {
+        chosen: '',
+        target: '',
+        reason: '',
+        question: interpolatedQuestion,
+        notify: notifyRes,
+        cancelled: true,
+      };
+    }
     return {
       chosen: result.chosen,
       target: result.target,
@@ -119,7 +132,19 @@ export async function runApprovalStep(
     undefined,
     undefined,
     timeoutMs,
+    options.cancellationToken,
   );
+
+  if (result.cancelled) {
+    return {
+      chosen: '',
+      target: '',
+      reason: '',
+      question: interpolatedQuestion,
+      notify: notifyRes,
+      cancelled: true,
+    };
+  }
 
   return {
     chosen: result.chosen,

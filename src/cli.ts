@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 import * as readline from 'readline';
-import { initCommand } from './init';
-import { runCommand, RunMode } from './run';
-import { getCurrentState, loadContext } from './context/context';
-import { loadWorkflowConfig } from './workflow/workflowLoader';
-import { printHelp } from './cli/help';
-import { printDocs } from './cli/docs';
-import { printSchema } from './cli/schema';
+import {initCommand} from './init';
+import {runCommand, RunMode} from './run';
+import {getCurrentState, loadContext} from './context/context';
+import {loadWorkflowConfig} from './workflow/workflowLoader';
+import {printHelp} from './cli/help';
+import {printDocs} from './cli/docs';
+import {printSchema} from './cli/schema';
 import commandLineArgs from 'command-line-args';
-import { RailiRunArgs } from './types';
-import { statsCommand } from './cli/stats';
-import { RailiCommand } from './cli/railiCommand';
-import { listenCommand } from './cli/listen';
-import { teachCommand } from './cli/teach';
-import { createCommand } from './cli/create';
-import { visualCommand } from './cli/visual';
+import {RailiRunArgs} from './types';
+import {statsCommand} from './cli/stats';
+import {RailiCommand} from './cli/railiCommand';
+import {listenCommand} from './cli/listen';
+import {teachCommand} from './cli/teach';
+import {createCommand} from './cli/create';
+import {visualCommand} from './cli/visual';
 /** Load .raili/vars.yaml if it exists. Only keys declared in workflow inputs: are used. */
-import { loadVarsFile } from './variables/varsLoader';
-import { createCancellationController } from './cancellation';
+import {loadVarsFile} from './variables/varsLoader';
+import {createCancellationController} from './cancellation';
 
 const args = process.argv.slice(2);
 
@@ -279,6 +279,9 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
           stdin.setRawMode(true);
         }
         stdin.on('data', onInput);
+        // readline used by the run-mode prompt may have paused stdin after its interface closed.
+        // Explicitly resume it so Ctrl+X and Ctrl+C reach this listener in every run path.
+        stdin.resume();
         inputListenerInstalled = true;
         await runCommand(
           process.cwd(),
@@ -302,6 +305,7 @@ async function main(command = new RailiCommand(args[0]), runArgs= args.slice(1))
         if (canSetRawMode) {
           stdin.setRawMode(originalRawMode);
         }
+        stdin.pause();
       }
     } else if (command.help) {
       // raili help [topic]

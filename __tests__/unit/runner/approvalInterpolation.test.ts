@@ -30,11 +30,8 @@ describe('variable interpolation in approval blocks', () => {
 
     await runApprovalStep('review', approval, { cwd: '/tmp', context }, 'mock');
 
-    expect(mockHandleManual).toHaveBeenCalledWith(
+    expect(mockHandleManual.mock.calls[0][0]).toEqual(
       { question: 'Did you update ticket PROJ-123? Title: Fix login bug', options: { PASSED: 'next', FAILED: 'back' } },
-      undefined,
-      undefined,
-      undefined,
     );
   });
 
@@ -52,11 +49,8 @@ describe('variable interpolation in approval blocks', () => {
 
     await runApprovalStep('review', approval, { cwd: '/tmp', context });
 
-    expect(mockHandleManual).toHaveBeenCalledWith(
+    expect(mockHandleManual.mock.calls[0][0]).toEqual(
       { question: 'Ticket: PROJ-123, Title: ', options: { PASSED: 'next', FAILED: 'back' } },
-      undefined,
-      undefined,
-      undefined,
     );
   });
 
@@ -84,11 +78,8 @@ Description: Fix critical bug
 
 Please confirm.`;
 
-    expect(mockHandleManual).toHaveBeenCalledWith(
+    expect(mockHandleManual.mock.calls[0][0]).toEqual(
       { question: expectedQuestion, options: { PASSED: 'next', FAILED: 'back' } },
-      undefined,
-      undefined,
-      undefined,
     );
   });
 
@@ -107,11 +98,8 @@ Please confirm.`;
 
     await runApprovalStep('review', approval, { cwd: '/tmp', context });
 
-    expect(mockHandleManual).toHaveBeenCalledWith(
+    expect(mockHandleManual.mock.calls[0][0]).toEqual(
       { question: 'Price: $100 and variable: value', options: { PASSED: 'next', FAILED: 'back' } },
-      undefined,
-      undefined,
-      undefined,
     );
   });
 
@@ -129,11 +117,8 @@ Please confirm.`;
 
     await runApprovalStep('review', approval, { cwd: '/tmp', context });
 
-    expect(mockHandleManual).toHaveBeenCalledWith(
+    expect(mockHandleManual.mock.calls[0][0]).toEqual(
       { question: 'Is everything ready?', options: { PASSED: 'next', FAILED: 'back' } },
-      undefined,
-      undefined,
-      undefined,
     );
   });
 
@@ -146,11 +131,8 @@ Please confirm.`;
 
     await runApprovalStep('review', approval, { cwd: '/tmp' });
 
-    expect(mockHandleManual).toHaveBeenCalledWith(
+    expect(mockHandleManual.mock.calls[0][0]).toEqual(
       { question: 'Is everything ready?', options: { PASSED: 'next', FAILED: 'back' } },
-      undefined,
-      undefined,
-      undefined,
     );
   });
 });

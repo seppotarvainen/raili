@@ -1,10 +1,9 @@
-import { StateDef, WorkflowContext } from '../types';
-import { ApprovalOutcome, runApprovalStep } from './approveStateRunner';
-import { handleFeedbackPrompt } from '../handlers/manualHandler';
-import { loadFeedbackResolver } from '../handlers/manualHandler';
-import { resolveResolverConfigPath, resolveWorkflowDir } from '../context/pathUtils';
-import { loadResolverConfig } from '../resolverConfigLoader';
-import { Presenter } from '../presenter';
+import {CancellationToken, StateDef, WorkflowContext} from '../types';
+import {ApprovalOutcome, runApprovalStep} from './approveStateRunner';
+import {handleFeedbackPrompt, loadFeedbackResolver} from '../handlers/manualHandler';
+import {resolveResolverConfigPath, resolveWorkflowDir} from '../context/pathUtils';
+import {loadResolverConfig} from '../resolverConfigLoader';
+import {Presenter} from '../presenter';
 
 export interface InteractiveFlowContextApi {
   record: (stateId: string, meta?: Record<string, unknown>) => boolean;
@@ -18,6 +17,7 @@ export interface InteractiveFlowDeps {
   approvalResolverPath?: string | null | undefined;
   feedbackResolverPath?: string | null | undefined;
   ctxApi: InteractiveFlowContextApi;
+  cancellationToken?: CancellationToken;
 }
 
 /**
@@ -30,6 +30,7 @@ export class InteractiveFlowManager {
   private readonly approvalResolverPath?: string | null | undefined;
   private readonly feedbackResolverPath?: string | null | undefined;
   private readonly ctxApi: InteractiveFlowContextApi;
+  private readonly cancellationToken?: CancellationToken;
 
   constructor(deps: InteractiveFlowDeps) {
     this.cwd = deps.cwd;
@@ -37,6 +38,7 @@ export class InteractiveFlowManager {
     this.approvalResolverPath = deps.approvalResolverPath;
     this.feedbackResolverPath = deps.feedbackResolverPath;
     this.ctxApi = deps.ctxApi;
+    this.cancellationToken = deps.cancellationToken;
   }
 
   /**
@@ -52,9 +54,18 @@ export class InteractiveFlowManager {
     const approvalOutcome: ApprovalOutcome = await runApprovalStep(
       stateId,
       approval,
-      { cwd: this.cwd, context: this.ctxApi.context(), workflowArg: this.workflowArg },
+      {
+        cwd: this.cwd,
+        context: this.ctxApi.context(),
+        workflowArg: this.workflowArg,
+        cancellationToken: this.cancellationToken,
+      },
       this.approvalResolverPath,
     );
+
+    if (approvalOutcome.cancelled || this.cancellationToken?.isCancellationRequested) {
+      return '';
+    }
 
     const chosen = approvalOutcome.chosen;
     const nextStateId = approvalOutcome.chosen === 'PASSED' ? approval.PASSED : approval.FAILED;
@@ -131,7 +142,10 @@ export class InteractiveFlowManager {
       timeoutMs = undefined;
     }
 
-    const val = await handleFeedbackPrompt(fb, fbResolver, timeoutMs);
+    const val = await handleFeedbackPrompt(fb, fbResolver, timeoutMs, this.cancellationToken);
+    if ((typeof val !== 'string' && val !== null && val.cancelled) || this.cancellationToken?.isCancellationRequested) {
+      return null;
+    }
     const fbWait = Date.now() - fbStart;
 
     const ctx = this.ctxApi.context();
