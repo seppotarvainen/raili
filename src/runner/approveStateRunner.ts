@@ -1,15 +1,15 @@
-import {ApprovalConfig, CancellationToken, WorkflowContext} from '../types';
+import { ApprovalConfig, CancellationToken, WorkflowContext } from '../types';
 import {
   handleManualTransition,
   loadApprovalResolver,
   ManualResult,
   ManualTransitionConfig,
 } from '../handlers/manualHandler';
-import {NotifyResult, runNotify} from '../handlers/notifyHandler';
-import {outputPath} from '../context/outputStore';
-import {interpolateString} from '../variables/variableInterpolation';
-import {resolveResolverConfigPath, resolveWorkflowDir} from '../context/pathUtils';
-import {loadResolverConfig} from '../resolverConfigLoader';
+import { NotifyResult, runNotify } from '../handlers/notifyHandler';
+import { outputPath } from '../context/outputStore';
+import { interpolateString } from '../variables/variableInterpolation';
+import { resolveResolverConfigPath, resolveWorkflowDir } from '../context/pathUtils';
+import { loadResolverConfig } from '../resolverConfigLoader';
 
 interface ApprovalStepOptions {
   cwd: string;

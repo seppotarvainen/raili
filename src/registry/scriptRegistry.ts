@@ -1,4 +1,4 @@
-import {getFileSystem} from '../infrastructure/fileSystemProvider';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
 import path from 'path';
 
 export interface ScriptEntry {
@@ -33,7 +33,9 @@ export function loadScriptRegistry(dir: string): ScriptRegistry {
       (v as any).runtime !== undefined &&
       (typeof (v as any).runtime !== 'string' || (v as any).runtime.trim() === '')
     ) {
-      throw new Error(`Invalid script registry entry for '${k}': runtime must be a non-empty string`);
+      throw new Error(
+        `Invalid script registry entry for '${k}': runtime must be a non-empty string`,
+      );
     }
   }
 

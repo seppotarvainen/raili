@@ -1,8 +1,8 @@
-import {getFileSystem} from '../infrastructure/fileSystemProvider';
-import {AgentRegistry, loadAgentRegistry} from './agentRegistry';
-import {loadScriptRegistry, ScriptRegistry} from './scriptRegistry';
-import {WorkflowConfig} from '../types';
-import {resolveRegistryPath} from '../context/pathUtils';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
+import { AgentRegistry, loadAgentRegistry } from './agentRegistry';
+import { loadScriptRegistry, ScriptRegistry } from './scriptRegistry';
+import { WorkflowConfig } from '../types';
+import { resolveRegistryPath } from '../context/pathUtils';
 import path from 'node:path';
 
 function runtimeExists(runtime: string, cwd: string): boolean {
@@ -15,9 +15,10 @@ function runtimeExists(runtime: string, cwd: string): boolean {
     candidates.push(resolved);
   } else {
     const pathEntries = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean);
-    const extensions = process.platform === 'win32'
-      ? (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';')
-      : [''];
+    const extensions =
+      process.platform === 'win32'
+        ? (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';')
+        : [''];
     for (const directory of pathEntries) {
       for (const extension of extensions) {
         candidates.push(path.join(directory, `${runtime}${extension}`));
@@ -25,7 +26,9 @@ function runtimeExists(runtime: string, cwd: string): boolean {
     }
   }
 
-  return candidates.some((candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile());
+  return candidates.some(
+    (candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile(),
+  );
 }
 
 export function validateAgentRegistry(dir: string): AgentRegistry {

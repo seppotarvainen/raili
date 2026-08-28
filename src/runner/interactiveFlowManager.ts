@@ -1,9 +1,9 @@
-import {CancellationToken, StateDef, WorkflowContext} from '../types';
-import {ApprovalOutcome, runApprovalStep} from './approveStateRunner';
-import {handleFeedbackPrompt, loadFeedbackResolver} from '../handlers/manualHandler';
-import {resolveResolverConfigPath, resolveWorkflowDir} from '../context/pathUtils';
-import {loadResolverConfig} from '../resolverConfigLoader';
-import {Presenter} from '../presenter';
+import { CancellationToken, StateDef, WorkflowContext } from '../types';
+import { ApprovalOutcome, runApprovalStep } from './approveStateRunner';
+import { handleFeedbackPrompt, loadFeedbackResolver } from '../handlers/manualHandler';
+import { resolveResolverConfigPath, resolveWorkflowDir } from '../context/pathUtils';
+import { loadResolverConfig } from '../resolverConfigLoader';
+import { Presenter } from '../presenter';
 
 export interface InteractiveFlowContextApi {
   record: (stateId: string, meta?: Record<string, unknown>) => boolean;
@@ -143,7 +143,10 @@ export class InteractiveFlowManager {
     }
 
     const val = await handleFeedbackPrompt(fb, fbResolver, timeoutMs, this.cancellationToken);
-    if ((typeof val !== 'string' && val !== null && val.cancelled) || this.cancellationToken?.isCancellationRequested) {
+    if (
+      (typeof val !== 'string' && val !== null && val.cancelled) ||
+      this.cancellationToken?.isCancellationRequested
+    ) {
       return null;
     }
     const fbWait = Date.now() - fbStart;

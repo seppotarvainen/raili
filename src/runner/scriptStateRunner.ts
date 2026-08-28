@@ -1,10 +1,10 @@
-import {CancellationToken, StateDef} from '../types';
-import {ScriptRegistry} from '../registry/scriptRegistry';
-import {executeScript} from '../handlers/scriptHandler';
-import type {StateResult} from './runner';
-import {IStateRunner} from './stateRunner';
-import {buildEnvOverrides, processStateResult} from './stateRunnerUtils';
-import {interpolateObject} from '../variables/variableInterpolation';
+import { CancellationToken, StateDef } from '../types';
+import { ScriptRegistry } from '../registry/scriptRegistry';
+import { executeScript } from '../handlers/scriptHandler';
+import type { StateResult } from './runner';
+import { IStateRunner } from './stateRunner';
+import { buildEnvOverrides, processStateResult } from './stateRunnerUtils';
+import { interpolateObject } from '../variables/variableInterpolation';
 
 /**
  * ScriptStateRunner - executes registered scripts via script-registry.
