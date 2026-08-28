@@ -54,7 +54,7 @@ Additionally, when agents emit an `AI Credits` footer line (for example `AI Cred
 
 ## Type: script
 
-Executes a shell script from script-registry.json. Exit code determines routing.
+Executes a registered script from script-registry.json. Exit code determines routing.
 
 ```yaml
 test:
@@ -66,6 +66,19 @@ test:
 ```
 
 You may also pass an ordered list of arguments to the script using `args:`. Values in `args:` are interpolated for `${VARIABLE}` placeholders using the workflow's variables before the script is spawned. The engine fails fast if any referenced variable is missing. Use literal `$RAILI_VAR_<UPPERCASE>` when you want the shell-visible env var preserved.
+
+For scripts written in a cross-platform language such as JavaScript or Python, add an optional `runtime` to the registry entry. Raili invokes the runtime with the resolved script path followed by the configured arguments (for example, `node <script> ...args`), so the same workflow can run on Windows and macOS when that runtime is installed and available on `PATH`.
+
+```json
+{
+  "examplescript": {
+    "path": "./scripts/examplescript.js",
+    "runtime": "node"
+  }
+}
+```
+
+If `runtime` is omitted, Raili retains the legacy behavior of executing the registered path directly. `runtime` must be a non-empty string.
 
 ```yaml
 my_script_state:
@@ -83,6 +96,7 @@ my_script_state:
 
 - `script` (required) — Script ID from script-registry.json
 - `args` (optional) — Ordered list of strings forwarded to the script process
+- `runtime` (optional, in script-registry.json) — Executable used to launch the script, such as `node` or `python`
 
 **Routing:** Use `on:` (binary) or `transitions:` (named).
 

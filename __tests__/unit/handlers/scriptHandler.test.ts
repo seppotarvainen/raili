@@ -42,6 +42,20 @@ function setupRegistry() {
   return loadScriptRegistry(TMP);
 }
 
+function setupRuntimeRegistry(runtime: string = 'node') {
+  const fs = getFileSystem();
+  const raidir = path.join(TMP, '.raili');
+  if (!fs.existsSync(raidir)) fs.mkdirSync(raidir, { recursive: true } as any);
+  const scriptFile = path.join(TMP, 'scripts', 'example.js');
+  fs.mkdirSync(path.dirname(scriptFile), { recursive: true } as any);
+  fs.writeFileSync(scriptFile, 'console.log("hello")');
+  fs.writeFileSync(
+    path.join(raidir, 'script-registry.json'),
+    JSON.stringify({ example: { path: './scripts/example.js', runtime } }),
+  );
+  return loadScriptRegistry(TMP);
+}
+
 beforeEach(() => {
   mockedSpawn.mockImplementation(() => fakeChild('hello\n', '', 0));
 });
@@ -71,6 +85,13 @@ test('passes args to spawn when provided', async () => {
   await executeScript(loaded, 'archive-part', TMP, ['one', '--flag']);
   const fullPath = path.resolve(TMP, './scripts/archive.sh');
   expect(mockedSpawn).toHaveBeenCalledWith(fullPath, ['one', '--flag'], expect.any(Object));
+});
+
+test('runs a script through its configured runtime', async () => {
+  const loaded = setupRuntimeRegistry();
+  await executeScript(loaded, 'example', TMP, ['one', '--flag']);
+  const fullPath = path.resolve(TMP, './scripts/example.js');
+  expect(mockedSpawn).toHaveBeenCalledWith('node', [fullPath, 'one', '--flag'], expect.any(Object));
 });
 
 test('terminates an in-flight script and cancellation wins the close race', async () => {

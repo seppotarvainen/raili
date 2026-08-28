@@ -1,8 +1,8 @@
-import { spawn } from 'child_process';
-import { getFileSystem } from '../infrastructure/fileSystemProvider';
-import { ScriptRegistry } from '../registry/scriptRegistry';
-import { resolveRegistryPath } from '../context/pathUtils';
-import { CancellationToken } from '../types';
+import {spawn} from 'child_process';
+import {getFileSystem} from '../infrastructure/fileSystemProvider';
+import {ScriptRegistry} from '../registry/scriptRegistry';
+import {resolveRegistryPath} from '../context/pathUtils';
+import {CancellationToken} from '../types';
 
 interface ScriptExecutionResult {
   success: boolean;
@@ -31,7 +31,9 @@ export function executeScript(
   }
 
   return new Promise((resolve) => {
-    const child = spawn(fullPath, args, {
+    const command = entry.runtime ?? fullPath;
+    const commandArgs = entry.runtime ? [fullPath, ...args] : args;
+    const child = spawn(command, commandArgs, {
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, ...envOverrides },

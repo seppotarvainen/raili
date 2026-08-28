@@ -1,16 +1,18 @@
-import { CancellationToken, StateDef } from '../types';
-import { ScriptRegistry } from '../registry/scriptRegistry';
-import { executeScript } from '../handlers/scriptHandler';
-import type { StateResult } from './runner';
-import { IStateRunner } from './stateRunner';
-import { buildEnvOverrides, processStateResult } from './stateRunnerUtils';
-import { interpolateObject } from '../variables/variableInterpolation';
+import {CancellationToken, StateDef} from '../types';
+import {ScriptRegistry} from '../registry/scriptRegistry';
+import {executeScript} from '../handlers/scriptHandler';
+import type {StateResult} from './runner';
+import {IStateRunner} from './stateRunner';
+import {buildEnvOverrides, processStateResult} from './stateRunnerUtils';
+import {interpolateObject} from '../variables/variableInterpolation';
 
 /**
- * ScriptStateRunner - executes shell scripts via script-registry.
+ * ScriptStateRunner - executes registered scripts via script-registry.
+ * Entries may specify a runtime (for example, `node` or `python`) for
+ * cross-platform script execution.
  */
 class ScriptStateRunner implements IStateRunner {
-  constructor(private registry: ScriptRegistry) {}
+  constructor(private readonly registry: ScriptRegistry) {}
 
   async run(
     state: StateDef,
