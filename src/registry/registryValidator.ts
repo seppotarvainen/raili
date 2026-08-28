@@ -1,8 +1,32 @@
-import { getFileSystem } from '../infrastructure/fileSystemProvider';
-import { AgentRegistry, loadAgentRegistry } from './agentRegistry';
-import { loadScriptRegistry, ScriptRegistry } from './scriptRegistry';
-import { WorkflowConfig } from '../types';
-import { resolveRegistryPath } from '../context/pathUtils';
+import {getFileSystem} from '../infrastructure/fileSystemProvider';
+import {AgentRegistry, loadAgentRegistry} from './agentRegistry';
+import {loadScriptRegistry, ScriptRegistry} from './scriptRegistry';
+import {WorkflowConfig} from '../types';
+import {resolveRegistryPath} from '../context/pathUtils';
+import path from 'node:path';
+
+function runtimeExists(runtime: string, cwd: string): boolean {
+  const fs = getFileSystem();
+  const hasPathSeparator = runtime.includes('/') || runtime.includes('\\');
+  const candidates: string[] = [];
+
+  if (path.isAbsolute(runtime) || hasPathSeparator) {
+    const resolved = path.isAbsolute(runtime) ? runtime : path.resolve(cwd, runtime);
+    candidates.push(resolved);
+  } else {
+    const pathEntries = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean);
+    const extensions = process.platform === 'win32'
+      ? (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';')
+      : [''];
+    for (const directory of pathEntries) {
+      for (const extension of extensions) {
+        candidates.push(path.join(directory, `${runtime}${extension}`));
+      }
+    }
+  }
+
+  return candidates.some((candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile());
+}
 
 export function validateAgentRegistry(dir: string): AgentRegistry {
   const fs = getFileSystem();
@@ -32,6 +56,11 @@ export function validateScriptRegistry(dir: string): ScriptRegistry {
     const stat = fs.statSync(full);
     if (!stat.isFile()) {
       throw new Error(`Script '${id}' references a path that is not a file: ${full}`);
+    }
+    if (entry.runtime && !runtimeExists(entry.runtime, dir)) {
+      throw new Error(
+        `Script '${id}' requires runtime '${entry.runtime}', but it was not found in PATH`,
+      );
     }
   }
   return reg;
@@ -131,7 +160,7 @@ export function validateWorkflowReferences(
 export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: string): void {
   const fs = getFileSystem();
   const yaml = require('js-yaml');
-  const path = require('path');
+  const path = require('node:path');
 
   // Collect all potential targets referenced by the main workflow so we can detect illegal cross-references
   const referencedTargets = new Set<string>();

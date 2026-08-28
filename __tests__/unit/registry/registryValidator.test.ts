@@ -32,6 +32,33 @@ test('throws when script file missing', () => {
   expect(() => validateScriptRegistry(TMP)).toThrow();
 });
 
+test('accepts a script whose runtime exists', () => {
+  const raildir = path.join(TMP, '.raili');
+  const scriptFile = path.join(TMP, 'scripts', 'runtime.js');
+  getFileSystem().mkdirSync(raildir, { recursive: true } as any);
+  getFileSystem().mkdirSync(path.dirname(scriptFile), { recursive: true } as any);
+  getFileSystem().writeFileSync(scriptFile, 'console.log(1)');
+  const runtimePath = path.join(TMP, 'bin', 'node');
+  getFileSystem().mkdirSync(path.dirname(runtimePath), { recursive: true } as any);
+  getFileSystem().writeFileSync(runtimePath, 'node');
+  const reg = { runtime: { path: './scripts/runtime.js', runtime: runtimePath } };
+  getFileSystem().writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
+  expect(() => validateScriptRegistry(TMP)).not.toThrow();
+});
+
+test('throws when a script runtime is unavailable', () => {
+  const raildir = path.join(TMP, '.raili');
+  const scriptFile = path.join(TMP, 'scripts', 'missing-runtime.js');
+  getFileSystem().mkdirSync(raildir, { recursive: true } as any);
+  getFileSystem().mkdirSync(path.dirname(scriptFile), { recursive: true } as any);
+  getFileSystem().writeFileSync(scriptFile, 'console.log(1)');
+  const reg = { runtime: { path: './scripts/missing-runtime.js', runtime: 'raili-runtime-does-not-exist' } };
+  getFileSystem().writeFileSync(path.join(raildir, 'script-registry.json'), JSON.stringify(reg));
+  expect(() => validateScriptRegistry(TMP)).toThrow(
+    "Script 'runtime' requires runtime 'raili-runtime-does-not-exist', but it was not found in PATH",
+  );
+});
+
 describe('validateWorkflowReferences', () => {
   test('passes when all agents and scripts exist in registries', () => {
     const workflow: WorkflowConfig = {
