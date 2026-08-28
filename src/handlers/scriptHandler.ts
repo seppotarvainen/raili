@@ -1,8 +1,8 @@
-import {spawn} from 'child_process';
-import {getFileSystem} from '../infrastructure/fileSystemProvider';
-import {ScriptRegistry} from '../registry/scriptRegistry';
-import {resolveRegistryPath} from '../context/pathUtils';
-import {CancellationToken} from '../types';
+import { spawn } from 'child_process';
+import { getFileSystem } from '../infrastructure/fileSystemProvider';
+import { ScriptRegistry } from '../registry/scriptRegistry';
+import { resolveRegistryPath } from '../context/pathUtils';
+import { CancellationToken } from '../types';
 
 interface ScriptExecutionResult {
   success: boolean;

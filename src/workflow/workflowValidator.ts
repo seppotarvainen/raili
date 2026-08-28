@@ -76,7 +76,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
     }
   }
 
-  const knownVars = new Set<string>();
+  const knownVars = new Set<string>(['workflow']);
 
   if (config.inputs && Array.isArray(config.inputs)) {
     for (const it of config.inputs) {

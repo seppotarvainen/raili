@@ -481,6 +481,36 @@ describe('SchemaValidator', () => {
       expect(() => validateWorkflowConfig(config)).not.toThrow();
     });
 
+    it('should accept the reserved workflow variable in script args', () => {
+      const config = {
+        initial: 'start',
+        states: {
+          start: {
+            type: 'script',
+            script: 'todo',
+            args: ['.raili/${workflow}/todo.json'],
+          },
+        },
+      };
+      expect(() => validateWorkflowConfig(config)).not.toThrow();
+    });
+
+    it('should reject unrelated undeclared variables in script args', () => {
+      const config = {
+        initial: 'start',
+        states: {
+          start: {
+            type: 'script',
+            script: 'todo',
+            args: ['.raili/${unknown}/todo.json'],
+          },
+        },
+      };
+      expect(() => validateWorkflowConfig(config)).toThrow(
+        /undeclared variable '\$\{unknown\}'/i,
+      );
+    });
+
     it('should throw if inputs log is not boolean', () => {
       const config = {
         initial: 'start',
@@ -631,4 +661,3 @@ describe('SchemaValidator', () => {
     });
   });
 });
-

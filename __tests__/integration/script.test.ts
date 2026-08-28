@@ -247,4 +247,43 @@ states:
     const ctx = loadContext(tmpDir);
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
   });
+
+  it('interpolates the injected workflow variable in direct script args', async () => {
+    writeWorkflow(
+      tmpDir,
+      `
+initial: load_todo
+states:
+  load_todo:
+    type: script
+    script: todo_reader
+    args:
+      - ".raili/\${workflow}/todo.json"
+    on:
+      PASSED: done
+      FAILED: error
+  done:
+    type: engine
+  error:
+    type: engine
+`,
+    );
+
+    writeAgentRegistry(tmpDir, {});
+    writeScriptRegistry(tmpDir, { todo_reader: { path: './scripts/read_todo.sh' } });
+    writeScriptFile(tmpDir, 'scripts/read_todo.sh', '#!/bin/bash\ncat "$1"');
+
+    spawn.mockImplementation((cmd: string, args?: string[]) => {
+      if (typeof cmd === 'string' && cmd.endsWith('read_todo.sh')) {
+        expect(args).toEqual(['.raili/main/todo.json']);
+        return fakeChild('todo contents', '', 0);
+      }
+      return fakeChild('', '', 0);
+    });
+
+    await runCommand(tmpDir, 'clean', {});
+
+    const ctx = loadContext(tmpDir);
+    expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
+  });
 });
