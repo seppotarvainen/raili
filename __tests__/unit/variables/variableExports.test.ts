@@ -43,4 +43,19 @@ describe('parseExports', () => {
     const parsed = parseExports(out, ['id']);
     expect(parsed.id).toBe('ID123');
   });
+
+  test('parses a single raw value with a trailing LF', () => {
+    const parsed = parseExports('4f3c2a1b9d0e\n', ['commit_id']);
+    expect(parsed).toEqual({commit_id: '4f3c2a1b9d0e'});
+  });
+
+  test('parses a single raw value with a trailing CRLF', () => {
+    const parsed = parseExports('4f3c2a1b9d0e\r\n', ['commit_id']);
+    expect(parsed).toEqual({commit_id: '4f3c2a1b9d0e'});
+  });
+
+  test('does not treat genuinely multiline raw output as a single value', () => {
+    const parsed = parseExports('4f3c2a1b9d0e\nsecond-line\n', ['commit_id']);
+    expect(parsed.commit_id).toBeUndefined();
+  });
 });
