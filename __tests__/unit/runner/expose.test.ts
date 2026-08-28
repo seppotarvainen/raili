@@ -46,6 +46,24 @@ describe('expose variables feature', () => {
     expect(res.outcome).toBe('PASSED');
   });
 
+  test('runCommandState exposes a raw value ending in a newline', async () => {
+    executeCommand.mockResolvedValue({ success: true, stdout: '4f3c2a1b9d0e\n', stderr: '' });
+
+    const state = {
+      id: 'c1',
+      config: {
+        type: 'command',
+        command: 'git rev-parse HEAD',
+        expose: ['commit_id'],
+        on: { PASSED: 'next', FAILED: 'error' },
+      },
+    } as any;
+
+    const res = await runCommandState(state, '/tmp', {});
+    expect(res.exports).toEqual({ commit_id: '4f3c2a1b9d0e' });
+    expect(res.outcome).toBe('PASSED');
+  });
+
   test('runScriptState extracts exposed variables from stdout', async () => {
     executeScript.mockResolvedValue({ success: true, stdout: 'token=abc\n', stderr: '' });
 

@@ -13,10 +13,12 @@ export function parseExports(stdout: string, names: string[]): Record<string, st
     return exports;
   }
 
-  const lines = stdout.split(/\r?\n/);
+  const rawValueOutput = names.length === 1 ? stdout.replace(/\r?\n$/, '') : stdout;
+  const lines = rawValueOutput.split(/\r?\n/);
 
   if (lines.length === 1 && names.length === 1) {
-    exports[names[0]] = lines[0].trim();
+    const baseName = names[0].endsWith('?') ? names[0].slice(0, -1) : names[0];
+    exports[baseName] = lines[0].trim();
   }
 
   for (const name of names) {

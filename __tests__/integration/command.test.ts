@@ -147,7 +147,51 @@ states:
 });
 
 // ---------------------------------------------------------------------------
-// 4. Command state with output storage, notify, and approval
+// 4. Command state with raw exposed output and binary routing
+// ---------------------------------------------------------------------------
+describe('command state with raw exposed output', () => {
+  it('persists a trailing-newline commit hash and routes to success', async () => {
+    writeWorkflow(
+      tmpDir,
+      `
+initial: capture_commit
+states:
+  capture_commit:
+    type: command
+    command: "git rev-parse HEAD"
+    expose: [commit_id]
+    on:
+      PASSED: success
+      FAILED: error
+  success:
+    type: engine
+  error:
+    type: engine
+    success: false
+`,
+    );
+    writeAgentRegistry(tmpDir, {});
+    writeScriptRegistry(tmpDir, {});
+
+    spawn.mockImplementation((cmd: string, args: string[]) => {
+      if (cmd === 'sh' && args[1] === 'git rev-parse HEAD') {
+        return fakeChild('4f3c2a1b9d0e\n', '', 0);
+      }
+      return fakeChild('', '', 0);
+    });
+
+    await runCommand(tmpDir, 'clean', {});
+
+    const ctx = loadContext(tmpDir);
+    const states = ctx.stateHistory.map((entry) => entry.state);
+    expect(states[states.length - 1]).toBe('success');
+    expect(ctx.vars?.commit_id).toBe('4f3c2a1b9d0e');
+    expect(states).not.toContain('error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. Command state with output storage, notify, and approval
 // ---------------------------------------------------------------------------
 describe('command state with output, notify, and approval', () => {
   it('stores output, fires notify, and routes through approval', async () => {
