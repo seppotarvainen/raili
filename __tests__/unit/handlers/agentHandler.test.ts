@@ -18,7 +18,7 @@ function expectedSpawnArgs(args: string[]): string[] {
   if (!isWindows) return args;
 
   const quote = (value: string) =>
-    `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1')}"`;
+    `"${value.replace(/\r\n|\r|\n/g, ' ').replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1')}"`;
   return ['/d', '/s', '/c', ['copilot.cmd', ...args.map(quote)].join(' ')];
 }
 
@@ -191,6 +191,24 @@ test('uses custom prompt when prompt param is provided', async () => {
   const spawnArgs = mockedSpawn.mock.calls[0][1] as string[];
   const promptIndex = spawnArgs.indexOf('--prompt');
   expect(spawnArgs[promptIndex + 1]).toBe('Analyze ticket $RAILI_VAR_TICKET_ID');
+});
+
+test('passes a multiline prompt as one Windows command argument', async () => {
+  const registry = setupAgent();
+  const prompt = 'First line\nSecond line\r\nThird line';
+
+  await executeAgent(registry, 'analyzer.agent', TMP, null, prompt);
+
+  const spawnArgs = mockedSpawn.mock.calls[0][1] as string[];
+  if (isWindows) {
+    expect(spawnArgs).toEqual(
+      expectedSpawnArgs(['--agent=analyzer.agent', '--prompt', prompt, '--yolo']),
+    );
+    expect(spawnArgs[3]).not.toContain('\n');
+    expect(spawnArgs[3]).not.toContain('\r');
+  } else {
+    expect(spawnArgs).toEqual(['--agent=analyzer.agent', '--prompt', prompt, '--yolo']);
+  }
 });
 
 test('appends previous output to custom prompt when both are provided', async () => {

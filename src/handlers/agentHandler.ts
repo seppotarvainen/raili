@@ -27,7 +27,8 @@ function parseFrontmatterModel(content: string): string | undefined {
 function quoteWindowsCommandArg(value: string): string {
   if (value.length === 0) return '""';
 
-  return `"${value
+  const commandLineValue = value.replace(/\r\n|\r|\n/g, ' ');
+  return `"${commandLineValue
     .replace(/(\\*)"/g, '$1$1\\"')
     .replace(/(\\+)$/g, '$1$1')}"`;
 }
