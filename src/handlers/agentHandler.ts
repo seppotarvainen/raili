@@ -89,7 +89,6 @@ export function executeAgent(
     const commandArgs = isWindows
       ? [
           '/d',
-          '/s',
           '/c',
           [copilotCommand, ...args.map(quoteWindowsCommandArg)].join(' '),
         ]

@@ -48,15 +48,19 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    // Capture console.log timestamps and messages
+    // Capture console.log ordering and messages. A sequence counter avoids Date.now() collisions
+    // when logging and spawning happen within the same millisecond in CI.
     const originalLog = console.log;
     const logs: { t: number; msg: string }[] = [];
-    console.log = (m?: any) => logs.push({ t: Date.now(), msg: String(m) });
+    let sequence = 0;
+    console.log = (m?: any) => logs.push({ t: ++sequence, msg: String(m) });
 
     let spawnTime = 0;
     spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        spawnTime = Date.now();
+      const isCopilotCommand =
+        cmd === 'copilot' || (process.platform === 'win32' && /(?:^|[\\/])cmd\.exe$/i.test(cmd));
+      if (isCopilotCommand) {
+        spawnTime = ++sequence;
         return fakeChild('analysis\ncomplete', '', 0);
       }
       return fakeChild('', '', 0);
@@ -87,7 +91,11 @@ states:
     expect(verboseEntry!.t).toBeLessThan(spawnTime);
 
     // Copilot was invoked
-    const copilotCall = spawn.mock.calls.find((c: any[]) => c[0] === 'copilot');
+    const copilotCall = spawn.mock.calls.find(
+      (c: any[]) =>
+        c[0] === 'copilot' ||
+        (process.platform === 'win32' && /(?:^|[\\/])cmd\.exe$/i.test(c[0])),
+    );
     expect(copilotCall).toBeDefined();
 
     const ctx = loadContext(tmpDir);
