@@ -86,7 +86,12 @@ export function executeAgent(
     const copilotCommand = isWindows ? 'copilot.cmd' : 'copilot';
     const command = isWindows ? process.env.ComSpec ?? 'cmd.exe' : copilotCommand;
     const commandArgs = isWindows
-      ? ['/d', '/s', '/c', [copilotCommand, ...args].map(quoteWindowsCommandArg).join(' ')]
+      ? [
+          '/d',
+          '/s',
+          '/c',
+          [copilotCommand, ...args.map(quoteWindowsCommandArg)].join(' '),
+        ]
       : args;
     const child = spawn(command, commandArgs, {
       cwd,

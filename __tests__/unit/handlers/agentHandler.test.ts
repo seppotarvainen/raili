@@ -19,7 +19,7 @@ function expectedSpawnArgs(args: string[]): string[] {
 
   const quote = (value: string) =>
     `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1')}"`;
-  return ['/d', '/s', '/c', ['copilot.cmd', ...args].map(quote).join(' ')];
+  return ['/d', '/s', '/c', ['copilot.cmd', ...args.map(quote)].join(' ')];
 }
 
 let restoreFs: () => void;
