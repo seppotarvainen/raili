@@ -1,11 +1,11 @@
-import { spawn } from 'child_process';
+import {spawn} from 'child_process';
 import * as path from 'path';
-import { getFileSystem } from '../infrastructure/fileSystemProvider';
-import { AgentRegistry } from '../registry/agentRegistry';
-import { resolveRegistryPath } from '../context/pathUtils';
-import { readLatestNRuns } from '../context/outputStore';
-import { CancellationToken, TokenUsage } from '../types';
-import { parseCopilotTokenLine } from './tokenParser';
+import {getFileSystem} from '../infrastructure/fileSystemProvider';
+import {AgentRegistry} from '../registry/agentRegistry';
+import {resolveRegistryPath} from '../context/pathUtils';
+import {readLatestNRuns} from '../context/outputStore';
+import {CancellationToken, TokenUsage} from '../types';
+import {parseCopilotTokenLine} from './tokenParser';
 
 interface AgentExecutionResult {
   success: boolean;
@@ -73,10 +73,12 @@ export function executeAgent(
     args.splice(1, 0, `--model=${model}`);
   }
 
-  return new Promise((resolve) => {
-    const child = spawn('copilot', args, {
+  return new Promise((resolve, reject) => {
+    const command = process.platform === 'win32' ? 'copilot.cmd' : 'copilot';
+    const child = spawn(command, args, {
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: process.platform === 'win32',
     });
 
     let stdout = '';
@@ -85,6 +87,23 @@ export function executeAgent(
     let cancellationRequested = false;
     let terminationRequested = false;
     let removeCancellationListener: (() => void) | undefined;
+
+    child.on('error', (error: NodeJS.ErrnoException) => {
+      if (settled) return;
+      settled = true;
+      removeCancellationListener?.();
+
+      if (error.code === 'ENOENT') {
+        reject(
+          new Error(
+            `Copilot CLI could not be launched. Ensure ${command} is installed and available on PATH.`,
+          ),
+        );
+        return;
+      }
+
+      reject(error);
+    });
 
     const finish = (cancelled: boolean, code: number | null = null): void => {
       if (settled) return;

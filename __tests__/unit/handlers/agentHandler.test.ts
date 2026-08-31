@@ -11,6 +11,7 @@ jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const mockedSpawn = jest.mocked(spawn);
 
 const TMP = '/tmp';
+const copilotCommand = process.platform === 'win32' ? 'copilot.cmd' : 'copilot';
 let restoreFs: () => void;
 
 beforeEach(() => { restoreFs = setupFakeFs(); });
@@ -28,6 +29,14 @@ function fakeChild(stdoutData: string, stderrData: string, exitCode: number) {
     if (stderrData) child.stderr.emit('data', Buffer.from(stderrData));
     child.emit('close', exitCode);
   });
+  return child;
+}
+
+function fakeErrorChild(error: NodeJS.ErrnoException) {
+  const child = new EventEmitter() as any;
+  child.stdout = new EventEmitter();
+  child.stderr = new EventEmitter();
+  setImmediate(() => child.emit('error', error));
   return child;
 }
 
@@ -57,7 +66,7 @@ test('runs copilot command without model when none specified', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
-    'copilot',
+    copilotCommand,
     ['--agent=analyzer.agent', '--prompt', 'Work according to your rules', '--yolo'],
     expect.any(Object),
   );
@@ -67,7 +76,7 @@ test('uses model from agent frontmatter', async () => {
   const registry = setupAgent(undefined, 'claude-sonnet-4.6');
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
-    'copilot',
+    copilotCommand,
     ['--agent=analyzer.agent', '--model=claude-sonnet-4.6', '--prompt', 'Work according to your rules', '--yolo'],
     expect.any(Object),
   );
@@ -77,7 +86,7 @@ test('registry model overrides frontmatter model', async () => {
   const registry = setupAgent('gpt-5.1', 'claude-sonnet-4.6');
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
-    'copilot',
+    copilotCommand,
     ['--agent=analyzer.agent', '--model=gpt-5.1', '--prompt', 'Work according to your rules', '--yolo'],
     expect.any(Object),
   );
@@ -107,7 +116,7 @@ test('uses default prompt when no previousOutputPath given', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
-    'copilot',
+    copilotCommand,
     expect.arrayContaining(['--prompt', 'Work according to your rules']),
     expect.any(Object),
   );
@@ -131,7 +140,7 @@ test('uses default prompt when previousOutputPath is null', async () => {
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP, null);
   expect(mockedSpawn).toHaveBeenCalledWith(
-    'copilot',
+    copilotCommand,
     expect.arrayContaining(['--prompt', 'Work according to your rules']),
     expect.any(Object),
   );
@@ -141,7 +150,7 @@ test('uses default prompt when previousOutputPath points to nonexistent file', a
   const registry = setupAgent();
   await executeAgent(registry, 'analyzer.agent', TMP, '/nonexistent/path.md');
   expect(mockedSpawn).toHaveBeenCalledWith(
-    'copilot',
+    copilotCommand,
     expect.arrayContaining(['--prompt', 'Work according to your rules']),
     expect.any(Object),
   );
@@ -233,4 +242,17 @@ test('terminates an in-flight agent and returns cancelled', async () => {
 
   await expect(resultPromise).resolves.toMatchObject({ success: false, cancelled: true });
   expect(kill).toHaveBeenCalledTimes(1);
+});
+
+test('rejects clearly when Copilot CLI cannot be launched', async () => {
+  mockedSpawn.mockImplementationOnce(() =>
+    fakeErrorChild(
+      Object.assign(new Error('spawn copilot ENOENT'), { code: 'ENOENT' }),
+    ),
+  );
+  const registry = setupAgent();
+
+  await expect(executeAgent(registry, 'analyzer.agent', TMP)).rejects.toThrow(
+    'Copilot CLI could not be launched',
+  );
 });
