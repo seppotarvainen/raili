@@ -96,6 +96,7 @@ export function executeAgent(
     const child = spawn(command, commandArgs, {
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
+      windowsVerbatimArguments: isWindows,
     });
 
     let stdout = '';
