@@ -24,6 +24,14 @@ function parseFrontmatterModel(content: string): string | undefined {
   return modelLine ? modelLine.replace(/^model:\s*/, '').trim() : undefined;
 }
 
+function quoteWindowsCommandArg(value: string): string {
+  if (value.length === 0) return '""';
+
+  return `"${value
+    .replace(/(\\*)"/g, '$1$1\\"')
+    .replace(/(\\+)$/g, '$1$1')}"`;
+}
+
 export function executeAgent(
   registry: AgentRegistry,
   agentId: string,
@@ -74,11 +82,15 @@ export function executeAgent(
   }
 
   return new Promise((resolve, reject) => {
-    const command = process.platform === 'win32' ? 'copilot.cmd' : 'copilot';
-    const child = spawn(command, args, {
+    const isWindows = process.platform === 'win32';
+    const copilotCommand = isWindows ? 'copilot.cmd' : 'copilot';
+    const command = isWindows ? process.env.ComSpec ?? 'cmd.exe' : copilotCommand;
+    const commandArgs = isWindows
+      ? ['/d', '/s', '/c', [copilotCommand, ...args].map(quoteWindowsCommandArg).join(' ')]
+      : args;
+    const child = spawn(command, commandArgs, {
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: process.platform === 'win32',
     });
 
     let stdout = '';
@@ -96,7 +108,7 @@ export function executeAgent(
       if (error.code === 'ENOENT') {
         reject(
           new Error(
-            `Copilot CLI could not be launched. Ensure ${command} is installed and available on PATH.`,
+            `Copilot CLI could not be launched. Ensure ${copilotCommand} is installed and available on PATH.`,
           ),
         );
         return;

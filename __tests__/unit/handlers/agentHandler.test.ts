@@ -11,7 +11,17 @@ jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const mockedSpawn = jest.mocked(spawn);
 
 const TMP = '/tmp';
-const copilotCommand = process.platform === 'win32' ? 'copilot.cmd' : 'copilot';
+const isWindows = process.platform === 'win32';
+const copilotCommand = isWindows ? process.env.ComSpec ?? 'cmd.exe' : 'copilot';
+
+function expectedSpawnArgs(args: string[]): string[] {
+  if (!isWindows) return args;
+
+  const quote = (value: string) =>
+    `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1')}"`;
+  return ['/d', '/s', '/c', ['copilot.cmd', ...args].map(quote).join(' ')];
+}
+
 let restoreFs: () => void;
 
 beforeEach(() => { restoreFs = setupFakeFs(); });
@@ -67,7 +77,7 @@ test('runs copilot command without model when none specified', async () => {
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
     copilotCommand,
-    ['--agent=analyzer.agent', '--prompt', 'Work according to your rules', '--yolo'],
+    expectedSpawnArgs(['--agent=analyzer.agent', '--prompt', 'Work according to your rules', '--yolo']),
     expect.any(Object),
   );
 });
@@ -77,7 +87,7 @@ test('uses model from agent frontmatter', async () => {
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
     copilotCommand,
-    ['--agent=analyzer.agent', '--model=claude-sonnet-4.6', '--prompt', 'Work according to your rules', '--yolo'],
+    expectedSpawnArgs(['--agent=analyzer.agent', '--model=claude-sonnet-4.6', '--prompt', 'Work according to your rules', '--yolo']),
     expect.any(Object),
   );
 });
@@ -87,7 +97,7 @@ test('registry model overrides frontmatter model', async () => {
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
     copilotCommand,
-    ['--agent=analyzer.agent', '--model=gpt-5.1', '--prompt', 'Work according to your rules', '--yolo'],
+    expectedSpawnArgs(['--agent=analyzer.agent', '--model=gpt-5.1', '--prompt', 'Work according to your rules', '--yolo']),
     expect.any(Object),
   );
 });
@@ -117,7 +127,7 @@ test('uses default prompt when no previousOutputPath given', async () => {
   await executeAgent(registry, 'analyzer.agent', TMP);
   expect(mockedSpawn).toHaveBeenCalledWith(
     copilotCommand,
-    expect.arrayContaining(['--prompt', 'Work according to your rules']),
+    expectedSpawnArgs(['--agent=analyzer.agent', '--prompt', 'Work according to your rules', '--yolo']),
     expect.any(Object),
   );
 });
@@ -141,7 +151,7 @@ test('uses default prompt when previousOutputPath is null', async () => {
   await executeAgent(registry, 'analyzer.agent', TMP, null);
   expect(mockedSpawn).toHaveBeenCalledWith(
     copilotCommand,
-    expect.arrayContaining(['--prompt', 'Work according to your rules']),
+    expectedSpawnArgs(['--agent=analyzer.agent', '--prompt', 'Work according to your rules', '--yolo']),
     expect.any(Object),
   );
 });
@@ -151,7 +161,7 @@ test('uses default prompt when previousOutputPath points to nonexistent file', a
   await executeAgent(registry, 'analyzer.agent', TMP, '/nonexistent/path.md');
   expect(mockedSpawn).toHaveBeenCalledWith(
     copilotCommand,
-    expect.arrayContaining(['--prompt', 'Work according to your rules']),
+    expectedSpawnArgs(['--agent=analyzer.agent', '--prompt', 'Work according to your rules', '--yolo']),
     expect.any(Object),
   );
 });
