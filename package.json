@@ -66,6 +66,7 @@
     "typescript-eslint": "^8.57.2"
   },
   "dependencies": {
+    "@github/copilot-sdk": "^1.0.11",
     "colors": "^1.4.0",
     "command-line-args": "^6.0.1",
     "js-yaml": "^4.1.1"
