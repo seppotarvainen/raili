@@ -1,31 +1,29 @@
-import fs from 'fs';
-import path from 'path';
+/// <reference path="../types/copilot-sdk.d.ts" />
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
   createTmpWorkspace,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
 
-jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+jest.mock('@github/copilot-sdk');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  resetCopilotSdkMock();
 });
 
 afterEach(() => {
   cleanupTmpWorkspace(tmpDir);
   cleanupRailiEnvVars();
-  spawn.mockReset();
 });
 
 describe('agent verbose output', () => {
@@ -48,22 +46,22 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    // Capture console.log ordering and messages. A sequence counter avoids Date.now() collisions
-    // when logging and spawning happen within the same millisecond in CI.
+    // Capture console.log ordering and messages with a monotonic sequence.
     const originalLog = console.log;
     const logs: { t: number; msg: string }[] = [];
     let sequence = 0;
     console.log = (m?: any) => logs.push({ t: ++sequence, msg: String(m) });
 
-    let spawnTime = 0;
-    spawn.mockImplementation((cmd: string) => {
-      const isCopilotCommand =
-        cmd === 'copilot' || (process.platform === 'win32' && /(?:^|[\\/])cmd\.exe$/i.test(cmd));
-      if (isCopilotCommand) {
-        spawnTime = ++sequence;
-        return fakeChild('analysis\ncomplete', '', 0);
-      }
-      return fakeChild('', '', 0);
+    let executionTime = 0;
+    mockSession.sendAndWait.mockImplementationOnce(async () => {
+      executionTime = ++sequence;
+      return {
+        type: 'assistant.message',
+        id: 'event',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'analysis\ncomplete', messageId: 'message' },
+      };
     });
 
     try {
@@ -86,17 +84,9 @@ states:
     // Ensure verbose block was printed
     const verboseEntry = logs.find((l) => l.msg.includes('VERBOSE: Agent context'));
     expect(verboseEntry).toBeDefined();
-    expect(spawnTime).toBeGreaterThan(0);
-    // Verbose output should occur before copilot was spawned
-    expect(verboseEntry!.t).toBeLessThan(spawnTime);
-
-    // Copilot was invoked
-    const copilotCall = spawn.mock.calls.find(
-      (c: any[]) =>
-        c[0] === 'copilot' ||
-        (process.platform === 'win32' && /(?:^|[\\/])cmd\.exe$/i.test(c[0])),
-    );
-    expect(copilotCall).toBeDefined();
+    expect(executionTime).toBeGreaterThan(0);
+    expect(verboseEntry!.t).toBeLessThan(executionTime);
+    expect(mockSession.sendAndWait).toHaveBeenCalled();
 
     const ctx = loadContext(tmpDir);
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('complete');

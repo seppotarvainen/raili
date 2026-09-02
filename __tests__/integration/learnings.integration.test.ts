@@ -11,7 +11,9 @@ import {
   writeScriptRegistry,
   writeNamedWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
+jest.mock('@github/copilot-sdk');
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');
 
@@ -19,6 +21,7 @@ let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  resetCopilotSdkMock();
   (spawn as jest.Mock).mockImplementation(() => fakeChild('', '', 0));
 });
 
@@ -70,8 +73,14 @@ states:
           return fakeChild('Prelude text\nLESSON: Global lesson from produce\nExtra\n', '', 0);
         }
       }
-      if (cmd === 'copilot') return fakeChild('done', '', 0);
       return fakeChild('', '', 0);
+    });
+    mockSession.sendAndWait.mockResolvedValue({
+      type: 'assistant.message',
+      id: 'learning-output',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'done', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
@@ -118,23 +127,18 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/agent2.md', 'Agent 2');
 
-    // Mock spawn so we can inspect copilot args
-    (spawn as jest.Mock).mockImplementation((cmd: string, args?: any[], opts?: any) => {
-      if (cmd === 'copilot') return fakeChild('done', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValue({
+      type: 'assistant.message',
+      id: 'learning-output',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'done', messageId: 'message' },
     });
 
     // Run QA workflow (should pick up global learnings)
     await runCommand(tmpDir, 'clean', {}, 'qa');
 
-    const copilotCalls = (spawn as jest.Mock).mock.calls.filter((c: any[]) => c[0] === 'copilot');
-    expect(copilotCalls.length).toBeGreaterThanOrEqual(1);
-
-    // The prompt is passed as args array: ['--agent=agent2','--prompt', resolvedPrompt, ...]
-    const copArgs = copilotCalls[0][1] as string[];
-    const promptArgIndex = copArgs.indexOf('--prompt');
-    expect(promptArgIndex).toBeGreaterThanOrEqual(0);
-    const promptText = copArgs[promptArgIndex + 1];
+    const promptText = mockSession.sendAndWait.mock.calls[0][0].prompt;
     expect(promptText).toContain('Global: remember this');
   });
 

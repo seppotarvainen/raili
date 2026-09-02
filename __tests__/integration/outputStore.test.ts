@@ -11,7 +11,9 @@ import {
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
+jest.mock('@github/copilot-sdk');
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');
 
@@ -19,6 +21,7 @@ let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  resetCopilotSdkMock();
   spawn.mockImplementation(() => fakeChild('', '', 0));
 });
 
@@ -51,9 +54,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, '.github/agents/raili-coding.md', '---\nmodel: test\n---\n');
 
-    spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
-      if (cmd === 'copilot') return fakeChild('intro\nSUMMARY:\nline1\nline2\n', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'output-1',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'intro\nSUMMARY:\nline1\nline2\n', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
@@ -93,9 +99,12 @@ states:
     writeAgentFile(tmpDir, '.github/agents/raili-coding.md', '---\nmodel: test\n---\n');
 
     // First run returns initial output
-    spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
-      if (cmd === 'copilot') return fakeChild('Analysis result\nComplete', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'output-2',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'Analysis result\nComplete', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
@@ -110,9 +119,12 @@ states:
     expect(latestContent1).toContain('Analysis result');
 
     // Second run returns updated output
-    spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
-      if (cmd === 'copilot') return fakeChild('Updated analysis\nDone', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'output-3',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'Updated analysis\nDone', messageId: 'message' },
     });
 
     // Continue run to resume the workflow and run the state again
@@ -153,10 +165,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, '.github/agents/raili-coding.md', '---\nmodel: test\n---\n');
 
-    spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
-      if (cmd === 'copilot')
-        return fakeChild('preamble\nRESULT:\nline1\nline2\nline3\nline4', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'output-4',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'preamble\nRESULT:\nline1\nline2\nline3\nline4', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
@@ -205,6 +219,13 @@ states:
     spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
       if (cmd === 'copilot') return fakeChild('RESULT:\nlineA', '', 0);
       return fakeChild('', '', 0);
+    });
+    mockSession.sendAndWait.mockResolvedValue({
+      type: 'assistant.message',
+      id: 'output-reset',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'RESULT:\nlineA', messageId: 'message' },
     });
 
     // First run creates the files (limit to initial state so reset_step does not run yet)

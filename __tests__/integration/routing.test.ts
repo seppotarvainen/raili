@@ -1,5 +1,7 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
+import { resetCopilotSdkMock } from '@github/copilot-sdk';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
@@ -13,12 +15,14 @@ import {
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
+jest.mock('@github/copilot-sdk');
 const { spawn } = require('child_process');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  resetCopilotSdkMock();
   spawn.mockImplementation(() => fakeChild('', '', 0));
 });
 
@@ -49,11 +53,6 @@ states:
     writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent');
-
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('some output\napprove', '', 0);
-      return fakeChild('', '', 0);
-    });
 
     await runCommand(tmpDir, 'clean', {});
 

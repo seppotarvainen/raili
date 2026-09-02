@@ -12,7 +12,9 @@ import {
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
+jest.mock('@github/copilot-sdk');
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
 const { spawn } = require('child_process');
 
@@ -20,6 +22,7 @@ let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  resetCopilotSdkMock();
   // default: no-op child
   spawn.mockImplementation(() => fakeChild('', '', 0));
 });
@@ -146,9 +149,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('analysis\nready', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'next-output',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'analysis\nready', messageId: 'message' },
     });
 
     // Automatically accept approval prompt
@@ -159,9 +165,7 @@ states:
     const ctx = loadContext(tmpDir);
     const states = ctx.stateHistory.map((e) => e.state);
 
-    // Approval should have been triggered (copilot called)
-    const copilotCall = spawn.mock.calls.find((c: any[]) => c[0] === 'copilot');
-    expect(copilotCall).toBeDefined();
+    expect(mockSession.sendAndWait).toHaveBeenCalled();
 
     // Run should stop after the approval state (only analyze recorded)
     expect(states).toEqual(['analyze']);

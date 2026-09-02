@@ -156,7 +156,8 @@ export interface CancellationController extends CancellationToken {
   requestCancellation(): void;
 }
 
-// Token usage parsed from copilot CLI output. Numeric fields are absolute integers.
+// Token usage reported by an agent provider. Unavailable numeric values use -1;
+// corresponding display fields use "N/A".
 export interface TokenUsage {
   input: number;
   cached?: number;
