@@ -1,3 +1,4 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -12,14 +13,17 @@ import {
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
+jest.mock('@github/copilot-sdk');
 const { spawn } = require('child_process');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  resetCopilotSdkMock();
   spawn.mockImplementation(() => fakeChild('', '', 0));
 });
 
@@ -71,8 +75,15 @@ states:
           return fakeChild('Prelude text\nLESSON: This is the lesson\nDetails about it\n', '', 0);
         }
       }
-      if (cmd === 'copilot') return fakeChild('done', '', 0);
       return fakeChild('', '', 0);
+    });
+
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'done', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});

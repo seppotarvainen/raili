@@ -1,3 +1,4 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -6,28 +7,26 @@ import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
   createTmpWorkspace,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,
   writeSubWorkflow,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
-jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+jest.mock('@github/copilot-sdk');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
-  spawn.mockImplementation(() => fakeChild('', '', 0));
+  resetCopilotSdkMock();
 });
 
 afterEach(() => {
   cleanupTmpWorkspace(tmpDir);
   cleanupRailiEnvVars();
-  spawn.mockReset();
 });
 
 // ---------------------------------------------------------------------------
@@ -81,17 +80,28 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    // Each copilot call returns the expected transition key as the last stdout line.
-    let copilotCallCount = 0;
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        copilotCallCount++;
-        if (copilotCallCount === 1) return fakeChild('analysis\ncontinue', '', 0); // analyze → 'continue'
-        if (copilotCallCount === 2) return fakeChild('code output\ndone', '', 0); // code → 'done'
-        return fakeChild('review output\ndone', '', 0); // review → 'done' (inherited from parent)
-      }
-      return fakeChild('', '', 0);
-    });
+    mockSession.sendAndWait
+      .mockResolvedValueOnce({
+        type: 'assistant.message',
+        id: 'group-1',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'analysis\ncontinue', messageId: 'message' },
+      })
+      .mockResolvedValueOnce({
+        type: 'assistant.message',
+        id: 'group-2',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'code output\ndone', messageId: 'message' },
+      })
+      .mockResolvedValue({
+        type: 'assistant.message',
+        id: 'group-3',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'review output\ndone', messageId: 'message' },
+      });
 
     await runCommand(tmpDir, 'clean', {});
 
@@ -158,15 +168,21 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    let copilotCallCount = 0;
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        copilotCallCount++;
-        if (copilotCallCount === 1) return fakeChild('ok\nnext', '', 0); // step1 → 'next'
-        return fakeChild('step2 output', '', 0); // step2: approval takes over routing
-      }
-      return fakeChild('', '', 0);
-    });
+    mockSession.sendAndWait
+      .mockResolvedValueOnce({
+        type: 'assistant.message',
+        id: 'group-approval-1',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'ok\nnext', messageId: 'message' },
+      })
+      .mockResolvedValue({
+        type: 'assistant.message',
+        id: 'group-approval-2',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'step2 output', messageId: 'message' },
+      });
 
     // Simulate user approval (also handles the skip confirmation for the proxy state).
     process.env.RAILI_MANUAL_CHOICE = 'PASSED';
@@ -229,17 +245,24 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    // First run: a and b succeed, c fails (non-zero exit).
-    // c inherits on: {PASSED: end} — FAILED has no route → Runner throws.
-    let callCount = 0;
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        callCount++;
-        if (callCount <= 2) return fakeChild('ok', '', 0);
-        return fakeChild('', '', 1); // c fails
-      }
-      return fakeChild('', '', 0);
-    });
+    // First run: a and b succeed, c fails. c inherits on: {PASSED: end};
+    // FAILED has no route, so the runner throws before recording the next state.
+    mockSession.sendAndWait
+      .mockResolvedValueOnce({
+        type: 'assistant.message',
+        id: 'group-fail-1',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'ok', messageId: 'message' },
+      })
+      .mockResolvedValueOnce({
+        type: 'assistant.message',
+        id: 'group-fail-2',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'ok', messageId: 'message' },
+      })
+      .mockRejectedValueOnce(new Error('agent failed'));
 
     try {
       await runCommand(tmpDir, 'clean', {});
@@ -259,10 +282,12 @@ states:
     ]);
 
     // Second run: c succeeds this time, routing continues to 'end'.
-    spawn.mockReset();
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('ok', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValue({
+      type: 'assistant.message',
+      id: 'group-retry',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'ok', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'continue', {});
@@ -324,26 +349,21 @@ states:
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
     let seenEnv: string | undefined;
-    let seenPrompt: string | undefined;
-
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        seenEnv = process.env.RAILI_VAR_TICKET_ID;
-        const call = (spawn.mock.calls[spawn.mock.calls.length - 1] || []) as any[];
-        const args = call[1] as string[] | undefined;
-        if (args) {
-          const idx = args.indexOf('--prompt');
-          if (idx >= 0) seenPrompt = args[idx + 1];
-        }
-        return fakeChild('ok', '', 0);
-      }
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockImplementation(async () => {
+      seenEnv = process.env.RAILI_VAR_TICKET_ID;
+      return {
+        type: 'assistant.message',
+        id: 'group-env',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'ok', messageId: 'message' },
+      };
     });
 
     await runCommand(tmpDir, 'clean', { ticket_id: 'T-123' });
 
     expect(seenEnv).toBe('T-123');
-    expect(seenPrompt).toContain('Check ticket T-123');
+    expect(mockSession.sendAndWait.mock.calls[0][0].prompt).toContain('Check ticket T-123');
 
     const ctx = loadContext(tmpDir);
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('finish');
@@ -396,9 +416,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('stored output\nsome content', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValue({
+      type: 'assistant.message',
+      id: 'group-output',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'stored output\nsome content', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
@@ -456,9 +479,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('work output', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValue({
+      type: 'assistant.message',
+      id: 'group-work',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'work output', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});

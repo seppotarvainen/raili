@@ -1,3 +1,4 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -12,21 +13,20 @@ import {
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
-jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+jest.mock('@github/copilot-sdk');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
-  spawn.mockImplementation(() => fakeChild('', '', 0));
+  resetCopilotSdkMock();
 });
 
 afterEach(() => {
   cleanupTmpWorkspace(tmpDir);
   cleanupRailiEnvVars();
-  spawn.mockReset();
 });
 
 describe('state end summary is printed', () => {
@@ -53,9 +53,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('analysis output\napprove', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'analysis output\napprove', messageId: 'message' },
     });
 
     const spy = jest.spyOn(console, 'log').mockImplementation(() => {});

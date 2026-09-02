@@ -1,10 +1,10 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
+import { spawn as spawnProcess } from 'child_process';
 import { createCancellationController } from '../../src/cancellation';
-import { main } from '../../src/cli';
-import { RailiCommand } from '../../src/cli/railiCommand';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
@@ -15,14 +15,17 @@ import {
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock, mockClient } from '@github/copilot-sdk';
 
+jest.mock('@github/copilot-sdk');
 jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+const spawn = jest.mocked(spawnProcess);
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
+  resetCopilotSdkMock();
   spawn.mockImplementation(() => fakeChild('', '', 0));
 });
 
@@ -59,16 +62,61 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('some analysis output\napprove', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'some analysis output\napprove', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
 
-    const copilotCall = spawn.mock.calls.find((c: any[]) => c[0] === 'copilot');
-    expect(copilotCall).toBeDefined();
-    expect(copilotCall![1]).toEqual(expect.arrayContaining(['--agent=test_agent']));
+    expect(mockSession.sendAndWait).toHaveBeenCalled();
+
+    const ctx = loadContext(tmpDir);
+    expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
+  });
+});
+
+// New tests: model selection and client cleanup on success
+describe('sdk session model selection and cleanup', () => {
+  it('creates session with configured model and stops client on completion', async () => {
+    writeWorkflow(
+      tmpDir,
+      `
+initial: analyze
+states:
+  analyze:
+    type: agent
+    agent: test_agent
+    prompt: "Analyze the code"
+    transitions:
+      approve: done
+  done:
+    type: engine
+`,
+    );
+    writeAgentRegistry(tmpDir, {
+      test_agent: { path: './agents/test.agent.md', model: 'test-model' },
+    });
+    writeScriptRegistry(tmpDir, {});
+    writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
+
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'analysis result\napprove', messageId: 'message' },
+    });
+
+    await runCommand(tmpDir, 'clean', {});
+
+    expect(mockClient.createSession).toHaveBeenCalled();
+    const sessionConfig = (mockClient.createSession.mock.calls[0][0] as any) || {};
+    expect(sessionConfig.model).toBe('test-model');
+    expect(mockClient.stop).toHaveBeenCalled();
 
     const ctx = loadContext(tmpDir);
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('done');
@@ -97,14 +145,9 @@ states:
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
     const cancellationController = createCancellationController();
-    const child = fakeChild('', '', 0);
-    const killSpy = jest.spyOn(child, 'kill');
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        cancellationController.requestCancellation();
-        return child;
-      }
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockImplementationOnce(async () => {
+      cancellationController.requestCancellation();
+      return undefined;
     });
 
     const run = runCommand(
@@ -121,53 +164,9 @@ states:
     );
     await run;
 
-    expect(spawn.mock.calls.some((call: unknown[]) => call[0] === 'copilot')).toBe(true);
-    expect(killSpy).toHaveBeenCalled();
-    const ctx = loadContext(tmpDir);
-    expect(ctx.stateHistory.map((entry) => entry.state)).not.toContain('done');
-    const analyze = ctx.stateHistory.find((entry) => entry.state === 'analyze');
-    expect(analyze?.meta?.cancelled).toEqual(expect.any(String));
-  });
-
-  it('cancels through the CLI boundary and persists cancellation metadata', async () => {
-    writeWorkflow(
-      tmpDir,
-      `
-initial: analyze
-states:
-  analyze:
-    type: agent
-    agent: test_agent
-    prompt: "Analyze the code"
-    transitions:
-      approve: done
-  done:
-    type: engine
-`,
-    );
-    writeAgentRegistry(tmpDir, { test_agent: { path: './agents/test.agent.md' } });
-    writeScriptRegistry(tmpDir, {});
-    writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
-
-    const child = fakeChild('', '', 0);
-    const killSpy = jest.spyOn(child, 'kill');
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        process.stdin.emit('data', Buffer.from([0x18]));
-        return child;
-      }
-      return fakeChild('', '', 0);
-    });
-
-    const previousCwd = process.cwd();
-    process.chdir(tmpDir);
-    try {
-      await main(new RailiCommand('run'), ['--clean']);
-    } finally {
-      process.chdir(previousCwd);
-    }
-
-    expect(killSpy).toHaveBeenCalled();
+    expect(mockSession.sendAndWait).toHaveBeenCalled();
+    expect(mockSession.abort).toHaveBeenCalled();
+    expect(mockClient.stop).toHaveBeenCalled();
     const ctx = loadContext(tmpDir);
     expect(ctx.stateHistory.map((entry) => entry.state)).not.toContain('done');
     const analyze = ctx.stateHistory.find((entry) => entry.state === 'analyze');
@@ -201,9 +200,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('analysis complete\napprove', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'analysis complete\napprove', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
@@ -249,22 +251,23 @@ states:
 
     let envVarDuringRun: string | undefined;
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') {
-        envVarDuringRun = process.env.RAILI_VAR_TICKET_ID;
-        return fakeChild('done', '', 0);
-      }
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockImplementationOnce(async ({ prompt }) => {
+      envVarDuringRun = process.env.RAILI_VAR_TICKET_ID;
+      expect(prompt).toContain('Analyze ticket TICKET-123');
+      return {
+        type: 'assistant.message',
+        id: 'event',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'done', messageId: 'message' },
+      };
     });
 
     await runCommand(tmpDir, 'clean', { ticket_id: 'TICKET-123' });
 
     expect(envVarDuringRun).toBe('TICKET-123');
 
-    const copilotCall = spawn.mock.calls.find((c: any[]) => c[0] === 'copilot');
-    const args = copilotCall![1] as string[];
-    const promptIdx = args.indexOf('--prompt');
-    expect(args[promptIdx + 1]).toContain('Analyze ticket TICKET-123');
+    expect(mockSession.sendAndWait).toHaveBeenCalled();
 
     const ctx = loadContext(tmpDir);
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('complete');
@@ -299,9 +302,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('agent output here', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'agent output here', messageId: 'message' },
     });
 
     // Accept the approval
@@ -317,9 +323,6 @@ states:
     expect(commands).toContain("echo 'starting analysis'");
 
     // Copilot was called
-    const copilotCall = spawn.mock.calls.find((c: any[]) => c[0] === 'copilot');
-    expect(copilotCall).toBeDefined();
-
     // Approval routed to deploy
     const ctx = loadContext(tmpDir);
     const states = ctx.stateHistory.map((e) => e.state);

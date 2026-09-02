@@ -1,3 +1,4 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -5,27 +6,25 @@ import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
   createTmpWorkspace,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
-jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+jest.mock('@github/copilot-sdk');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
-  spawn.mockImplementation(() => fakeChild('', '', 0));
+  resetCopilotSdkMock();
 });
 
 afterEach(() => {
   cleanupTmpWorkspace(tmpDir);
   cleanupRailiEnvVars();
-  spawn.mockReset();
 });
 
 /**
@@ -69,12 +68,15 @@ states:
     writeStoredOutputs(tmpDir, 'code', ['first-run-output', 'second-run-output']);
 
     let finalPrompt = '';
-    spawn.mockImplementation((cmd: string, args: any[] = []) => {
-      if (cmd === 'copilot') {
-        finalPrompt = args[args.indexOf('--prompt') + 1] ?? '';
-        return fakeChild('ok\n', '', 0);
-      }
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockImplementationOnce(async ({ prompt }) => {
+      finalPrompt = prompt;
+      return {
+        type: 'assistant.message',
+        id: 'event',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'PASSED', messageId: 'message' },
+      };
     });
 
     // No context.json → continue starts at the initial state 'code' with pre-existing outputs
@@ -111,12 +113,15 @@ states:
     writeStoredOutputs(tmpDir, 'code', ['old-output-1', 'old-output-2']);
 
     let finalPrompt = '';
-    spawn.mockImplementation((cmd: string, args: any[] = []) => {
-      if (cmd === 'copilot') {
-        finalPrompt = args[args.indexOf('--prompt') + 1] ?? '';
-        return fakeChild('ok\n', '', 0);
-      }
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockImplementationOnce(async ({ prompt }) => {
+      finalPrompt = prompt;
+      return {
+        type: 'assistant.message',
+        id: 'event',
+        parentId: null,
+        timestamp: new Date(0).toISOString(),
+        data: { content: 'PASSED', messageId: 'message' },
+      };
     });
 
     // No context.json → continue starts at the initial state 'code' with pre-existing outputs

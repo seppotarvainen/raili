@@ -171,16 +171,18 @@ The canonical success indicator field in each run object is `success` (boolean).
 
 Token accounting (per-state)
 
-In addition to run-level metrics, Raili records per-state token consumption when an agent emits a Copilot token-reporting line (for example: `↑ 256.9k (223.0k cached) • ↓ 9.7k`). When detected, the runner attaches a `meta.tokens` object to the producing state's history entry in `.raili/<workflow>/context.json` so tooling and UIs can attribute consumption to the exact state and run.
+In addition to run-level metrics, Raili records per-state token consumption using the Copilot SDK's usage/metrics API when available. The SDK-provided metrics are mapped into the `meta.tokens` object attached to the producing state's history entry in `.raili/<workflow>/context.json` so tooling and UIs can attribute consumption to the exact state and run.
 
-The recorded `TokenUsage` object contains numeric fields **input**, **output**, and optional **cached**, plus the original display strings `input_display`, `output_display`, and `cached_display`. When present, an `AI Credits` footer (for example `AI Credits 0.72 (1h30m45s)`) is parsed and merged into the same object as `ai_display` (original footer string), `ai_credits` (numeric credit amount), and `ai_time` (duration converted to total seconds). Numeric token fields are absolute integers (suffixes such as `k`/`M` and commas are parsed). Example entry:
+The recorded `TokenUsage` object contains numeric fields **input**, **output**, and optional **cached**, plus the original display strings `input_display`, `output_display`, and `cached_display`. When the SDK provides AI credit/time metrics they are mapped into `ai_display`, `ai_credits`, and `ai_time`. If SDK metrics are not available for a run, numeric fields will be set to `-1` and display fields to `"N/A"` to indicate unavailable values. Legacy CLI-footer parsing is no longer authoritative and should not be relied upon for token/accounting data.
 
-```
+Example entry:
+
+```json
 {
-  state: "analyze",
-  enteredAt: "2026-03-16T12:00:00Z",
-  meta: {
-    tokens: {
+  "state": "analyze",
+  "enteredAt": "2026-03-16T12:00:00Z",
+  "meta": {
+    "tokens": {
       "input": 256900,
       "cached": 223000,
       "output": 9700,

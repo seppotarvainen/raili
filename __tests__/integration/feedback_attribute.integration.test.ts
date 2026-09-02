@@ -1,8 +1,8 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
   createTmpWorkspace,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,
@@ -10,22 +10,21 @@ import {
 } from './testUtils';
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
-jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+jest.mock('@github/copilot-sdk');
 
 let tmpDir: string;
 
 describe('feedback attribute integration', () => {
   beforeEach(() => {
     tmpDir = createTmpWorkspace();
-    spawn.mockImplementation(() => fakeChild('', '', 0));
+    resetCopilotSdkMock();
   });
 
   afterEach(() => {
     cleanupTmpWorkspace(tmpDir);
     cleanupRailiEnvVars();
-    spawn.mockReset();
   });
 
   test('agent with feedback attribute stores feedback but does not change routing', async () => {
@@ -49,9 +48,14 @@ states:
     writeAgentFile(tmpDir, '.github/agents/analyzer.md', '---\nmodel: test\n---\nAnalyze');
     writeScriptRegistry(tmpDir, {});
 
-    // spawn will simulate copilot printing some lines and a feedback block
     const agentStdout = `Some analysis lines\nFEEDBACK: {"rating":5,"comment":"Looks good"}\napprove\n`;
-    spawn.mockImplementation(() => fakeChild(agentStdout, '', 0));
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: agentStdout, messageId: 'message' },
+    });
 
     await runCommand(tmpDir, 'clean', {});
 

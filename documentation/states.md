@@ -1,11 +1,11 @@
 # States
 
-> Five state types: agent (Copilot agents), script (shell scripts), command (inline commands), engine (no-op), group
+> Five state types: agent (SDK-backed Copilot agents), script (shell scripts), command (inline commands), engine (no-op), group
 > (embedded sub-workflow). Each has different routing rules.
 
 ## Type: agent
 
-Runs a Copilot agent from `.github/agents/`. Agents read and understand prompts, iterate, and output decision keys.
+Runs a Copilot agent from `.github/agents/`. Agents are executed via the Copilot SDK client sessions rather than spawning a local CLI subprocess. The handler preserves prompt construction, model precedence, previous-output context, and the final-assistant-content contract; SDK usage metrics are adapted into the runner's existing token-accounting shape.
 
 ```yaml
 analyze:
@@ -46,9 +46,9 @@ When a state declares `teach:` and also uses `approval:`, approval-exposed varia
 
 **Memory:** With `output.store: true`, previous output is appended to prompt on next run.
 
-**Token accounting:** Agent handlers now parse Copilot CLI token-reporting lines (for example `↑ 256.9k (223.0k cached) • ↓ 9.7k`). When present, token usage is attached to the producing state's history entry in `.raili/<workflow>/context.json` under `meta.tokens`. The recorded `TokenUsage` contains numeric **input**, **output**, and optional **cached** fields plus display strings (`input_display`, `output_display`, `cached_display`). See `documentation/output.md` for an example and parsing details.
+**Token accounting:** Agent handlers obtain token usage from the Copilot SDK's usage/metrics API when available. SDK metrics are mapped into the `TokenUsage` shape and attached to the producing state's history entry in `.raili/<workflow>/context.json` under `meta.tokens`. When SDK metrics are unavailable numeric fields use sentinel values (`-1`) and display fields use `"N/A"` to indicate missing data. Legacy CLI footer parsing is no longer authoritative and should not be relied upon; any CLI-footer text present in agent outputs is ignored for token accounting. See `documentation/output.md` for the mapped shape and examples.
 
-Verbose agent context (CLI): When `raili run` is invoked with `--verbose` (short `-v`), Raili prints a pre-execution verbose block to stdout labeled `VERBOSE: Agent context`. This block includes the `agent` id, the resolved `model` (or `(uses frontmatter)` when unspecified), and a truncated preview of the `prompt` (max 500 characters). The separator line width respects the terminal columns. This flag is intended for debugging and test assertions and does not change handler behavior.
+Verbose agent context: When `raili run` is invoked with `--verbose` (short `-v`), Raili prints a pre-execution verbose block labeled `VERBOSE: Agent context` immediately before creating the SDK session. This block includes the `agent` id, the resolved `model` (or `(uses frontmatter)` when unspecified), and a truncated preview of the `prompt` (max 500 characters). The separator line width respects the terminal columns. This flag is intended for debugging and test assertions and does not change handler behavior.
 
 Additionally, when agents emit an `AI Credits` footer line (for example `AI Credits 0.72 (1h30m45s)`), the parser extracts three additional fields: **ai_display** (original footer string), **ai_credits** (parsed numeric credit amount), and **ai_time** (duration parsed to total seconds). These fields are merged into `meta.tokens` alongside the numeric token counts so tooling can attribute both token usage and reported AI credits/time to the producing state. See `documentation/output.md` for parsing details and examples.
 

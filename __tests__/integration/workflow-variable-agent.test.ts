@@ -1,33 +1,30 @@
-import fs from 'fs';
-import path from 'path';
+/// <reference path="../types/copilot-sdk.d.ts" />
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
   createTmpWorkspace,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,
   writeWorkflow,
   writeNamedWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
-jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+jest.mock('@github/copilot-sdk');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
-  spawn.mockImplementation(() => fakeChild('', '', 0));
+  resetCopilotSdkMock();
 });
 
 afterEach(() => {
   cleanupTmpWorkspace(tmpDir);
   cleanupRailiEnvVars();
-  spawn.mockReset();
 });
 
 describe('workflow variable in agent prompts', () => {
@@ -52,9 +49,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('done', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'done', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});
@@ -62,11 +62,7 @@ states:
     const ctx = loadContext(tmpDir);
     expect(ctx.vars!.workflow).toBe('main');
 
-    const copilotCall = spawn.mock.calls.find((c: any[]) => c[0] === 'copilot');
-    expect(copilotCall).toBeDefined();
-    const args = copilotCall![1] as string[];
-    const promptIdx = args.indexOf('--prompt');
-    expect(args[promptIdx + 1]).toContain('main');
+    expect(mockSession.sendAndWait.mock.calls[0][0].prompt).toContain('main');
   });
 
   it('injects workflow var into agent prompt for named workflow', async () => {
@@ -91,9 +87,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('done', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'done', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {}, 'dev');
@@ -101,11 +100,7 @@ states:
     const ctx = loadContext(tmpDir, 'dev');
     expect(ctx.vars!.workflow).toBe('dev');
 
-    const copilotCall = spawn.mock.calls.find((c: any[]) => c[0] === 'copilot');
-    expect(copilotCall).toBeDefined();
-    const args = copilotCall![1] as string[];
-    const promptIdx = args.indexOf('--prompt');
-    expect(args[promptIdx + 1]).toContain('dev');
+    expect(mockSession.sendAndWait.mock.calls[0][0].prompt).toContain('dev');
   });
 
   it('preserves workflow var on continue runs', async () => {
@@ -129,9 +124,12 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('done', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'done', messageId: 'message' },
     });
 
     // initial clean run
@@ -140,9 +138,12 @@ states:
     expect(ctx.vars!.workflow).toBe('main');
 
     // continue run should preserve existing workflow var
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('done', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'done', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'continue', {});

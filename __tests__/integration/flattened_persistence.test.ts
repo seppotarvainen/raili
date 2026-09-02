@@ -1,3 +1,4 @@
+/// <reference path="../types/copilot-sdk.d.ts" />
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -6,27 +7,25 @@ import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
   createTmpWorkspace,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,
   writeWorkflow,
 } from './testUtils';
+import { mockSession, resetCopilotSdkMock } from '@github/copilot-sdk';
 
-jest.mock('child_process', () => ({ spawn: jest.fn() }));
-const { spawn } = require('child_process');
+jest.mock('@github/copilot-sdk');
 
 let tmpDir: string;
 
 beforeEach(() => {
   tmpDir = createTmpWorkspace();
-  spawn.mockImplementation(() => fakeChild('', '', 0));
+  resetCopilotSdkMock();
 });
 
 afterEach(() => {
   cleanupTmpWorkspace(tmpDir);
   cleanupRailiEnvVars();
-  spawn.mockReset();
 });
 
 describe('integration: flattened persistence across group/sub-workflow', () => {
@@ -71,9 +70,12 @@ describe('integration: flattened persistence across group/sub-workflow', () => {
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/deploy.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string) => {
-      if (cmd === 'copilot') return fakeChild('OUTPUT:\ndeploy output\ndone', '', 0);
-      return fakeChild('', '', 0);
+    mockSession.sendAndWait.mockResolvedValueOnce({
+      type: 'assistant.message',
+      id: 'event',
+      parentId: null,
+      timestamp: new Date(0).toISOString(),
+      data: { content: 'OUTPUT:\ndeploy output\ndone', messageId: 'message' },
     });
 
     await runCommand(tmpDir, 'clean', {});

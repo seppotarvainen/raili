@@ -1,6 +1,9 @@
 import { TokenUsage } from '../types';
 
 /**
+ * Legacy parser retained for callers that explicitly process archived CLI output.
+ * Agent execution uses SDK metrics and does not call this parser.
+ *
  * Parse a number string like "256.9k", "1.2M", "1,234", "10" into a numeric value.
  */
 function parseNumberString(s: string | undefined): number | undefined {
