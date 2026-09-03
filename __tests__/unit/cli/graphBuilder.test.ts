@@ -30,7 +30,7 @@ describe('buildGraph', () => {
     };
 
     const g = buildGraph(cfg);
-    const repr = g.edges.map((e) => `${e.from}->${e.outcome}->${e.to}`);
+    const repr = g.edges.map((e) => `${e.from}->${e.outcome ?? ''}->${e.to ?? ''}`);
     expect(repr).toEqual(expect.arrayContaining(['s->approve->ok', 's->default->fallback', 't->PASSED->p', 't->FAILED->f']));
 
     const defaultEdge = g.edges.find((e) => e.from === 's' && e.outcome === 'default');

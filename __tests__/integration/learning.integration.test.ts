@@ -1,4 +1,4 @@
-/// <reference path="../types/copilot-sdk.d.ts" />
+import '../types/copilot-sdk';
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -67,7 +67,7 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/test.agent.md', 'Agent instructions');
 
-    spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
+    spawn.mockImplementation((cmd: string, args?: any[], _opts?: any) => {
       if (cmd === 'sh' && Array.isArray(args) && typeof args[1] === 'string') {
         const invoked = args[1] as string;
         if (invoked.includes('echo')) {

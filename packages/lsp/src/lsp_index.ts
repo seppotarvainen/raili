@@ -21,7 +21,7 @@ function toLSPDiagnostic(diag: Diagnostic): LSPDiagnostic {
       end: { line: diag.location.line - 1, character: diag.location.column },
     },
     message: diag.message,
-    severity: diag.severity as any, // 1 = Error, 2 = Warning, 3 = Information
+    severity: diag.severity as LSPDiagnostic['severity'], // 1 = Error, 2 = Warning, 3 = Information
   };
 }
 
@@ -30,12 +30,12 @@ export function runFromStdio(connectionFactory?: () => LspConnectionLike) {
   if (connectionFactory) {
     const conn = connectionFactory();
     createCoreServer(conn);
-    return { processDocument: () => {} };
+    return { processDocument: () => undefined };
   }
 
   // Otherwise, create real connection from stdio
   const connection = createConnection(ProposedFeatures.all);
-  const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+  const documents = new TextDocuments(TextDocument);
 
   const conn = createVscodeAdapter(connection, documents);
   createCoreServer(conn);
@@ -44,7 +44,7 @@ export function runFromStdio(connectionFactory?: () => LspConnectionLike) {
   documents.listen(connection);
   connection.listen();
 
-  return { processDocument: () => {} };
+  return { processDocument: () => undefined };
 }
 
 /**

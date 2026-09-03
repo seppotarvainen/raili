@@ -124,13 +124,17 @@ export function readMergedLearnings(cwd: string, agentId: string, workflowArg?: 
 
   // Parse lines into normalized map
   const parseLines = (raw: string) => {
-    if (!raw) return [] as { rawLine: string; normalized: string }[];
+    if (!raw) {
+      return [] as { rawLine: string; normalized: string }[];
+    }
     const lines = raw.split(/\r?\n/);
     const re = /^- \[[^\]]+\](?: \[[^\]]+\])? (.*)$/;
     const out: { rawLine: string; normalized: string }[] = [];
     for (const line of lines) {
       const m = re.exec(line);
-      if (!m) continue;
+      if (!m) {
+        continue;
+      }
       const lessonEscaped = (m[1] || '').trim();
       const decoded = lessonEscaped.replace(/\\n/g, '\n');
       const normalized = normalizeForCompare(decoded.replace(/\n/g, ' '));
@@ -174,7 +178,9 @@ export function readMergedLearningsForPrompt(
 ): string {
   const mergedRaw = readMergedLearnings(cwd, agentId, workflowArg);
   const entries = stripTimestampsFromLearnings(mergedRaw);
-  if (!entries.length) return '';
+  if (!entries.length) {
+    return '';
+  }
   return entries.join('\n\n');
 }
 

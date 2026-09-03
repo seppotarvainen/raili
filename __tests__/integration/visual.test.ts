@@ -12,7 +12,7 @@ import { RailiCommand } from '../../src/cli/railiCommand';
 describe('CLI visual flow', () => {
   const ORIGINAL_CWD = process.cwd();
   let tmp: string;
-  let exitMock: jest.SpyInstance;
+  let _exitMock: jest.SpyInstance;
 
   beforeEach(() => {
     tmp = createTmpWorkspace();
@@ -23,12 +23,14 @@ describe('CLI visual flow', () => {
     jest.restoreAllMocks();
     try {
       process.chdir(ORIGINAL_CWD);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   });
 
   test('raili visual writes diagram.html to workflow dir', async () => {
     process.chdir(tmp);
-    jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
+    jest.spyOn(process, 'exit').mockImplementation((_code?: string | number | null) => {
       return undefined as never;
     });
 
@@ -40,7 +42,6 @@ describe('CLI visual flow', () => {
     try {
       jest.isolateModules(() => {
         // Import after setting argv/cwd
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const cli = require('../../src/cli');
         return cli.main(new RailiCommand('visual'), []);
       });

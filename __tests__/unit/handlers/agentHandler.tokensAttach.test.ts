@@ -1,4 +1,4 @@
-/// <reference path="../../types/copilot-sdk.d.ts" />
+import "../../types/copilot-sdk";
 import path from 'path';
 import { loadAgentRegistry } from '../../../src/registry/agentRegistry';
 import { executeAgent } from '../../../src/handlers/agentHandler';

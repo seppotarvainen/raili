@@ -1,5 +1,4 @@
 import {Runner, RunnerConfig} from '../../../src/runner/runner';
-import * as outputStore from '../../../src/context/outputStore';
 import * as notifyHandler from '../../../src/handlers/notifyHandler';
 import * as agentStateRunner from '../../../src/runner/agentStateRunner';
 import * as scriptStateRunner from '../../../src/runner/scriptStateRunner';
@@ -21,7 +20,6 @@ jest.mock('../../../src/context/context', () => ({
 // Access mocks after module resolution
 const contextModule = require('../../../src/context/context');
 
-const mockClear = outputStore.clearAgentOutputs as jest.MockedFunction<typeof outputStore.clearAgentOutputs>;
 const mockRunAgent = agentStateRunner.runAgentState as jest.MockedFunction<typeof agentStateRunner.runAgentState>;
 const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<typeof scriptStateRunner.runScriptState>;
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;

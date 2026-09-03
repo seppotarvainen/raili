@@ -33,13 +33,12 @@ export function loadVarsResolver(resolverPath: string | null): VarsResolverFn | 
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const mod = require(resolverPath);
     const fn: VarsResolverFn | undefined = mod && (mod.default || mod);
     if (!fn || typeof fn !== 'function') {
       throw new Error('vars-resolver.js does not export a function');
     }
-    return fn as VarsResolverFn;
+    return fn;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(`Failed to load vars-resolver.js: ${msg}`);
@@ -50,7 +49,7 @@ export async function executeVarsResolver(
   resolverFn: VarsResolverFn,
   input: VarsResolverInput,
 ): Promise<Record<string, string>> {
-  const res = await resolverFn(input as VarsResolverInput);
+  const res = await resolverFn(input);
   if (res == null) {
     return {};
   }

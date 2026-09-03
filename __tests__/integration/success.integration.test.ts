@@ -19,7 +19,7 @@ describe('Integration: success field in terminal engine states', () => {
     // Clean up temp directory
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch (err) {
+    } catch {
       // ignore
     }
   });

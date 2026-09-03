@@ -28,7 +28,9 @@ const COMMAND_HELP: Record<string, string> = {
 };
 
 function stripTitleFromMarkdown(content: string, stopAtExamples = false): string {
-  if (!content) return content;
+  if (!content) {
+    return content;
+  }
 
   // Split lines for line-oriented parsing
   const lines = content.split(/\r?\n/);
@@ -36,7 +38,9 @@ function stripTitleFromMarkdown(content: string, stopAtExamples = false): string
   // Remove first top-level title if present
   if (lines.length > 0 && /^\s*#\s+/.test(lines[0])) {
     lines.shift();
-    while (lines.length > 0 && /^\s*$/.test(lines[0])) lines.shift();
+    while (lines.length > 0 && /^\s*$/.test(lines[0])) {
+      lines.shift();
+    }
   }
 
   // Collect leading blockquote (quote) lines if present
@@ -57,18 +61,27 @@ function stripTitleFromMarkdown(content: string, stopAtExamples = false): string
   // Collect Usage header and its content until the next heading
   const usageCollected: string[] = [];
   for (let i = usageIdx; i < lines.length; i++) {
-    if (i !== usageIdx && /^\s*#/.test(lines[i])) break;
+    if (i !== usageIdx && /^\s*#/.test(lines[i])) {
+      break;
+    }
     usageCollected.push(lines[i]);
   }
 
   // Trim blank lines from usage block
-  while (usageCollected.length > 0 && /^\s*$/.test(usageCollected[0])) usageCollected.shift();
-  while (usageCollected.length > 0 && /^\s*$/.test(usageCollected[usageCollected.length - 1]))
+  while (usageCollected.length > 0 && /^\s*$/.test(usageCollected[0])) {
+    usageCollected.shift();
+  }
+  while (usageCollected.length > 0 && /^\s*$/.test(usageCollected[usageCollected.length - 1])) {
     usageCollected.pop();
+  }
 
   const parts: string[] = [];
-  if (quoteLines.length > 0) parts.push(quoteLines.join('\n').trim());
-  if (usageCollected.length > 0) parts.push(usageCollected.join('\n').trim());
+  if (quoteLines.length > 0) {
+    parts.push(quoteLines.join('\n').trim());
+  }
+  if (usageCollected.length > 0) {
+    parts.push(usageCollected.join('\n').trim());
+  }
 
   return parts.join('\n\n').trim();
 }
@@ -106,7 +119,7 @@ export function formatHelp(command?: string, topic?: string): string {
       return doc.trim();
     }
     if (topic in HELP_TOPICS) {
-      return HELP_TOPICS[topic as keyof typeof HELP_TOPICS].trim();
+      return HELP_TOPICS[topic].trim();
     }
     return (`Unknown topic: ${topic}\n\nGet help with ` + '`raili help` or `raili --help`.').trim();
   }

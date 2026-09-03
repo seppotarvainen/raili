@@ -80,7 +80,7 @@ states:
    invented:
      type: engine
  `;
-    const { states, references } = parseWorkflow(yaml);
+    const { references } = parseWorkflow(yaml);
     const refNames = references.map((r) => r.name).sort();
     // Should NOT include: true, "Completed", "RAI-76", "Do", "you", "want", "to", "commit", etc.
     // Should only include: final_diff, invented

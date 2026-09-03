@@ -6,6 +6,11 @@ module.exports = {
       '**/__tests__/integration/*.test.ts'
   ],
   collectCoverage: true,
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/cli\\.ts$',
+    '<rootDir>/__tests__/unit/infrastructure/fsFake\\.util\\.ts$',
+  ],
   coverageThreshold: {
     global: {
       branches: 80,
@@ -15,4 +20,3 @@ module.exports = {
     }
   }
 };
-

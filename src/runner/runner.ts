@@ -95,8 +95,8 @@ export class Runner {
     const added = this.context.stateHistory.length > prevLen;
 
     // Determine whether this record should count towards stepsExecuted.
-    const skipped = Boolean(meta && (meta as Record<string, unknown>)['skipped'] !== undefined);
-    const preRecord = Boolean(meta && (meta as Record<string, unknown>)['pre_record'] === true);
+    const skipped = Boolean(meta?.skipped !== undefined);
+    const preRecord = Boolean(meta?.pre_record === true);
 
     let shouldCount = false;
     if (!skipped && !preRecord) {
@@ -129,20 +129,28 @@ export class Runner {
       this.context && this.context.stateHistory && this.context.stateHistory.length > 0
         ? this.context.stateHistory[this.context.stateHistory.length - 1].state
         : this.stateMachine.initial;
+    let resumeInteractiveStateId: string | undefined;
 
-    // If the last recorded state is terminal (no routing), treat this as a fresh run
-    // and start from the workflow initial state so `continue` on a completed run restarts it.
     if (this.context.stateHistory.length > 0) {
-      const lastStateId = this.context.stateHistory[this.context.stateHistory.length - 1].state;
+      const lastEntry = this.context.stateHistory[this.context.stateHistory.length - 1];
+      const lastStateId = lastEntry.state;
       const lastDef = this.stateMachine.states[lastStateId];
       if (lastDef) {
+        const pendingInteractivePrompt =
+          lastEntry.meta?.pre_record === true &&
+          lastEntry.meta?.cancelled !== undefined &&
+          (lastDef.config.approval !== undefined || lastDef.config.feedback !== undefined);
+        if (pendingInteractivePrompt) {
+          resumeInteractiveStateId = lastStateId;
+        }
+
         const isTerminal =
           !lastDef.config.on &&
           !lastDef.config.transitions &&
           !lastDef.config.approval &&
           !lastDef.config.feedback &&
           lastDef.transitions.length === 0;
-        if (isTerminal) {
+        if (isTerminal && !pendingInteractivePrompt) {
           currentStateId = this.stateMachine.initial;
         }
       }
@@ -181,7 +189,9 @@ export class Runner {
       cancellationToken: this.cancellationToken,
       ctxApi: {
         record: (s: string, m?: Record<string, unknown>) => this.record(s, m),
-        persist: () => this.persist(),
+        persist: () => {
+          this.persist();
+        },
         context: () => this.context,
       },
     });
@@ -208,7 +218,9 @@ export class Runner {
         getHistoryCount: () => this.context.stateHistory.length,
         getLastEntry: () => this.context.stateHistory[this.context.stateHistory.length - 1] ?? null,
         vars: this.context.vars,
-        persist: () => this.persist(),
+        persist: () => {
+          this.persist();
+        },
       },
       presenterFactory: () => new Presenter(),
       cwd: this.cwd,
@@ -249,80 +261,85 @@ export class Runner {
         if (!stateDef) {
           throw new Error(`Runner: state '${stateId}' not found in state machine`);
         }
+        const resumingInteractivePrompt = stateId === resumeInteractiveStateId;
 
-        // Phase 1: Skip - use RoutingManager
-        const skipTarget = routingManager.evaluateSkip(stateId, stateDef, this.stateMachine);
-        if (skipTarget) {
-          // Record that the state was skipped (fail-fast history entry) and then continue to target
-          this.record(stateId, { skipped: { target: skipTarget } });
-          stateId = skipTarget;
-          continue;
+        let stateResult: StateResult | undefined;
+        if (!resumingInteractivePrompt) {
+          // Phase 1: Skip - use RoutingManager
+          const skipTarget = routingManager.evaluateSkip(stateId, stateDef, this.stateMachine);
+          if (skipTarget) {
+            // Record that the state was skipped (fail-fast history entry) and then continue to target
+            this.record(stateId, { skipped: { target: skipTarget } });
+            stateId = skipTarget;
+            continue;
+          }
+
+          // Phase 2: Enter state (max_visits, reset_outputs, history, notify) via StateEntryManager
+          const entryResult = await stateEntryManager.enter(stateId, stateDef);
+          this.currentPresenter = entryResult.presenter ?? undefined;
+          if (entryResult.continueTarget) {
+            stateId = entryResult.continueTarget;
+            continue;
+          }
+
+          if (this.cancellationToken?.isCancellationRequested) {
+            this.record(stateId, { cancelled: new Date().toISOString() });
+            return;
+          }
+
+          // stepsExecuted is incremented inside record() when a new, non-skipped history entry is added.
+
+          // Phase 3: Terminal check
+          const { config } = stateDef;
+          // Consider stateDef.transitions (built by workflowLoader) when determining terminal states.
+          // A state with no routing in config but with transitions added during build (e.g., continue)
+          // must NOT be treated as terminal.
+          if (
+            !config.on &&
+            !config.transitions &&
+            !config.approval &&
+            !config.feedback &&
+            stateDef.transitions.length === 0
+          ) {
+            const successValue = config.success === undefined ? null : !!config.success;
+            this.record(stateId, { success: successValue });
+
+            // Present terminal exit summary
+            try {
+              const enteredAt = this.currentPresenter?.entry?.enteredAt;
+              const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
+              this.currentPresenter?.appendStateExit(stateDef, 'TERMINAL', undefined, elapsedMs);
+              this.currentPresenter?.render();
+            } catch {}
+
+            break;
+          }
+
+          // Phase 4: Execute state handler via StateExecutionManager
+          stateResult = await stateExecutionManager.executeAndExport(
+            stateId,
+            stateDef,
+            this.context,
+            this.cancellationToken,
+          );
+
+          if (
+            stateResult.cancelled ||
+            stateResult.outcome === 'CANCELLED' ||
+            this.cancellationToken?.isCancellationRequested
+          ) {
+            this.record(stateId, { cancelled: new Date().toISOString() });
+            return;
+          }
+
+          // Persist token usage into the most recent history entry when present.
+          // This ensures token accounting is attached to the state that produced them.
+          if (stateResult.tokens) {
+            this.record(stateId, { tokens: stateResult.tokens });
+          }
         }
 
-        // Phase 2: Enter state (max_visits, reset_outputs, history, notify) via StateEntryManager
-        const entryResult = await stateEntryManager.enter(stateId, stateDef);
-        this.currentPresenter = entryResult.presenter ?? undefined;
-        if (entryResult.continueTarget) {
-          stateId = entryResult.continueTarget;
-          continue;
-        }
-
-        if (this.cancellationToken?.isCancellationRequested) {
-          this.record(stateId, { cancelled: new Date().toISOString() });
-          return;
-        }
-
-        // stepsExecuted is incremented inside record() when a new, non-skipped history entry is added.
-
-        // Phase 3: Terminal check
         const { config } = stateDef;
-        // Consider stateDef.transitions (built by workflowLoader) when determining terminal states.
-        // A state with no routing in config but with transitions added during build (e.g., continue)
-        // must NOT be treated as terminal.
-        if (
-          !config.on &&
-          !config.transitions &&
-          !config.approval &&
-          !config.feedback &&
-          stateDef.transitions.length === 0
-        ) {
-          const successValue = config.success === undefined ? null : !!config.success;
-          this.record(stateId, { success: successValue });
-
-          // Present terminal exit summary
-          try {
-            const enteredAt = this.currentPresenter?.entry?.enteredAt;
-            const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;
-            this.currentPresenter?.appendStateExit(stateDef, 'TERMINAL', undefined, elapsedMs);
-            this.currentPresenter?.render();
-          } catch {}
-
-          break;
-        }
-
-        // Phase 4: Execute state handler via StateExecutionManager
-        const stateResult = await stateExecutionManager.executeAndExport(
-          stateId,
-          stateDef,
-          this.context,
-          this.cancellationToken,
-        );
-
-        if (
-          stateResult.cancelled ||
-          stateResult.outcome === 'CANCELLED' ||
-          this.cancellationToken?.isCancellationRequested
-        ) {
-          this.record(stateId, { cancelled: new Date().toISOString() });
-          return;
-        }
-
-        // Persist token usage into the most recent history entry when present.
-        // This ensures token accounting is attached to the state that produced them.
-        if (stateResult.tokens) {
-          this.record(stateId, { tokens: stateResult.tokens });
-        }
-
         // Phase 6: Approval flow (if configured)
         if (config.approval) {
           const next = await interactiveManager.handleApproval(
@@ -346,6 +363,7 @@ export class Runner {
           if (stateDef.config.teach) {
             await teachManager.teach(stateId, stateDef);
           }
+          resumeInteractiveStateId = undefined;
           stateId = next;
           continue;
         }
@@ -365,6 +383,7 @@ export class Runner {
           if (typeof this.nextSteps === 'number' && this.stepsExecuted >= this.nextSteps) {
             break;
           }
+          resumeInteractiveStateId = undefined;
           stateId = feedbackNext;
           continue;
         }
@@ -401,6 +420,11 @@ export class Runner {
           break;
         }
 
+        if (!stateResult) {
+          throw new Error(
+            `Runner: resumed feedback state '${stateId}' must define a 'next' transition`,
+          );
+        }
         stateId = routingManager.routeToNext(
           stateId,
           stateDef,

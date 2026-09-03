@@ -61,10 +61,10 @@ describe('schemaFormatter', () => {
       const output = generateSchemaOutput();
       // Some required fields
       const requiredMatches = output.match(/\(REQUIRED\)/g);
-      expect(requiredMatches && requiredMatches.length).toBeGreaterThan(0);
+      expect(requiredMatches?.length).toBeGreaterThan(0);
       // Some optional fields
       const optionalMatches = output.match(/\(OPTIONAL\)/g);
-      expect(optionalMatches && optionalMatches.length).toBeGreaterThan(0);
+      expect(optionalMatches?.length).toBeGreaterThan(0);
     });
 
     it('should format enum values', () => {
@@ -82,7 +82,7 @@ describe('schemaFormatter', () => {
 
     it('should not have duplicate sections', () => {
       const output = generateSchemaOutput();
-      const titleCount = (output.match(/RAILI WORKFLOW YAML SCHEMA/g) || []).length;
+      const titleCount = (output.match(/RAILI WORKFLOW YAML SCHEMA/g) ?? []).length;
       expect(titleCount).toBe(1);
     });
 

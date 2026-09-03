@@ -20,7 +20,7 @@ describe('parseExports', () => {
   });
 
   test('is case-insensitive and trims whitespace', () => {
-    const out = '  Id = \" 789 \"\n';
+    const out = '  Id = " 789 "\n';
     const parsed = parseExports(out, ['id']);
     expect(parsed.id).toBe('789');
   });

@@ -20,7 +20,7 @@ const approval = {
 beforeEach(() => {
   jest.resetAllMocks();
   mockHandleManual.mockResolvedValue({ chosen: 'PASSED', target: 'hello', reason: '' });
-  mockLoadApproval.mockReturnValue(async (input: any) => 'PASSED' as any);
+  mockLoadApproval.mockReturnValue(async (_input: any) => 'PASSED' as any);
 });
 
 test('runs approval prompt with no approval-level notify', async () => {
@@ -64,7 +64,7 @@ test('notify failure does not prevent approval prompt (best-effort)', async () =
 
 test('forwards resolver to manual handler when provided', async () => {
   const resolverPath = '/tmp/approval-resolver.js';
-  const outcome = await runApprovalStep('analyze', approval, { cwd: '/tmp' }, resolverPath);
+  const _outcome = await runApprovalStep('analyze', approval, { cwd: '/tmp' }, resolverPath);
 
   expect(mockLoadApproval).toHaveBeenCalledWith(resolverPath);
   // ensure the manual handler was called with the resolver as second arg

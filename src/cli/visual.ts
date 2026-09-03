@@ -12,8 +12,12 @@ import { wrapMermaidInHtml } from './htmlWrapper';
 import { resolveWorkflowDir } from '../context/pathUtils';
 
 function getErrorMessage(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  if (typeof e === 'string') return e;
+  if (e instanceof Error) {
+    return e.message;
+  }
+  if (typeof e === 'string') {
+    return e;
+  }
   try {
     return String(e);
   } catch {
@@ -23,8 +27,8 @@ function getErrorMessage(e: unknown): string {
 
 export function visualCommand(
   cwd: string,
-  workflowArg: string = 'main',
-  format: string = 'mermaid',
+  workflowArg = 'main',
+  format = 'mermaid',
   outPath?: string,
 ): void {
   const fs = getFileSystem();

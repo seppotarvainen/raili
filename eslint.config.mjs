@@ -117,7 +117,7 @@ export default tseslint.config(
   // ── Test file overrides (relaxed) ──
   // Tests are mock-heavy by nature; enforce structure, not type purity.
   {
-    files: ["__tests__/**/*.ts"],
+    files: ["**/__tests__/**/*.ts"],
     rules: {
       // Type safety — off for tests (mocking produces `any` everywhere)
       "@typescript-eslint/no-explicit-any": "off",

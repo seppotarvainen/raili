@@ -218,7 +218,7 @@ export function validateWorkflowNesting(workflow: WorkflowConfig, workflowDir: s
     }
 
     const content = fs.readFileSync(groupPath, 'utf8');
-    const parsed = yaml.load(content) as any;
+    const parsed = yaml.load(content);
     if (!parsed || typeof parsed !== 'object') {
       throw new Error(`Sub-workflow file is empty or invalid: ${groupPath}`);
     }

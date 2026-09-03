@@ -1,5 +1,5 @@
 import { getFileSystem } from '../../../src/infrastructure/fileSystemProvider';
-import { InMemoryFileSystem, setupFakeFs } from './fsFake.util';
+import { setupFakeFs } from './fsFake.util';
 
 describe('InMemoryFileSystem', () => {
   test('write/read/append works', () => {

@@ -15,8 +15,8 @@ describe('stateRunnerUtils.resolveStateOutputPath', () => {
   afterEach(() => {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch (e) {
-      // ignore cleanup errors
+    } catch {
+      /* ignore cleanup errors */
     }
   });
 

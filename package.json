@@ -18,7 +18,7 @@
     "start": "node dist/cli.js",
     "test": "jest --runInBand",
     "mutate": "stryker run",
-    "lint": "eslint .",
+    "lint": "eslint src __tests__ packages/lsp/src packages/lsp/__tests__ --ext .ts,.js",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write src/**/*.ts __tests__/**/*.ts packages/lsp/src/**/*.ts packages/lsp/__tests__/**/*.ts",
     "format:check": "prettier --check src/**/*.ts __tests__/**/*.ts packages/lsp/src/**/*.ts packages/lsp/__tests__/**/*.ts",

@@ -17,7 +17,7 @@ export function createCancellationController(): CancellationController {
       return () => listeners.delete(listener);
     },
     requestCancellation(): void {
-      if (cancellationRequested) return;
+      if (cancellationRequested) {return;}
       cancellationRequested = true;
       for (const listener of [...listeners]) {
         listener();

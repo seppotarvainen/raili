@@ -1,4 +1,4 @@
-/// <reference path="../types/copilot-sdk.d.ts" />
+import '../types/copilot-sdk';
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
 import {

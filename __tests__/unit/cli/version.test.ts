@@ -7,13 +7,13 @@ describe('raili CLI --version', () => {
     // Arrange: set argv before requiring the module so the module captures the args at load time
     process.argv = ['node', 'raili', '--version'];
 
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
+    const exitSpy = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
       throw new Error('EXIT:' + String(code));
     });
     const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
     const pkg = require('../../../package.json');
-    const expected = pkg.version + '\n';
+    const expected = String(pkg.version) + '\n';
 
     // Act: require module (which reads process.argv at top-level) and call main
     let main: any;

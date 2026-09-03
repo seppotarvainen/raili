@@ -11,7 +11,7 @@ jest.mock('../../../src/runner/commandStateRunner');
 // mock context helpers so we can assert they were called correctly
 jest.mock('../../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
-  addStateToHistory: jest.fn((ctx, state) => ctx),
+  addStateToHistory: jest.fn((ctx, _state) => ctx),
   saveContext: jest.fn(),
 }));
 

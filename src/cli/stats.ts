@@ -105,13 +105,13 @@ export function computeComparison(prev: Metrics | null, curr: Metrics) {
       key: 'approvalFailRate',
       label: 'Approval failure rate',
       lowerIsBetter: true,
-      format: (v) => formatPct(v as number | null),
+      format: (v) => formatPct(v),
     },
     {
       key: 'successRate',
       label: 'Success rate',
       lowerIsBetter: false,
-      format: (v) => formatPct(v as number | null),
+      format: (v) => formatPct(v),
     },
   ];
 

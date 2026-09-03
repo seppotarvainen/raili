@@ -13,12 +13,14 @@ describe('loadTriggerModule', () => {
   afterEach(() => {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch (e) {
-      // ignore
+    } catch {
+      /* ignore */
     }
     // Clear require cache for files inside tmpDir to avoid cross-test pollution
     Object.keys(require.cache).forEach((k) => {
-      if (k.startsWith(tmpDir)) delete require.cache[k];
+      if (k.startsWith(tmpDir)) {
+        require.cache[k] = undefined as any;
+      }
     });
   });
 

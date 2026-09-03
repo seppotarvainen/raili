@@ -42,7 +42,7 @@ function setupRegistry() {
   return loadScriptRegistry(TMP);
 }
 
-function setupRuntimeRegistry(runtime: string = 'node') {
+function setupRuntimeRegistry(runtime = 'node') {
   const fs = getFileSystem();
   const raidir = path.join(TMP, '.raili');
   if (!fs.existsSync(raidir)) fs.mkdirSync(raidir, { recursive: true } as any);

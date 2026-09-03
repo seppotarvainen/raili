@@ -24,7 +24,7 @@ const mockClear = outputStore.clearAgentOutputs as jest.MockedFunction<typeof ou
 const mockRunAgent = agentStateRunner.runAgentState as jest.MockedFunction<typeof agentStateRunner.runAgentState>;
 const mockRunScript = scriptStateRunner.runScriptState as jest.MockedFunction<typeof scriptStateRunner.runScriptState>;
 const mockRunCommand = commandStateRunner.runCommandState as jest.MockedFunction<typeof commandStateRunner.runCommandState>;
-const mockAppendUnique = learningStore.appendUniqueLearning as jest.MockedFunction<typeof learningStore.appendUniqueLearning>;
+const _mockAppendUnique = learningStore.appendUniqueLearning as jest.MockedFunction<typeof learningStore.appendUniqueLearning>;
 
 function makeRunner(states: StateMachine['states'], initial = 'start', nextSteps?: number, agentRegistry: any = { agent1: { path: 'agent.md' }, a: { path: 'agent.md' } }, cancellationToken?: CancellationToken): Runner {
   const stateMachine: StateMachine = { initial, states };

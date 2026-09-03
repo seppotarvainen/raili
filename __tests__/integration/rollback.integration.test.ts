@@ -54,9 +54,9 @@ states:
     expect(ctx.stateHistory[ctx.stateHistory.length - 1].state).toBe('s3');
 
     // Add some persistent context fields and save
-    ctx.vars = { ...(ctx.vars || {}), myVar: 'value-123' };
-    ctx.approvals = { ...(ctx.approvals || {}), S1_PASSED: 'approved-by-ci' };
-    ctx.feedbacks = { ...(ctx.feedbacks || {}), s1: { value: 'initial-feedback' } };
+    ctx.vars = { ...(ctx.vars ?? {}), myVar: 'value-123' };
+    ctx.approvals = { ...(ctx.approvals ?? {}), S1_PASSED: 'approved-by-ci' };
+    ctx.feedbacks = { ...(ctx.feedbacks ?? {}), s1: { value: 'initial-feedback' } };
     saveContext(tmpDir, ctx);
 
     // Continue with rollback by 1, but do not execute further steps (nextSteps=0)
@@ -86,9 +86,9 @@ states:
     expect(ctx.stateHistory.length).toBe(3);
 
     // Add some persistent context fields and save
-    ctx.vars = { ...(ctx.vars || {}), namedVar: 'named-value' };
-    ctx.approvals = { ...(ctx.approvals || {}), S2_PASSED: 'ok' };
-    ctx.feedbacks = { ...(ctx.feedbacks || {}), s2: { value: 'f2' } };
+    ctx.vars = { ...(ctx.vars ?? {}), namedVar: 'named-value' };
+    ctx.approvals = { ...(ctx.approvals ?? {}), S2_PASSED: 'ok' };
+    ctx.feedbacks = { ...(ctx.feedbacks ?? {}), s2: { value: 'f2' } };
     saveContext(tmpDir, ctx);
 
     // Rollback to s1 (named state)

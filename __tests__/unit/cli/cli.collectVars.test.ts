@@ -1,5 +1,4 @@
 import path from 'path';
-import os from 'os';
 import readline from 'readline';
 import {collectVars} from '../../../src/cli';
 import * as workflowLoader from '../../../src/workflow/workflowLoader';

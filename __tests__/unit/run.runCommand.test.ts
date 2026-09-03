@@ -29,7 +29,7 @@ jest.mock('../../src/runner/runner');
 describe('runCommand', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (mockFs.existsSync as jest.Mock).mockImplementation((p: string) => true);
+    (mockFs.existsSync as jest.Mock).mockImplementation((_p: string) => true);
     (mockFs.statSync as jest.Mock).mockImplementation(() => ({ isDirectory: () => true }));
     (loadWorkflowConfig as jest.Mock).mockReturnValue({ initial: 'start', states: {} });
     (validateAgentRegistry as jest.Mock).mockReturnValue({});
@@ -57,9 +57,9 @@ describe('runCommand', () => {
     });
 
     // Mock provider fs to indicate vars file exists and contains YAML
-    (mockFs.existsSync as jest.Mock).mockImplementation((p: string) => true);
+    (mockFs.existsSync as jest.Mock).mockImplementation((_p: string) => true);
     (mockFs.readFileSync as unknown as jest.Mock).mockImplementation(
-      (p: string) => 'ticket_id: T1\nsecret: X\n',
+      (_p: string) => 'ticket_id: T1\nsecret: X\n',
     );
 
     // Act: call runCommand with a flag overriding ticket_id

@@ -1,4 +1,4 @@
-/// <reference path="../../types/copilot-sdk.d.ts" />
+import "../../types/copilot-sdk";
 import path from 'path';
 import { loadAgentRegistry } from '../../../src/registry/agentRegistry';
 import { executeAgent } from '../../../src/handlers/agentHandler';
@@ -229,4 +229,44 @@ test('throws when the agent is not in the registry', async () => {
   await expect(executeAgent(registry, 'missing.agent', TMP)).rejects.toThrow(
     "Agent 'missing.agent' not found in registry",
   );
+});
+
+test('throws when the configured agent file is missing', async () => {
+  await expect(
+    executeAgent({ 'missing.agent': { path: './agents/missing.agent.md' } }, 'missing.agent', TMP),
+  ).rejects.toThrow(`Agent file not found: ${path.join(TMP, 'agents', 'missing.agent.md')}`);
+});
+
+test('uses the default prompt when the supplied prompt is blank', async () => {
+  const registry = setupAgent();
+
+  await executeAgent(registry, 'analyzer.agent', TMP, null, '   ');
+
+  expect(mockSession.sendAndWait).toHaveBeenCalledWith({ prompt: 'Work according to your rules' });
+});
+
+test('wraps SDK client construction failures', async () => {
+  (CopilotClient as unknown as jest.Mock).mockImplementationOnce(() => {
+    throw new Error('SDK unavailable');
+  });
+  const registry = setupAgent();
+
+  await expect(executeAgent(registry, 'analyzer.agent', TMP)).rejects.toThrow(
+    'Copilot SDK setup failed: SDK unavailable',
+  );
+});
+
+test('aborts before execution when cancellation was already requested', async () => {
+  const registry = setupAgent();
+  const cancellation: CancellationController = {
+    isCancellationRequested: true,
+    onCancellationRequested: () => jest.fn(),
+    requestCancellation: jest.fn(),
+  };
+
+  await expect(
+    executeAgent(registry, 'analyzer.agent', TMP, null, undefined, null, undefined, cancellation),
+  ).resolves.toMatchObject({ success: false, cancelled: true });
+
+  expect(mockSession.abort).toHaveBeenCalledTimes(1);
 });

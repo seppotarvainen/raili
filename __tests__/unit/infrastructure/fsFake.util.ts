@@ -6,8 +6,8 @@ type MakeDirOptions = { recursive?: boolean } | number;
 
 // Utility: In-memory file system used by unit tests
 export class InMemoryFileSystem implements fsTypes.IFileSystem {
-  private files: Map<string, Buffer> = new Map();
-  private dirs: Set<string> = new Set();
+  private files: Map<string, Buffer> = new Map<string, Buffer>();
+  private dirs: Set<string> = new Set<string>();
 
   constructor() {
     // root exists
@@ -42,7 +42,7 @@ export class InMemoryFileSystem implements fsTypes.IFileSystem {
     return fake;
   }
 
-  readFileSync(p: string, enc: string = 'utf8'): string {
+  readFileSync(p: string, enc: BufferEncoding = 'utf8'): string {
     const n = this.normalize(p);
     const buf = this.files.get(n);
     if (!buf) {
@@ -53,7 +53,7 @@ export class InMemoryFileSystem implements fsTypes.IFileSystem {
     return buf.toString(enc as BufferEncoding);
   }
 
-  writeFileSync(p: string, data: string | Buffer, enc?: string): void {
+  writeFileSync(p: string, data: string | Buffer, enc?: BufferEncoding): void {
     const n = this.normalize(p);
     const dir = path.dirname(n);
     if (!this.dirs.has(dir)) {
@@ -65,7 +65,7 @@ export class InMemoryFileSystem implements fsTypes.IFileSystem {
     this.files.set(n, buf);
   }
 
-  appendFileSync(p: string, data: string | Buffer, enc?: string): void {
+  appendFileSync(p: string, data: string | Buffer, enc?: BufferEncoding): void {
     const n = this.normalize(p);
     const prev = this.files.get(n);
     const buf = Buffer.isBuffer(data) ? data : Buffer.from(data, (enc as BufferEncoding) || 'utf8');
@@ -147,7 +147,7 @@ export class InMemoryFileSystem implements fsTypes.IFileSystem {
     throw err;
   }
 
-  chmodSync(p: string, mode: number): void {
+  chmodSync(p: string, _mode: number): void {
     const n = this.normalize(p);
     if (!this.files.has(n) && !this.dirs.has(n)) {
       const err: NodeJS.ErrnoException = new Error(`ENOENT: no such file or directory, chmod '${p}'`);

@@ -57,7 +57,7 @@ export function writeSubWorkflow(
 }
 
 /** Write arbitrary .raili/<filename> (kept for compatibility) */
-function writeWorkflowFile(dir: string, filename: string, yamlContent: string): void {
+function _writeWorkflowFile(dir: string, filename: string, yamlContent: string): void {
   fs.writeFileSync(path.join(dir, '.raili', filename), yamlContent, 'utf8');
 }
 
@@ -117,7 +117,7 @@ export function fakeChild(stdoutData: string, stderrData: string, exitCode: numb
 export function cleanupRailiEnvVars(): void {
   for (const key of Object.keys(process.env)) {
     if (key.startsWith('RAILI_VAR_') || key.startsWith('RAILI_FEEDBACK_')) {
-      delete process.env[key];
+      process.env[key] = undefined;
     }
   }
   delete process.env.RAILI_MANUAL_CHOICE;

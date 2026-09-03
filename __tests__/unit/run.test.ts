@@ -1,5 +1,4 @@
 import path from 'path';
-import os from 'os';
 import { setupFakeFs } from './infrastructure/fsFake.util';
 import { getFileSystem } from '../../src/infrastructure/fileSystemProvider';
 import { runCommand } from '../../src/run';

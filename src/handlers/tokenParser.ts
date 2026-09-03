@@ -7,10 +7,14 @@ import { TokenUsage } from '../types';
  * Parse a number string like "256.9k", "1.2M", "1,234", "10" into a numeric value.
  */
 function parseNumberString(s: string | undefined): number | undefined {
-  if (!s) return undefined;
+  if (!s) {
+    return undefined;
+  }
   const cleaned = s.replace(/,/g, '').trim();
-  const m = cleaned.match(/^([0-9]+(?:\.[0-9]+)?)([kKmM])?$/);
-  if (!m) return undefined;
+  const m = /^([0-9]+(?:\.[0-9]+)?)([kKmM])?$/.exec(cleaned);
+  if (!m) {
+    return undefined;
+  }
   const num = parseFloat(m[1]);
   const suffix = m[2]?.toLowerCase();
   const mult = suffix === 'k' ? 1e3 : suffix === 'm' ? 1e6 : 1;
@@ -32,9 +36,13 @@ function parseParenValue(segment: string, label: string): string | undefined {
  * Returns 0 for empty or invalid strings.
  */
 export function parseTimeDuration(timeStr: string): number {
-  if (!timeStr) return 0;
+  if (!timeStr) {
+    return 0;
+  }
   const s = timeStr.trim();
-  if (!s) return 0;
+  if (!s) {
+    return 0;
+  }
 
   let total = 0;
   const re = /(\d+)\s*([hms])/gi;
@@ -42,9 +50,13 @@ export function parseTimeDuration(timeStr: string): number {
   while ((m = re.exec(s)) !== null) {
     const val = parseInt(m[1], 10);
     const unit = m[2].toLowerCase();
-    if (unit === 'h') total += val * 3600;
-    else if (unit === 'm') total += val * 60;
-    else if (unit === 's') total += val;
+    if (unit === 'h') {
+      total += val * 3600;
+    } else if (unit === 'm') {
+      total += val * 60;
+    } else if (unit === 's') {
+      total += val;
+    }
   }
   return total;
 }
@@ -58,7 +70,9 @@ export function parseTimeDuration(timeStr: string): number {
 export function parseAICreditsLine(
   text: string,
 ): { ai_display: string; ai_credits: number; ai_time: number } | undefined {
-  if (!text) return undefined;
+  if (!text) {
+    return undefined;
+  }
   const lines = text.split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
     const line = lines[i].trim();
@@ -82,7 +96,9 @@ export function parseAICreditsLine(
  * Cached and reasoning parts are optional.
  */
 export function parseCopilotTokenLine(text: string): TokenUsage | undefined {
-  if (!text) return undefined;
+  if (!text) {
+    return undefined;
+  }
 
   // Find last line that starts with "Tokens"
   const lines = text.split('\n');
@@ -93,33 +109,45 @@ export function parseCopilotTokenLine(text: string): TokenUsage | undefined {
       break;
     }
   }
-  if (!tokenLine) return undefined;
+  if (!tokenLine) {
+    return undefined;
+  }
 
   // Split by arrows: we expect ↑ ... ↓ ...
   const upIdx = tokenLine.indexOf('↑');
   const downIdx = tokenLine.indexOf('↓');
-  if (upIdx === -1 || downIdx === -1 || downIdx <= upIdx) return undefined;
+  if (upIdx === -1 || downIdx === -1 || downIdx <= upIdx) {
+    return undefined;
+  }
 
   const upSegment = tokenLine.slice(upIdx + 1, downIdx);
   const downSegment = tokenLine.slice(downIdx + 1);
 
   // Parse input: first number token after ↑
-  const inputMatch = upSegment.match(/([0-9][0-9.,]*[kKmM]?)/);
-  if (!inputMatch) return undefined;
+  const inputMatch = /([0-9][0-9.,]*[kKmM]?)/.exec(upSegment);
+  if (!inputMatch) {
+    return undefined;
+  }
   const input_display = inputMatch[1];
   const input = parseNumberString(input_display);
-  if (input === undefined) return undefined;
+  if (input === undefined) {
+    return undefined;
+  }
 
   // Parse cached (optional): "(NNN cached)"
   const cached_display = parseParenValue(upSegment, 'cached');
   const cached = parseNumberString(cached_display);
 
   // Parse output: first number token after ↓
-  const outputMatch = downSegment.match(/([0-9][0-9.,]*[kKmM]?)/);
-  if (!outputMatch) return undefined;
+  const outputMatch = /([0-9][0-9.,]*[kKmM]?)/.exec(downSegment);
+  if (!outputMatch) {
+    return undefined;
+  }
   const output_display = outputMatch[1];
   const output = parseNumberString(output_display);
-  if (output === undefined) return undefined;
+  if (output === undefined) {
+    return undefined;
+  }
 
   const res: TokenUsage = { input, output, input_display, output_display };
   if (cached !== undefined) {

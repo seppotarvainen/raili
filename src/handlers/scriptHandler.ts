@@ -47,7 +47,9 @@ export function executeScript(
     let removeCancellationListener: (() => void) | undefined;
 
     const finish = (cancelled: boolean, code: number | null = null): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       removeCancellationListener?.();
       const result: ScriptExecutionResult = {
@@ -55,7 +57,9 @@ export function executeScript(
         stdout,
         stderr,
       };
-      if (cancelled) result.cancelled = true;
+      if (cancelled) {
+        result.cancelled = true;
+      }
       resolve(result);
     };
 
@@ -87,8 +91,12 @@ export function executeScript(
     if (cancellationToken) {
       const unsubscribe = cancellationToken.onCancellationRequested(cancel);
       removeCancellationListener = settled ? undefined : unsubscribe;
-      if (settled) unsubscribe();
-      if (cancellationToken.isCancellationRequested) cancel();
+      if (settled) {
+        unsubscribe();
+      }
+      if (cancellationToken.isCancellationRequested) {
+        cancel();
+      }
     }
   });
 }

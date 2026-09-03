@@ -66,7 +66,7 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/agent1.md', 'Agent instructions');
 
-    (spawn as jest.Mock).mockImplementation((cmd: string, args?: any[], opts?: any) => {
+    (spawn as jest.Mock).mockImplementation((cmd: string, args?: any[], _opts?: any) => {
       if (cmd === 'sh' && Array.isArray(args) && typeof args[1] === 'string') {
         const invoked = args[1] as string;
         if (invoked.includes('echo')) {
@@ -170,7 +170,7 @@ states:
     writeScriptRegistry(tmpDir, {});
     writeAgentFile(tmpDir, 'agents/agent3.md', 'Agent 3');
 
-    (spawn as jest.Mock).mockImplementation((cmd: string, args?: any[], opts?: any) => {
+    (spawn as jest.Mock).mockImplementation((cmd: string, args?: any[], _opts?: any) => {
       if (cmd === 'sh' && Array.isArray(args) && typeof args[1] === 'string') {
         const invoked = args[1] as string;
         if (invoked.includes('echo')) {

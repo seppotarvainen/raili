@@ -7,7 +7,8 @@ import { Presenter } from '../presenter';
 
 export interface InteractiveFlowContextApi {
   record: (stateId: string, meta?: Record<string, unknown>) => boolean;
-  persist?: () => void;
+  // persist may be synchronous or async; allow both signatures so callers can await safely
+  persist?: () => Promise<void> | void;
   context: () => WorkflowContext;
 }
 
@@ -51,6 +52,19 @@ export class InteractiveFlowManager {
   ): Promise<string> {
     const approval = stateDef.config.approval!;
 
+    // Pre-record context immediately before showing the approval prompt so that
+    // any subsequent user interaction can be correlated with the pre-state snapshot.
+    try {
+      try {
+        this.ctxApi.record(stateId, { pre_record: true });
+      } catch {}
+      if (this.ctxApi.persist) {
+        try {
+          await this.ctxApi.persist();
+        } catch {}
+      }
+    } catch {}
+
     const approvalOutcome: ApprovalOutcome = await runApprovalStep(
       stateId,
       approval,
@@ -92,14 +106,18 @@ export class InteractiveFlowManager {
     this.ctxApi.record(stateId, approvalMeta);
 
     const ctx = this.ctxApi.context();
-    if (!ctx.approvals) ctx.approvals = {};
-    if (!ctx.vars) ctx.vars = {};
+    if (!ctx.approvals) {
+      ctx.approvals = {};
+    }
+    if (!ctx.vars) {
+      ctx.vars = {};
+    }
     const key = `${stateId}_${approvalOutcome.chosen}`.toUpperCase();
     ctx.approvals[key] = approvalOutcome.reason ?? '';
     ctx.vars[key] = approvalOutcome.reason ?? '';
     if (this.ctxApi.persist) {
       try {
-        this.ctxApi.persist();
+        await this.ctxApi.persist();
       } catch {}
     }
 
@@ -118,7 +136,9 @@ export class InteractiveFlowManager {
     presenter?: Presenter,
   ): Promise<string | null> {
     const fb = stateDef.config.feedback;
-    if (!fb) return null;
+    if (!fb) {
+      return null;
+    }
 
     const fbStart = Date.now();
 
@@ -142,9 +162,22 @@ export class InteractiveFlowManager {
       timeoutMs = undefined;
     }
 
+    // Pre-record context immediately before showing the feedback prompt so the
+    // runtime snapshot is available if the user provides feedback.
+    try {
+      try {
+        this.ctxApi.record(stateId, { pre_record: true });
+      } catch {}
+      if (this.ctxApi.persist) {
+        try {
+          await this.ctxApi.persist();
+        } catch {}
+      }
+    } catch {}
+
     const val = await handleFeedbackPrompt(fb, fbResolver, timeoutMs, this.cancellationToken);
     if (
-      (typeof val !== 'string' && val !== null && val.cancelled) ||
+      (typeof val !== 'string' && val?.cancelled) ||
       this.cancellationToken?.isCancellationRequested
     ) {
       return null;
@@ -152,7 +185,9 @@ export class InteractiveFlowManager {
     const fbWait = Date.now() - fbStart;
 
     const ctx = this.ctxApi.context();
-    if (!ctx.vars) ctx.vars = {};
+    if (!ctx.vars) {
+      ctx.vars = {};
+    }
 
     let feedbackValue = '';
     let feedbackMetadata: string | undefined = undefined;
@@ -173,25 +208,30 @@ export class InteractiveFlowManager {
       ctx.vars[exposeName] = feedbackValue;
     }
 
-    if (!ctx.feedbacks) ctx.feedbacks = {};
+    if (!ctx.feedbacks) {
+      ctx.feedbacks = {};
+    }
     ctx.feedbacks[stateId] = { value: feedbackValue, metadata: feedbackMetadata };
 
     if (this.ctxApi.persist) {
       try {
-        this.ctxApi.persist();
+        await this.ctxApi.persist();
       } catch {}
     }
 
     const meta: Record<string, unknown> = { feedback: { name: exposeName, value: feedbackValue } };
-    if (typeof feedbackMetadata !== 'undefined')
-      (meta.feedback as Record<string, unknown>)['metadata'] = feedbackMetadata;
-    if (stateDef.config.approval) (meta as Record<string, unknown>)['waitMs'] = fbWait;
+    if (typeof feedbackMetadata !== 'undefined') {
+      (meta.feedback as Record<string, unknown>).metadata = feedbackMetadata;
+    }
+    if (stateDef.config.approval) {
+      meta.waitMs = fbWait;
+    }
 
     this.ctxApi.record(stateId, meta);
 
     const transitions = stateDef.config.transitions;
-    if (transitions && (transitions as Record<string, string>).next) {
-      const next = (transitions as Record<string, string>).next;
+    if (transitions?.next) {
+      const next = transitions.next;
       try {
         const enteredAt = presenter?.entry?.enteredAt;
         const elapsedMs = enteredAt ? Date.now() - new Date(enteredAt).getTime() : undefined;

@@ -3,7 +3,7 @@ import { StateMachine } from '../../../src/types';
 
 jest.mock('../../../src/context/context', () => ({
   loadContext: jest.fn(() => ({ stateHistory: [] })),
-  addStateToHistory: jest.fn((ctx, state) => ({ ...ctx, stateHistory: [...(ctx.stateHistory || []), { state }] })),
+  addStateToHistory: jest.fn((ctx, state) => ({ ...ctx, stateHistory: [...(ctx.stateHistory ?? []), { state }] })),
   saveContext: jest.fn(),
 }));
 

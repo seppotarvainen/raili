@@ -6,6 +6,7 @@ import {
   handleManualTransition,
   handleFeedbackPrompt,
 } from '../../../src/handlers/manualHandler';
+import { CancellationToken } from '../../../src/types';
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -34,6 +35,13 @@ describe('resolver loaders', () => {
     jest.mock('feedback-fn-mod', () => jest.fn(async () => 'some feedback'), { virtual: true });
     const fn = loadFeedbackResolver('feedback-fn-mod');
     expect(typeof fn).toBe('function');
+  });
+
+  test('loadFeedbackResolver accepts a default function export', () => {
+    jest.mock('feedback-default-mod', () => ({ default: jest.fn(async () => 'feedback') }), {
+      virtual: true,
+    });
+    expect(typeof loadFeedbackResolver('feedback-default-mod')).toBe('function');
   });
 
   test('loadFeedbackResolver throws when exported value is not a function', () => {
@@ -106,5 +114,26 @@ describe('handler integration with resolvers', () => {
     const resolver = async () => 'my feedback';
     const out = await handleFeedbackPrompt(feedback, resolver as any);
     expect(out).toBe('my feedback');
+  });
+
+  test('handleManualTransition rejects an unknown resolver outcome', async () => {
+    const cfg = { question: 'Ok?', options: { PASSED: 'x', FAILED: 'y' } } as any;
+
+    await expect(handleManualTransition(cfg, async () => 'MAYBE' as any)).rejects.toThrow(
+      "invalid outcome: MAYBE",
+    );
+  });
+
+  test('handleFeedbackPrompt returns cancellation without invoking its resolver', async () => {
+    const resolver = jest.fn(async () => 'unused');
+    const cancellation: CancellationToken = {
+      isCancellationRequested: true,
+      onCancellationRequested: () => jest.fn(),
+    };
+
+    await expect(
+      handleFeedbackPrompt({ expose_var: 'note' }, resolver, undefined, cancellation),
+    ).resolves.toEqual({ feedback: '', cancelled: true });
+    expect(resolver).not.toHaveBeenCalled();
   });
 });

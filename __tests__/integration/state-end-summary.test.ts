@@ -1,13 +1,12 @@
-/// <reference path="../types/copilot-sdk.d.ts" />
-import fs from 'fs';
-import path from 'path';
+import '../types/copilot-sdk';
+import _fs from 'fs';
+import _path from 'path';
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,
   createTmpWorkspace,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,

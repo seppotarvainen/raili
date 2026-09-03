@@ -11,7 +11,7 @@ jest.mock('../../../src/handlers/notifyHandler');
 jest.mock('../../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx: any, stateId: string, meta?: any) => {
-    if (!ctx.stateHistory) ctx.stateHistory = [];
+    ctx.stateHistory ??= [];
     ctx.stateHistory.push({ state: stateId, enteredAt: new Date().toISOString(), meta });
     return ctx;
   }),
@@ -44,7 +44,7 @@ test('routes to continue target when max_visits exceeded and continue provided',
   // Simulate a command that always fails and would normally route back to 'start'
   mockRunCommand.mockResolvedValue({ outcome: 'FAILED' });
 
-  const { runner, context } = makeRunner({
+  const { runner, context: _context } = makeRunner({
     start: {
       id: 'start',
       config: {

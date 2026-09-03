@@ -70,7 +70,7 @@ export async function listenCommand(cwd: string, workflowPath?: string): Promise
   let failureStart: number | null = null;
 
   // Poll loop
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     try {
       const event = await triggerFn();
@@ -86,7 +86,7 @@ export async function listenCommand(cwd: string, workflowPath?: string): Promise
       }
 
       // Start a clean run with the event variables
-      await runCommand(cwd, 'clean', event as Record<string, string>, workflowPath, false);
+      await runCommand(cwd, 'clean', event, workflowPath, false);
 
       // Reset failure timer and wait before next poll
       failureStart = null;
