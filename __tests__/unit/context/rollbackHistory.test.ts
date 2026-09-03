@@ -30,12 +30,12 @@ describe('rollbackHistory', () => {
 
   test('numeric rollback errors when N > length', () => {
     const ctx = makeCtx();
-    expect(() => rollbackHistory(ctx, '10')).toThrowError('Cannot rollback 10 steps: history only has 4 entries');
+    expect(() => rollbackHistory(ctx, '10')).toThrow('Cannot rollback 10 steps: history only has 4 entries');
   });
 
   test('state-id rollback errors when not found', () => {
     const ctx = makeCtx();
-    expect(() => rollbackHistory(ctx, 'z')).toThrowError("State 'z' not found in history");
+    expect(() => rollbackHistory(ctx, 'z')).toThrow("State 'z' not found in history");
   });
 
   test('zero rollback returns same history value but new context object', () => {

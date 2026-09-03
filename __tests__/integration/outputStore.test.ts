@@ -216,7 +216,7 @@ states:
     writeAgentFile(tmpDir, '.github/agents/test-agent.md', '---\nmodel: test\n---\n');
 
     // Agent returns an output which will be saved to both files
-    spawn.mockImplementation((cmd: string, args?: any[], opts?: any) => {
+    spawn.mockImplementation((cmd: string, _args?: any[], _opts?: any) => {
       if (cmd === 'copilot') return fakeChild('RESULT:\nlineA', '', 0);
       return fakeChild('', '', 0);
     });

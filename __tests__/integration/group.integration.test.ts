@@ -1,4 +1,4 @@
-/// <reference path="../types/copilot-sdk.d.ts" />
+import '../types/copilot-sdk';
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -268,6 +268,7 @@ states:
       await runCommand(tmpDir, 'clean', {});
     } catch (_err) {
       // expected: 'FAILED' has no transition in on: {PASSED: end}
+      void _err;
     }
 
     let ctx = loadContext(tmpDir);

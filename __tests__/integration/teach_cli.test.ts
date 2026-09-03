@@ -14,13 +14,13 @@ jest.mock('readline');
 describe('CLI teach flow', () => {
   const ORIGINAL_CWD = process.cwd();
   let tmp: string;
-  let exitMock: jest.SpyInstance;
+  let _exitMock: jest.SpyInstance;
 
   beforeEach(() => {
     tmp = createTmpWorkspace();
     // mock process.exit to throw so we can continue
-    exitMock = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
-      throw new Error('EXIT:' + (code ?? 0));
+    _exitMock = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
+      throw new Error('EXIT:' + String(code ?? 0));
     });
   });
 
@@ -29,7 +29,9 @@ describe('CLI teach flow', () => {
     jest.restoreAllMocks();
     try {
       process.chdir(ORIGINAL_CWD);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   });
 
   test('raili teach <agentId> (positional) appends learning file', async () => {

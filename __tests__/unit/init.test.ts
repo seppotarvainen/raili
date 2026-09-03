@@ -1,7 +1,6 @@
 /// <reference types="node" />
 /// <reference types="jest" />
 
-import * as os from 'os';
 import * as path from 'path';
 import { initCommand } from '../../src/init';
 import { setupFakeFs } from './infrastructure/fsFake.util';

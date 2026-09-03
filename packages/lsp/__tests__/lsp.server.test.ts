@@ -7,7 +7,7 @@ describe('LSP server wiring', () => {
   beforeEach(() => {
     handlers = {};
     connection = {
-      onInitialize: jest.fn((cb: any) => cb && cb()),
+      onInitialize: jest.fn((cb: any) => cb?.()),
       onDidOpenTextDocument: jest.fn((cb: any) => (handlers.didOpen = cb)),
       onDidChangeTextDocument: jest.fn((cb: any) => (handlers.didChange = cb)),
       onDefinition: jest.fn((cb: any) => (handlers.definition = cb)),

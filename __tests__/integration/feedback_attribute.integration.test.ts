@@ -1,4 +1,4 @@
-/// <reference path="../types/copilot-sdk.d.ts" />
+import '../types/copilot-sdk';
 import {
   cleanupRailiEnvVars,
   cleanupTmpWorkspace,

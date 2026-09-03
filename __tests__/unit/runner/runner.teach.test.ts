@@ -1,5 +1,4 @@
 import { Runner, RunnerConfig } from '../../../src/runner/runner';
-import * as outputStore from '../../../src/context/outputStore';
 import * as agentStateRunner from '../../../src/runner/agentStateRunner';
 import * as scriptStateRunner from '../../../src/runner/scriptStateRunner';
 import * as commandStateRunner from '../../../src/runner/commandStateRunner';
@@ -13,7 +12,7 @@ jest.mock('../../../src/runner/scriptStateRunner');
 jest.mock('../../../src/runner/commandStateRunner');
 jest.mock('../../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
-  addStateToHistory: jest.fn((ctx, stateId, meta) => ctx),
+  addStateToHistory: jest.fn((ctx, _stateId, _meta) => ctx),
   saveContext: jest.fn(),
 }));
 

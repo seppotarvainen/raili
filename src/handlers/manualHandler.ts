@@ -41,13 +41,17 @@ type FeedbackResolverFunction = (
  * may return either the legacy string or the new structured object.
  */
 function isApprovalObj(x: unknown): x is ApprovalResolverResult {
-  if (typeof x !== 'object' || x === null) return false;
+  if (typeof x !== 'object' || x === null) {
+    return false;
+  }
   const o = (x as { outcome?: unknown }).outcome;
   return o === 'PASSED' || o === 'FAILED';
 }
 
 function isFeedbackObj(x: unknown): x is FeedbackResolverResult {
-  if (typeof x !== 'object' || x === null) return false;
+  if (typeof x !== 'object' || x === null) {
+    return false;
+  }
   const f = (x as { feedback?: unknown }).feedback;
   return typeof f === 'string';
 }
@@ -62,7 +66,7 @@ export function normalizeApprovalResult(res: unknown): ApprovalResolverResult {
 
   if (isApprovalObj(res)) {
     // res is now narrowed to ApprovalResolverResult
-    const reason = (res as ApprovalResolverResult).reason;
+    const reason = res.reason;
     return { outcome: res.outcome, reason: typeof reason === 'string' ? reason : undefined };
   }
 
@@ -70,14 +74,18 @@ export function normalizeApprovalResult(res: unknown): ApprovalResolverResult {
 }
 
 export function normalizeFeedbackResult(res: unknown): FeedbackResolverResult | null {
-  if (res === null) return null;
+  if (res === null) {
+    return null;
+  }
   if (typeof res === 'string') {
-    if (res.trim() === '') throw new Error('Feedback resolver returned empty feedback');
+    if (res.trim() === '') {
+      throw new Error('Feedback resolver returned empty feedback');
+    }
     return { feedback: res };
   }
 
   if (isFeedbackObj(res)) {
-    const fb = res as FeedbackResolverResult;
+    const fb = res;
     if (typeof fb.feedback !== 'string' || fb.feedback.trim() === '') {
       throw new Error('Feedback resolver returned invalid feedback');
     }
@@ -94,7 +102,9 @@ export function normalizeFeedbackResult(res: unknown): FeedbackResolverResult | 
  * Loaders for resolver modules. These are fail-fast: throw on invalid modules.
  */
 export function loadApprovalResolver(resolverPath: string | null): ApprovalResolverFunction | null {
-  if (!resolverPath) return null;
+  if (!resolverPath) {
+    return null;
+  }
   // Use require to load arbitrary resolver modules (relative or absolute paths supported)
   const mod = require(resolverPath) as unknown;
   const fn =
@@ -110,7 +120,9 @@ export function loadApprovalResolver(resolverPath: string | null): ApprovalResol
 }
 
 export function loadFeedbackResolver(resolverPath: string | null): FeedbackResolverFunction | null {
-  if (!resolverPath) return null;
+  if (!resolverPath) {
+    return null;
+  }
   const mod = require(resolverPath) as unknown;
   const fn =
     typeof mod === 'function'
@@ -219,14 +231,18 @@ export async function handleManualTransition(
         let removeCancellationListener: (() => void) | undefined;
 
         const finish = (result: ManualResult): void => {
-          if (settled) return;
+          if (settled) {
+            return;
+          }
           settled = true;
           removeCancellationListener?.();
           resolve(result);
         };
 
         const onLine = (line: string) => {
-          if (settled) return;
+          if (settled) {
+            return;
+          }
           if (line === '/q') {
             rl.close();
             const reason = lines.join('\n');
@@ -246,7 +262,9 @@ export async function handleManualTransition(
             finish({ chosen: '', target: '', reason: '', cancelled: true });
           };
           removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
-          if (cancellationToken.isCancellationRequested) onCancellation();
+          if (cancellationToken.isCancellationRequested) {
+            onCancellation();
+          }
         }
       });
     }
@@ -258,7 +276,9 @@ export async function handleManualTransition(
       let settled = false;
       let removeCancellationListener: (() => void) | undefined;
       const finish = (value: ManualResult): void => {
-        if (settled) return;
+        if (settled) {
+          return;
+        }
         settled = true;
         removeCancellationListener?.();
         resolve(value);
@@ -278,7 +298,9 @@ export async function handleManualTransition(
           finish({ chosen: '', target: '', reason: '', cancelled: true });
         };
         removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
-        if (cancellationToken.isCancellationRequested) onCancellation();
+        if (cancellationToken.isCancellationRequested) {
+          onCancellation();
+        }
       }
     });
 
@@ -291,10 +313,9 @@ export async function handleManualTransition(
       return await Promise.race([
         doWork(),
         new Promise<ManualResult>((_, reject) => {
-          timeoutHandle = setTimeout(
-            () => reject(new Error('Approval prompt timeout exceeded')),
-            timeoutMs,
-          );
+          timeoutHandle = setTimeout(() => {
+            reject(new Error('Approval prompt timeout exceeded'));
+          }, timeoutMs);
         }),
       ]);
     } finally {
@@ -336,11 +357,15 @@ export async function handleFeedbackPrompt(
         config: feedback,
       };
       // Call resolver directly so we can preserve legacy string shape when appropriate.
-      const raw = await feedbackResolver(input as FeedbackResolverInput);
+      const raw = await feedbackResolver(input);
       // Validate/normalize to ensure the resolver returned an allowed shape; reuse existing normalizer for validation.
       const normalized = normalizeFeedbackResult(raw as unknown);
-      if (raw === null) return null;
-      if (typeof raw === 'string') return raw;
+      if (raw === null) {
+        return null;
+      }
+      if (typeof raw === 'string') {
+        return raw;
+      }
       // raw is an object - return the normalized object form
       return normalized;
     }
@@ -362,7 +387,9 @@ export async function handleFeedbackPrompt(
         let settled = false;
         let removeCancellationListener: (() => void) | undefined;
         const finish = (value: string | FeedbackResolverResult): void => {
-          if (settled) return;
+          if (settled) {
+            return;
+          }
           settled = true;
           removeCancellationListener?.();
           resolve(value);
@@ -379,10 +406,14 @@ export async function handleFeedbackPrompt(
             finish({ feedback: '', cancelled: true });
           };
           removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
-          if (cancellationToken.isCancellationRequested) onCancellation();
+          if (cancellationToken.isCancellationRequested) {
+            onCancellation();
+          }
         }
       });
-      if (typeof answer !== 'string') return answer;
+      if (typeof answer !== 'string') {
+        return answer;
+      }
       return answer.trim();
     };
 
@@ -400,13 +431,17 @@ export async function handleFeedbackPrompt(
         let settled = false;
         let removeCancellationListener: (() => void) | undefined;
         const finish = (value: string | FeedbackResolverResult): void => {
-          if (settled) return;
+          if (settled) {
+            return;
+          }
           settled = true;
           removeCancellationListener?.();
           resolve(value);
         };
         const onLine = (line: string) => {
-          if (settled) return;
+          if (settled) {
+            return;
+          }
           if (line === '/q') {
             rl.close();
             finish(lines.join('\n'));
@@ -422,7 +457,9 @@ export async function handleFeedbackPrompt(
             finish({ feedback: '', cancelled: true });
           };
           removeCancellationListener = cancellationToken.onCancellationRequested(onCancellation);
-          if (cancellationToken.isCancellationRequested) onCancellation();
+          if (cancellationToken.isCancellationRequested) {
+            onCancellation();
+          }
         }
       });
     };
@@ -445,10 +482,9 @@ export async function handleFeedbackPrompt(
       return await Promise.race([
         doWork(),
         new Promise<FeedbackResolverResult | string | null>((_, reject) => {
-          timeoutHandle = setTimeout(
-            () => reject(new Error('Feedback prompt timeout exceeded')),
-            timeoutMs,
-          );
+          timeoutHandle = setTimeout(() => {
+            reject(new Error('Feedback prompt timeout exceeded'));
+          }, timeoutMs);
         }),
       ]);
     } finally {

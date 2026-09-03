@@ -14,6 +14,37 @@ beforeEach(() => {
 });
 
 describe('InteractiveFlowManager', () => {
+  test('pre-record and persist occur before showing approval prompt', async () => {
+    const ctx: any = { stateHistory: [], vars: {}, approvals: {} };
+    const order: string[] = [];
+    const record = jest.fn().mockImplementation(() => order.push('record'));
+    const persist = jest.fn().mockImplementation(() => order.push('persist'));
+
+    mockRunApproval.mockImplementation(async () => {
+      order.push('runApproval');
+      return { chosen: 'PASSED', target: 'ok', reason: '', question: 'Is it ok?' } as any;
+    });
+
+    const mgr = new InteractiveFlowManager({
+      cwd: '/tmp',
+      workflowArg: undefined,
+      approvalResolverPath: undefined,
+      feedbackResolverPath: undefined,
+      ctxApi: { record, persist, context: () => ctx },
+    });
+
+    const stateDef: any = { config: { approval: { PASSED: 'ok', FAILED: 'err' } } };
+
+    const next = await mgr.handleApproval('mystate', stateDef);
+
+    expect(next).toBe('ok');
+    // Ensure record and persist happened before runApproval was called
+    expect(order.indexOf('record')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('persist')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('runApproval')).toBeGreaterThan(order.indexOf('record'));
+    expect(order.indexOf('runApproval')).toBeGreaterThan(order.indexOf('persist'));
+  });
+
   test('handleApproval records decision and returns next state', async () => {
     const ctx: any = { stateHistory: [], vars: {}, approvals: {} };
     const record = jest.fn().mockReturnValue(true);
@@ -72,9 +103,40 @@ describe('InteractiveFlowManager', () => {
 
     expect(next).toBe('err');
     // record should have been called with meta containing approval and waitMs
-    const metaArg = (record.mock.calls[0] as any)[1];
+    const calls = (record.mock.calls as any[]);
+    const metaArg = calls[calls.length - 1][1];
     expect(metaArg).toHaveProperty('approval');
     expect(metaArg.waitMs).toBe(1500);
+  });
+
+  test('pre-record and persist occur before showing feedback prompt', async () => {
+    const ctx: any = { stateHistory: [], vars: {} };
+    const order: string[] = [];
+    const record = jest.fn().mockImplementation(() => order.push('record'));
+    const persist = jest.fn().mockImplementation(() => order.push('persist'));
+
+    mockHandleFeedback.mockImplementation(async () => {
+      order.push('handleFeedback');
+      return null as any;
+    });
+
+    const mgr = new InteractiveFlowManager({
+      cwd: '/tmp',
+      workflowArg: undefined,
+      approvalResolverPath: undefined,
+      feedbackResolverPath: undefined,
+      ctxApi: { record, persist, context: () => ctx },
+    });
+
+    const stateDef: any = { config: { feedback: { expose_var: 'fb' } } };
+
+    const next = await mgr.handleFeedback('s1', stateDef);
+
+    expect(next).toBeNull();
+    expect(order.indexOf('record')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('persist')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('handleFeedback')).toBeGreaterThan(order.indexOf('record'));
+    expect(order.indexOf('handleFeedback')).toBeGreaterThan(order.indexOf('persist'));
   });
 
   test('handleFeedback handles null (timeout) and returns null when no transitions', async () => {

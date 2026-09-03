@@ -28,7 +28,7 @@ function getNumberFieldStrict(
 ): number | undefined {
   if (Object.prototype.hasOwnProperty.call(obj, key)) {
     const v = obj[key];
-    if (typeof v === 'number') return v;
+    if (typeof v === 'number') {return v;}
     throw new Error(`${pathPrefix}.${key} must be a number`);
   }
   return undefined;
@@ -36,7 +36,7 @@ function getNumberFieldStrict(
 
 export function loadResolverConfig(configPath: string | null): ResolverConfig {
   const defaults = getResolverConfigDefaults();
-  if (!configPath) return defaults;
+  if (!configPath) {return defaults;}
 
   const fs = getFileSystem();
   if (!fs.existsSync(configPath)) {
@@ -63,33 +63,33 @@ export function loadResolverConfig(configPath: string | null): ResolverConfig {
     throw new Error('Resolver config must be a JSON object');
   }
 
-  const parsedObj = parsed as Record<string, unknown>;
+  const parsedObj = parsed;
 
   const result: ResolverConfig = JSON.parse(JSON.stringify(defaults)); // deep copy
 
   if (parsedObj.trigger != null) {
-    if (!isPlainObject(parsedObj.trigger)) throw new Error('resolverConfig.trigger must be an object');
-    const trg = parsedObj.trigger as Record<string, unknown>;
+    if (!isPlainObject(parsedObj.trigger)) {throw new Error('resolverConfig.trigger must be an object');}
+    const trg = parsedObj.trigger;
     const interval = getNumberFieldStrict(trg, 'interval', 'resolverConfig.trigger');
     const timeout = getNumberFieldStrict(trg, 'timeout', 'resolverConfig.trigger');
     const retry_interval = getNumberFieldStrict(trg, 'retry_interval', 'resolverConfig.trigger');
-    if (interval !== undefined) result.trigger = { ...result.trigger, interval };
-    if (timeout !== undefined) result.trigger = { ...result.trigger, timeout };
-    if (retry_interval !== undefined) result.trigger = { ...result.trigger, retry_interval };
+    if (interval !== undefined) {result.trigger = { ...result.trigger, interval };}
+    if (timeout !== undefined) {result.trigger = { ...result.trigger, timeout };}
+    if (retry_interval !== undefined) {result.trigger = { ...result.trigger, retry_interval };}
   }
 
   if (parsedObj.approval != null) {
-    if (!isPlainObject(parsedObj.approval)) throw new Error('resolverConfig.approval must be an object');
-    const apr = parsedObj.approval as Record<string, unknown>;
+    if (!isPlainObject(parsedObj.approval)) {throw new Error('resolverConfig.approval must be an object');}
+    const apr = parsedObj.approval;
     const timeout = getNumberFieldStrict(apr, 'timeout', 'resolverConfig.approval');
-    if (timeout !== undefined) result.approval = { ...result.approval, timeout };
+    if (timeout !== undefined) {result.approval = { ...result.approval, timeout };}
   }
 
   if (parsedObj.feedback != null) {
-    if (!isPlainObject(parsedObj.feedback)) throw new Error('resolverConfig.feedback must be an object');
-    const fb = parsedObj.feedback as Record<string, unknown>;
+    if (!isPlainObject(parsedObj.feedback)) {throw new Error('resolverConfig.feedback must be an object');}
+    const fb = parsedObj.feedback;
     const timeout = getNumberFieldStrict(fb, 'timeout', 'resolverConfig.feedback');
-    if (timeout !== undefined) result.feedback = { ...result.feedback, timeout };
+    if (timeout !== undefined) {result.feedback = { ...result.feedback, timeout };}
   }
 
   return result;

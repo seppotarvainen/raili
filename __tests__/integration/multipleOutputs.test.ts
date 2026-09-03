@@ -1,4 +1,4 @@
-/// <reference path="../types/copilot-sdk.d.ts" />
+import '../types/copilot-sdk';
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -37,7 +37,7 @@ function writeStoredOutputs(dir: string, stateId: string, runs: string[]): void 
   fs.mkdirSync(outputsDir, { recursive: true });
   let content = runs[0] ?? '';
   for (let i = 1; i < runs.length; i++) {
-    content += `\n\n--- Run 2026-04-02T0${i}:00:00.000Z ---\n\n${runs[i]}`;
+    content += `\n\n--- Run 2026-04-02T${String(i)}:00:00.000Z ---\n\n${runs[i]}`;
   }
   fs.writeFileSync(path.join(outputsDir, `${stateId}.md`), content, 'utf8');
 }

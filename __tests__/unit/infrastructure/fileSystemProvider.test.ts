@@ -11,19 +11,19 @@ describe('fileSystemProvider', () => {
 
   test('setFileSystem overrides provider and getFileSystem returns the set instance', () => {
     const fakeFs: IFileSystem = {
-      existsSync: (p: string) => true,
-      statSync: (p: string) =>
+      existsSync: (_p: string) => true,
+      statSync: (_p: string) =>
         ({
           isFile: () => true,
         }) as any,
-      readFileSync: (p: string) => 'ok',
-      writeFileSync: (p: string, data: string) => {},
-      appendFileSync: (p: string, data: string) => {},
-      mkdirSync: (p: string) => {},
-      unlinkSync: (p: string) => {},
-      rmSync: (p: string) => {},
-      chmodSync: (p: string, mode: number) => {},
-      readdirSync: (p: string) => [],
+      readFileSync: (_p: string) => 'ok',
+      writeFileSync: (_p: string, _data: string) => {},
+      appendFileSync: (_p: string, _data: string) => {},
+      mkdirSync: (_p: string) => {},
+      unlinkSync: (_p: string) => {},
+      rmSync: (_p: string) => {},
+      chmodSync: (_p: string, _mode: number) => {},
+      readdirSync: (_p: string) => [],
     };
 
     setFileSystem(fakeFs);

@@ -103,7 +103,7 @@ export function addStateToHistory(
         const mergedMeta: StateMeta = { ...existingMeta };
         for (const [k, v] of Object.entries(meta)) {
           if (k === 'waitMs' && typeof existingMeta.waitMs === 'number' && typeof v === 'number') {
-            mergedMeta.waitMs = (existingMeta.waitMs as number) + (v as number);
+            mergedMeta.waitMs = existingMeta.waitMs + v;
           } else {
             mergedMeta[k] = v;
           }

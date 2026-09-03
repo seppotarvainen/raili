@@ -12,7 +12,7 @@ export async function loadTriggerModule(triggerPath: string): Promise<TriggerFun
   let mod: unknown;
   try {
     // Use Node require to load arbitrary JS modules (commonjs). Keep synchronous behavior here.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     mod = require(resolved);
   } catch (err: unknown) {
     // Narrow unknown to extract a message safely
@@ -23,7 +23,7 @@ export async function loadTriggerModule(triggerPath: string): Promise<TriggerFun
       'message' in err &&
       typeof (err as { message?: unknown }).message === 'string'
     ) {
-      msg = (err as { message?: string }).message as string;
+      msg = (err as { message?: string }).message!;
     } else {
       msg = String(err);
     }

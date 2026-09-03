@@ -15,6 +15,8 @@ review:
     FAILED: rework
 ```
 
+Raili persists run context just before approval and feedback prompts. When a state reaches the approval/feedback prompt the runner records a pre-entry marker in the state's history (`meta.pre_record: true`) so the run can be resumed. If a run is cancelled while waiting for approval/feedback, `raili run --continue` resumes at the prompt instead of re-running the producing state — the producing state's side effects are not re-executed. The persisted history entry will also contain a `meta.cancelled` marker (timestamp or token) to indicate an interrupted prompt.
+
 **User interaction:**
 - Question displayed: "Does this look good? "
 - Press **Enter** → routes to PASSED state

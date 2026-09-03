@@ -88,7 +88,7 @@ export class StateEntryManager {
 
     // After updating this state's visit counter, perform any configured resets of other states' visit counters
     if (Array.isArray(cfg.reset_max_visits) && cfg.reset_max_visits.length > 0) {
-      this.visitTracker.resetVisits(cfg.reset_max_visits as string[]);
+      this.visitTracker.resetVisits(cfg.reset_max_visits);
     }
 
     // Record the state entry via provided context API
@@ -96,7 +96,7 @@ export class StateEntryManager {
 
     // Handle reset_outputs
     if (Array.isArray(cfg.reset_outputs) && cfg.reset_outputs.length > 0) {
-      this.outputStore.clearAgentOutputs(this.cwd, cfg.reset_outputs as string[], this.workflowArg);
+      this.outputStore.clearAgentOutputs(this.cwd, cfg.reset_outputs, this.workflowArg);
     }
 
     // Compute whether earlier outputs or learnings applied (best-effort, non-fatal)

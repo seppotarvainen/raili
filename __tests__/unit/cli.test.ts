@@ -100,7 +100,7 @@ describe('run cancellation input lifecycle', () => {
     mockedRunCommand.mockImplementation(async (...args) => {
       cancellationToken = args[9];
       const dataListener = (
-        onSpy.mock.calls as unknown as Array<[string, (chunk: Buffer) => void]>
+        onSpy.mock.calls as unknown as [string, (chunk: Buffer) => void][]
       ).find(([event]) => event === 'data')?.[1];
       expect(dataListener).toBeDefined();
       (dataListener as (chunk: Buffer) => void)(Buffer.from([0x18]));
@@ -121,13 +121,13 @@ describe('run cancellation input lifecycle', () => {
     mockedRunCommand.mockImplementation(async (...args) => {
       cancellationToken = args[9];
       const dataListener = (
-        onSpy.mock.calls as unknown as Array<[string, (chunk: Buffer) => void]>
+        onSpy.mock.calls as unknown as [string, (chunk: Buffer) => void][]
       ).find(([event]) => event === 'data')?.[1];
       (dataListener as (chunk: Buffer) => void)(Buffer.from([0x03]));
       throw new Error('run failed');
     });
     const exit = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
-      throw new Error(`EXIT:${code ?? 0}`);
+      throw new Error(`EXIT:${String(code ?? 0)}`);
     });
 
     await expect(main(new RailiCommand('run'), ['--continue'])).rejects.toThrow('EXIT:1');
@@ -142,7 +142,7 @@ describe('run cancellation input lifecycle', () => {
 
   test('does not install the cancellation listener for non-run commands', async () => {
     const exit = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
-      throw new Error(`EXIT:${code ?? 0}`);
+      throw new Error(`EXIT:${String(code ?? 0)}`);
     });
 
     await expect(main(new RailiCommand('help'), [])).rejects.toThrow('EXIT:0');

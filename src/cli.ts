@@ -23,7 +23,7 @@ const args = process.argv.slice(2);
 
 // Early handling for --version: print package version and exit 0
 if (args.includes('--version') || args[0] === '--version') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const pkg = require('../package.json');
   process.stdout.write(`${pkg.version}\n`);
   process.exit(0);
@@ -64,7 +64,7 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
     { name: 'dry-run', type: Boolean },
   ];
   const parsed = commandLineArgs(optionDefinitions, { argv: normalizedArgv }) as { workflow?: string; clean?: boolean; continue?: boolean; next?: number; rollback?: string; var?: string[]; help?: boolean; 'dry-run'?: boolean; 'resolve-vars'?: string[]; verbose?: boolean };
-  const varsArray: string[] = (parsed.var as string[]) || [];
+  const varsArray: string[] = (parsed.var!) || [];
   const vars: Record<string, string> = {};
   for (const entry of varsArray) {
     const [key, ...rest] = entry.split('=');
@@ -82,7 +82,7 @@ export function parseRunArgs(argv: string[]): RailiRunArgs {
 
   // Resolve raw --resolve-vars behavior: if parser produced an array, use it (filter empty strings).
   // If parser did not produce a value but the flag was present (normalizedArgv contains --resolve-vars=), return []
-  const rawResolve = parsed['resolve-vars'] as string[] | undefined;
+  const rawResolve = parsed['resolve-vars'];
   let resolveVars: string[] | undefined;
   if (Array.isArray(rawResolve)) {
     resolveVars = rawResolve.filter((s) => s !== '');

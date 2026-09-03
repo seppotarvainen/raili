@@ -401,7 +401,7 @@ export function validateStateMachine(machine: StateMachine): void {
         if (!Array.isArray(arr)) {
           throw new Error(`Invalid state '${id}': teach['${agentId}'] must be an array`);
         }
-        for (const entry of arr as any[]) {
+        for (const entry of arr) {
           if (typeof entry !== 'object' || entry === null) {
             throw new Error(`Invalid state '${id}': teach entries must be objects`);
           }
@@ -409,7 +409,7 @@ export function validateStateMachine(machine: StateMachine): void {
           // Allow primary key 'output' or 'var' and optional 'scope' key
           if (keys.length < 1 || keys.length > 2) {
             throw new Error(
-              `Invalid state '${id}': teach entries must be objects like {output: <stateId>} or {var: "${'{VAR}'}"} with optional scope`,
+              `Invalid state '${id}': teach entries must be objects like {output: <stateId>} or {var: "{VAR}"} with optional scope`,
             );
           }
           // Ensure one of output|var is present
@@ -420,7 +420,7 @@ export function validateStateMachine(machine: StateMachine): void {
           }
           // If scope provided, validate value
           if ('scope' in entry) {
-            const val = (entry as any).scope;
+            const val = entry.scope;
             if (val !== 'global' && val !== 'workflow') {
               throw new Error(
                 `Invalid state '${id}': teach entry has invalid scope '${val}'; allowed: 'global'|'workflow'`,
@@ -444,8 +444,8 @@ export function validateStateMachine(machine: StateMachine): void {
         continue;
       }
       for (const entry of arr) {
-        if ((entry as any).output) {
-          const ref = (entry as any).output as string;
+        if (entry.output) {
+          const ref = entry.output as string;
           if (!stateKeys.has(ref)) {
             throw new Error(
               `Invalid state '${id}': teach references unknown state '${ref}' via output:${ref}`,
@@ -458,8 +458,8 @@ export function validateStateMachine(machine: StateMachine): void {
             );
           }
         }
-        if ((entry as any).var) {
-          const raw = (entry as any).var as string;
+        if (entry.var) {
+          const raw = entry.var as string;
           const varPattern = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
           if (!varPattern.test(raw)) {
             throw new Error(

@@ -116,7 +116,7 @@ describe('StateEntryManager', () => {
 
     const stateDef: any = { id: 's3', config: { notify: 'echo hi' }, transitions: [] };
 
-    const res = await mgr.enter('s3', stateDef);
+    const _res = await mgr.enter('s3', stateDef);
 
     expect(notifyHandler).toHaveBeenCalledWith('echo hi', cwd, expect.any(Object));
     // One record for the state entry, one for notify meta

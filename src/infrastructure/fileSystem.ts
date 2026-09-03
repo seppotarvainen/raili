@@ -22,7 +22,7 @@ export class NodeFileSystem implements IFileSystem {
     return fs.statSync(path);
   }
 
-  readFileSync(path: string, enc: string = 'utf8'): string {
+  readFileSync(path: string, enc = 'utf8'): string {
     return fs.readFileSync(path, enc as any) as unknown as string;
   }
 

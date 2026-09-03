@@ -180,7 +180,7 @@ export async function runCommand(
     saveContext(cwd, context, workflowPath);
   } else {
     context = loadContext(cwd, workflowPath);
-    if (!context.vars) context.vars = {};
+    if (!context.vars) {context.vars = {};}
     // workflow is injected as a default; existing context value takes precedence; CLI vars win last
     context.vars = { workflow: workflowName, ...context.vars, ...vars };
 

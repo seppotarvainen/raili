@@ -17,3 +17,5 @@ declare module '@github/copilot-sdk' {
   };
   export function resetCopilotSdkMock(): void;
 }
+
+export {};

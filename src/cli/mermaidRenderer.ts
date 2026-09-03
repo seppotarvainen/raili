@@ -56,7 +56,7 @@ export function renderMermaid(graph: Graph): string {
     if (mv && typeof mv.count === 'number') {
       parts.push(`max_visits=${mv.count}`);
     }
-    if (node.config?.output && node.config.output.store) {
+    if (node.config?.output?.store) {
       parts.push('output.store=true');
     }
     if (parts.length > 0) {

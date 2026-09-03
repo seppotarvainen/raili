@@ -5,8 +5,6 @@ import * as path from 'path';
 import {
   createTmpWorkspace,
   cleanupTmpWorkspace,
-  cleanupRailiEnvVars,
-  fakeChild,
   writeAgentFile,
   writeAgentRegistry,
   writeScriptRegistry,
@@ -75,7 +73,7 @@ states:
       next: done
     teach:
       agent2:
-        - var: "${'${SOME_VAR}'}"
+        - var: '\${SOME_VAR}'
   done:
     type: engine
 `,
@@ -93,8 +91,8 @@ states:
         }
 
         expect(caught).not.toBeNull();
-        expect(String(caught.message || caught)).toContain('teach');
-        expect(String(caught.message || caught)).toContain('agent2');
+        expect(String(caught.message ?? caught)).toContain('teach');
+        expect(String(caught.message ?? caught)).toContain('agent2');
       } finally {
         cleanupTmpWorkspace(tmp);
       }

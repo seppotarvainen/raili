@@ -573,3 +573,99 @@ afterEach(() => {
     });
   });
 
+  describe('loadWorkflowConfig group routing', () => {
+    function writeWf(dir: string, yaml: string) {
+      const workflowDir = path.join(dir, '.raili', 'main');
+      getFileSystem().mkdirSync(workflowDir, { recursive: true } as any);
+      getFileSystem().writeFileSync(path.join(workflowDir, 'workflow.yaml'), yaml);
+    }
+
+    function writeSub(dir: string, yaml: string) {
+      getFileSystem().writeFileSync(path.join(dir, '.raili', 'main', 'sub.yaml'), yaml);
+    }
+
+    test('rewrites internal sub-workflow routes and inherits parent routing at its exit', () => {
+      writeWf(
+        tmpdir,
+        [
+          'initial: group_state',
+          'states:',
+          '  group_state:',
+          '    type: group',
+          '    group: ./sub.yaml',
+          '    on:',
+          '      PASSED: finish',
+          '  finish:',
+          '    type: engine',
+        ].join('\n'),
+      );
+      writeSub(
+        tmpdir,
+        [
+          'states:',
+          '  work:',
+          '    type: engine',
+          '    on:',
+          '      PASSED: complete',
+          '  complete:',
+          '    type: engine',
+          '    out: true',
+        ].join('\n'),
+      );
+
+      const config = loadWorkflowConfig(tmpdir);
+
+      expect(config.states.group_state).toMatchObject({ type: 'engine', skip: 'group_state.work' });
+      expect(config.states['group_state.work'].on).toEqual({ PASSED: 'group_state.complete' });
+      expect(config.states['group_state.complete'].on).toEqual({ PASSED: 'finish' });
+    });
+
+    test('rejects a sub-workflow that declares its own initial state', () => {
+      writeWf(
+        tmpdir,
+        [
+          'initial: group_state',
+          'states:',
+          '  group_state:',
+          '    type: group',
+          '    group: ./sub.yaml',
+          '    on:',
+          '      PASSED: finish',
+          '  finish:',
+          '    type: engine',
+        ].join('\n'),
+      );
+      writeSub(
+        tmpdir,
+        [
+          'initial: work',
+          'states:',
+          '  work:',
+          '    type: engine',
+          '    out: true',
+        ].join('\n'),
+      );
+
+      expect(() => loadWorkflowConfig(tmpdir)).toThrow(/Sub-workflow file must not define 'initial'/);
+    });
+  });
+
+  describe('buildStateMachine control-flow targets', () => {
+    test('includes skip, max-visit, reset, and continue targets for validation', () => {
+      const machine = buildStateMachine({
+        initial: 'start',
+        states: {
+          start: { type: 'engine', skip: 'work' },
+          work: { type: 'engine', max_visits: { count: 2, continue: 'fallback' } },
+          reset: { type: 'engine', reset_max_visits: ['work'], continue: 'done' },
+          fallback: { type: 'engine' },
+          done: { type: 'engine' },
+        },
+      });
+
+      expect(machine.states.start.transitions).toEqual(['work']);
+      expect(machine.states.work.transitions).toEqual(['fallback']);
+      expect(machine.states.reset.transitions).toEqual(['work', 'done']);
+      expect(() => validateStateMachine(machine)).not.toThrow();
+    });
+  });

@@ -1,4 +1,4 @@
-/// <reference path="../types/copilot-sdk.d.ts" />
+import '../types/copilot-sdk';
 import fs from 'fs';
 import path from 'path';
 import { runCommand } from '../../src/run';
@@ -114,7 +114,7 @@ states:
     await runCommand(tmpDir, 'clean', {});
 
     expect(mockClient.createSession).toHaveBeenCalled();
-    const sessionConfig = (mockClient.createSession.mock.calls[0][0] as any) || {};
+    const sessionConfig = (mockClient.createSession.mock.calls[0][0] as any) ?? {};
     expect(sessionConfig.model).toBe('test-model');
     expect(mockClient.stop).toHaveBeenCalled();
 

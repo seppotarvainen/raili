@@ -22,7 +22,9 @@ interface AgentExecutionResult {
 
 function parseFrontmatterModel(content: string): string | undefined {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content);
-  if (!match) return undefined;
+  if (!match) {
+    return undefined;
+  }
   const modelLine = match[1].split(/\r?\n/).find((line) => line.startsWith('model:'));
   return modelLine ? modelLine.replace(/^model:\s*/, '').trim() : undefined;
 }
@@ -43,10 +45,16 @@ function aggregateModelUsage(
     .map((modelMetric) => modelMetric?.usage[field])
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
 
-  if (values.length > 0) return values.reduce((total, value) => total + value, 0);
+  if (values.length > 0) {
+    return values.reduce((total, value) => total + value, 0);
+  }
 
-  if (field === 'inputTokens') return unavailableNumber(metrics.lastCallInputTokens);
-  if (field === 'outputTokens') return unavailableNumber(metrics.lastCallOutputTokens);
+  if (field === 'inputTokens') {
+    return unavailableNumber(metrics.lastCallInputTokens);
+  }
+  if (field === 'outputTokens') {
+    return unavailableNumber(metrics.lastCallOutputTokens);
+  }
   return -1;
 }
 
@@ -106,7 +114,9 @@ function sendAndWaitForIdle(
     let unsubscribe: (() => void) | undefined;
 
     const finish = (callback: () => void): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       unsubscribe?.();
       callback();
@@ -119,14 +129,26 @@ function sendAndWaitForIdle(
       } else if (event.type === 'assistant.message') {
         latestAssistantMessage = event;
       } else if (event.type === 'session.idle') {
-        finish(() => resolve({ response: latestAssistantMessage, receivedDelta }));
+        finish(() => {
+          resolve({ response: latestAssistantMessage, receivedDelta });
+        });
       } else if (event.type === 'session.error') {
-        finish(() => reject(new Error(event.data.message)));
+        finish(() => {
+          reject(new Error(event.data.message));
+        });
       }
     });
 
-    void session.send({ prompt }).catch((error: unknown) => finish(() => reject(error)));
-    void cancellation.then(() => finish(() => resolve({ response: undefined, receivedDelta })));
+    void session.send({ prompt }).catch((error: unknown) => {
+      finish(() => {
+        reject(error);
+      });
+    });
+    void cancellation.then(() => {
+      finish(() => {
+        resolve({ response: undefined, receivedDelta });
+      });
+    });
   });
 }
 
@@ -147,10 +169,14 @@ export async function executeAgent(
 ): Promise<AgentExecutionResult> {
   const fs = getFileSystem();
   const entry = registry[agentId];
-  if (!entry) throw new Error(`Agent '${agentId}' not found in registry`);
+  if (!entry) {
+    throw new Error(`Agent '${agentId}' not found in registry`);
+  }
 
   const fullPath = resolveRegistryPath(cwd, entry.path);
-  if (!fs.existsSync(fullPath)) throw new Error(`Agent file not found: ${fullPath}`);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`Agent file not found: ${fullPath}`);
+  }
 
   const content = fs.readFileSync(fullPath, 'utf8');
   const model = entry.model ?? parseFrontmatterModel(content);
@@ -160,9 +186,13 @@ export async function executeAgent(
     const stateId = path.basename(previousOutputPath, path.extname(previousOutputPath));
     const history = readLatestNRuns(cwd, stateId, useLatest, workflowArg);
     const previous = history ?? fs.readFileSync(previousOutputPath, 'utf8').trim();
-    if (previous) resolvedPrompt = `${resolvedPrompt}\n\nYour previous output(s):\n${previous}`;
+    if (previous) {
+      resolvedPrompt = `${resolvedPrompt}\n\nYour previous output(s):\n${previous}`;
+    }
   }
-  if (resolvedPrompt.trim() === '') resolvedPrompt = 'Work according to your rules';
+  if (resolvedPrompt.trim() === '') {
+    resolvedPrompt = 'Work according to your rules';
+  }
 
   let client: CopilotClient | undefined;
   let session: CopilotSession | undefined;
@@ -199,17 +229,23 @@ export async function executeAgent(
     }
 
     const cancel = (): void => {
-      if (cancellationPromise) return;
+      if (cancellationPromise) {
+        return;
+      }
       cancellationRequested = true;
       cancellationPromise = Promise.resolve().then(() => {
-        if (!session) throw new Error('Copilot SDK session is unavailable');
+        if (!session) {
+          throw new Error('Copilot SDK session is unavailable');
+        }
         return session.abort();
       });
       resolveCancellation?.();
     };
     if (cancellationToken) {
       removeCancellationListener = cancellationToken.onCancellationRequested(cancel);
-      if (cancellationToken.isCancellationRequested) cancel();
+      if (cancellationToken.isCancellationRequested) {
+        cancel();
+      }
     }
 
     if (cancellationRequested) {
@@ -249,7 +285,9 @@ export async function executeAgent(
     } catch (error) {
       throw describeSdkError('execution', error);
     }
-    if (!receivedDelta) process.stdout.write(`${stdout}\n`);
+    if (!receivedDelta) {
+      process.stdout.write(`${stdout}\n`);
+    }
     let metrics;
     try {
       metrics = await session.rpc.usage.getMetrics();
@@ -259,7 +297,9 @@ export async function executeAgent(
     return { success: true, stdout, stderr: '', tokens: mapUsage(metrics) };
   } catch (error) {
     originalError = error;
-    if (error instanceof Error && error.message.startsWith('Copilot SDK ')) throw error;
+    if (error instanceof Error && error.message.startsWith('Copilot SDK ')) {
+      throw error;
+    }
     throw describeSdkError('execution', error);
   } finally {
     removeCancellationListener?.();
@@ -274,12 +314,17 @@ export async function executeAgent(
     if (client) {
       try {
         const errors = await client.stop();
-        if (errors.length > 0 && !cleanupError)
+        if (errors.length > 0 && !cleanupError) {
           cleanupError = describeSdkError('client cleanup', errors[0]);
+        }
       } catch (error) {
-        if (!cleanupError) cleanupError = describeSdkError('client cleanup', error);
+        if (!cleanupError) {
+          cleanupError = describeSdkError('client cleanup', error);
+        }
       }
     }
-    if (cleanupError && !originalError) throw cleanupError;
+    if (cleanupError && !originalError) {
+      throw cleanupError;
+    }
   }
 }

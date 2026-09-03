@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import { runCommand } from '../../src/run';
 import { loadContext } from '../../src/context/context';
 import {

@@ -4,8 +4,8 @@ import { StateResult } from './runner';
 export type AgentRunner = (
   stateDef: StateDef,
   cwd: string,
-  vars?: Record<string, string> | undefined,
-  workflowArg?: string | undefined,
+  vars?: Record<string, string>,
+  workflowArg?: string,
   cancellationToken?: CancellationToken,
   verbose?: boolean,
 ) => Promise<StateResult>;
@@ -97,13 +97,17 @@ export class StateExecutionManager {
 
     // Merge exports into context according to expose rules
     if (cfg.expose && cfg.expose.length > 0) {
-      if (!context.vars) context.vars = {};
+      if (!context.vars) {
+        context.vars = {};
+      }
       for (const name of cfg.expose) {
         const optional = name.endsWith('?');
         const baseName = optional ? name.slice(0, -1) : name;
         const val = result.exports ? result.exports[baseName] : undefined;
         if (val === undefined || val === null || String(val).trim() === '') {
-          if (optional) continue;
+          if (optional) {
+            continue;
+          }
           throw new Error(
             `State '${stateId}': exposed variable '${baseName}' was not produced by the state`,
           );
@@ -111,9 +115,11 @@ export class StateExecutionManager {
         context.vars[baseName] = String(val);
       }
     } else if (result.exports && Object.keys(result.exports).length > 0) {
-      if (!context.vars) context.vars = {};
+      if (!context.vars) {
+        context.vars = {};
+      }
       for (const [k, v] of Object.entries(result.exports)) {
-        context.vars[k] = v as string;
+        context.vars[k] = v;
       }
     }
 

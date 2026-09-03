@@ -188,7 +188,7 @@ describe('validateWorkflowNesting', () => {
     getFileSystem().mkdirSync(tmpDir, { recursive: true } as any);
   });
   afterEach(() => {
-    try { getFileSystem().rmSync(tmpDir, { recursive: true } as any); } catch (e) { }
+    try { getFileSystem().rmSync(tmpDir, { recursive: true } as any); } catch { /* ignore cleanup errors */ } 
   });
 
   test('missing sub-workflow file throws', () => {

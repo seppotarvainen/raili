@@ -1,7 +1,7 @@
 export class VisitTracker {
-  private visitCounts: Map<string, number> = new Map();
-  private countedStates: Set<string> = new Set();
-  private stepsExecuted: number = 0;
+  private visitCounts = new Map<string, number>();
+  private countedStates = new Set<string>();
+  private stepsExecuted = 0;
   private readonly maxSteps: number;
 
   constructor(maxSteps = 1000) {
@@ -28,7 +28,9 @@ export class VisitTracker {
    * false when the state was already counted.
    */
   recordStep(stateId: string): boolean {
-    if (this.countedStates.has(stateId)) return false;
+    if (this.countedStates.has(stateId)) {
+      return false;
+    }
     this.countedStates.add(stateId);
     this.stepsExecuted += 1;
     return true;

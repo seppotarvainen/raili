@@ -40,7 +40,9 @@ export class TeachManager {
 
   async teach(stateId: string, stateDef: StateDef): Promise<void> {
     const teach = stateDef.config.teach;
-    if (!teach) return;
+    if (!teach) {
+      return;
+    }
 
     const agentIds = Object.keys(teach);
     const missing = agentIds.filter((id) => !(id in this.agentRegistry));
@@ -51,9 +53,13 @@ export class TeachManager {
     const recorded: { agent: string; source: string }[] = [];
 
     for (const [agentId, arr] of Object.entries(teach)) {
-      if (!Array.isArray(arr)) continue;
+      if (!Array.isArray(arr)) {
+        continue;
+      }
       for (const entry of arr) {
-        if (!entry || typeof entry !== 'object') continue;
+        if (!entry || typeof entry !== 'object') {
+          continue;
+        }
         if ('output' in entry) {
           const ref = String(entry.output);
           const content = this.readLatestRun(this.cwd, ref, this.workflowArg);
@@ -70,7 +76,9 @@ export class TeachManager {
             this.workflowArg,
             entry.scope,
           );
-          if (appended) recorded.push({ agent: agentId, source: `output:${ref}` });
+          if (appended) {
+            recorded.push({ agent: agentId, source: `output:${ref}` });
+          }
         } else if ('var' in entry) {
           const raw = String(entry.var);
           const m = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(raw);
@@ -94,7 +102,9 @@ export class TeachManager {
               this.workflowArg,
               entry.scope,
             );
-            if (appended) recorded.push({ agent: agentId, source: `var:${varName}` });
+            if (appended) {
+              recorded.push({ agent: agentId, source: `var:${varName}` });
+            }
           }
         }
       }

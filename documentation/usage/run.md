@@ -145,7 +145,7 @@ The active state's history entry is persisted with a cancellation timestamp unde
 }
 ```
 
-No successor state is entered. Use `raili run --continue` to resume from the cancelled state; its handler will run again and the workflow can then follow its normal routing.
+No successor state is entered. After a graceful Ctrl+X cancellation, `--continue` resumes from the cancelled state. For normal handlers this retries the state's handler; for states that are waiting on an approval or feedback prompt (context persisted just prior to the prompt), `--continue` resumes at the prompt instead of re-running the producing state.
 
 ## Input Variables
 

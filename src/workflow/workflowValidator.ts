@@ -1,4 +1,4 @@
-import { WorkflowConfig } from '../types';
+import { StateConfig, WorkflowConfig } from '../types';
 import { WorkflowConfigSchema } from './schemas';
 import { validateObject } from './objectValidator';
 import { validateStateConfig, collectFailFastVarRefs } from './stateValidator';
@@ -26,7 +26,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
   }
 
   if (config.states && typeof config.states === 'object') {
-    for (const [stateId, stateConfig] of Object.entries(config.states)) {
+    for (const [stateId, stateConfig] of Object.entries(config.states) as [string, StateConfig][]) {
       try {
         validateStateConfig(stateConfig, stateId);
       } catch (error) {
@@ -88,7 +88,7 @@ export function validateWorkflowConfig(config: any): WorkflowConfig {
   }
 
   if (config.states && typeof config.states === 'object') {
-    for (const [stateId, stateConfig] of Object.entries(config.states) as [string, any][]) {
+    for (const [stateId, stateConfig] of Object.entries(config.states) as [string, StateConfig][]) {
       if (Array.isArray(stateConfig?.expose)) {
         for (const v of stateConfig.expose) {
           if (typeof v === 'string' && v) {

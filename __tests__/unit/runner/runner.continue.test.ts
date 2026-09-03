@@ -10,7 +10,7 @@ jest.mock('../../../src/handlers/notifyHandler');
 jest.mock('../../../src/context/context', () => ({
   getCurrentState: jest.fn().mockReturnValue(null),
   addStateToHistory: jest.fn((ctx: any, stateId: string, meta?: any) => {
-    if (!ctx.stateHistory) ctx.stateHistory = [];
+  ctx.stateHistory ??= [];
     ctx.stateHistory.push({ state: stateId, enteredAt: new Date().toISOString(), meta });
     return ctx;
   }),

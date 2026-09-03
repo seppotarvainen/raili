@@ -24,16 +24,14 @@ describe('cli teach --scope flag', () => {
     const agentRegistry = require('../../../src/registry/agentRegistry');
     (agentRegistry.loadAgentRegistry as jest.Mock).mockReturnValue({ agent1: { path: '/fake' } });
 
-    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
       throw new Error('EXIT:' + String(code));
     });
   });
 
   afterEach(() => {
     // Restore process.exit spy to avoid leaking into other tests
-    if (exitSpy && exitSpy.mockRestore) {
-      exitSpy.mockRestore();
-    }
+    exitSpy?.mockRestore();
   });
 
   test('passes scope flag to appendManualLearning', async () => {

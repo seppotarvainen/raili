@@ -6,8 +6,6 @@ import {
   cleanupTmpWorkspace,
   createTmpWorkspace,
   writeWorkflow,
-  writeAgentRegistry,
-  writeScriptRegistry,
 } from './testUtils';
 
 jest.mock('child_process', () => ({ spawn: jest.fn() }));

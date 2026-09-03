@@ -1,5 +1,5 @@
 import { parseResolveVarsArgs, loadVarsResolver, executeVarsResolver } from '../../../src/variables/varsResolverLoader';
-import { VarsResolverInput, VarsResolverFn } from '../../../src/types';
+import { VarsResolverFn } from '../../../src/types';
 
 describe('parseResolveVarsArgs', () => {
   test('parses named arguments', () => {

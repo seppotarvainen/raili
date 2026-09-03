@@ -28,7 +28,9 @@ export class RoutingManager {
 
   evaluateSkip(stateId: string, stateDef: StateDef, stateMachine: StateMachine): string | null {
     const skip = (stateDef.config as any).skip;
-    if (!skip) return null;
+    if (!skip) {
+      return null;
+    }
     const target = skip as string;
     if (!(target in stateMachine.states)) {
       throw new Error(`State '${stateId}': skip target '${target}' not found in state machine`);
@@ -89,7 +91,9 @@ export class RoutingManager {
     stateMachine: StateMachine,
     context: WorkflowContext,
   ): Promise<boolean> {
-    if (!stateMachine.error) return false;
+    if (!stateMachine.error) {
+      return false;
+    }
     const errStateId = stateMachine.error;
     const errDef = stateMachine.states[errStateId];
     if (!errDef) {

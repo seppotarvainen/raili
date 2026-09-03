@@ -55,7 +55,9 @@ export function buildGraph(config: WorkflowConfig): Graph {
   const stateSet = new Set(stateIds);
   const missing = new Set<string>();
   for (const e of edges) {
-    if (!stateSet.has(e.to)) missing.add(e.to);
+    if (!stateSet.has(e.to)) {
+      missing.add(e.to);
+    }
   }
 
   if (missing.size > 0) {

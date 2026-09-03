@@ -50,7 +50,7 @@ describe('LSP protocol handlers', () => {
   test('hover shows type and routing', () => {
     const h = hover(doc, { line: 3, column: 5 });
     expect(h).not.toBeNull();
-    const content = h?.contents || '';
+    const content = h?.contents ?? '';
     expect(content).toContain('agent');
     expect(content).toContain('Routing');
   });
@@ -59,7 +59,7 @@ describe('LSP protocol handlers', () => {
     const h = hover(doc, { line: 6, column: 5 });
     expect(h).not.toBeNull();
     // stateC has no type, hover should show 'unknown' for Type
-    const content = h?.contents || '';
+    const content = h?.contents ?? '';
     expect(content).toContain('unknown');
   });
 

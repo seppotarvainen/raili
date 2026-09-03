@@ -51,7 +51,7 @@ states:
 
     spawn.mockImplementation((cmd: string, args: any[], opts: any) => {
       if (cmd === 'sh') {
-        capturedEnv = opts.env && opts.env.RAILI_VAR_WORKFLOW;
+        capturedEnv = opts.env?.RAILI_VAR_WORKFLOW;
         return fakeChild('ok', '', 0);
       }
       return fakeChild('', '', 0);
@@ -88,7 +88,7 @@ states:
 
     spawn.mockImplementation((cmd: string, args: any[], opts: any) => {
       if (cmd === 'sh') {
-        capturedEnv = opts.env && opts.env.RAILI_VAR_WORKFLOW;
+        capturedEnv = opts.env?.RAILI_VAR_WORKFLOW;
         return fakeChild('ok', '', 0);
       }
       return fakeChild('', '', 0);

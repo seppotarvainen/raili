@@ -71,7 +71,7 @@ export function validateField(
   }
 
   if (fieldSchema.validForTypes && stateType) {
-    if (!fieldSchema.validForTypes.includes(stateType as StateType)) {
+    if (!fieldSchema.validForTypes.includes(stateType)) {
       throw new SchemaValidationError(
         `Field '${fieldName}' is only valid for type: ${fieldSchema.validForTypes.join(', ')}. ` +
           `This state has type: ${stateType}`,
